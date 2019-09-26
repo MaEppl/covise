@@ -8,19 +8,20 @@
 #pragma once
 #include <openGA.hpp>
 #include <Cam.h>
-#define NUMBER_OF_CAMS 432
+#define NUMBER_OF_CAMS 423
 //8:384 , 9:423
 class GA
 {
 public:
-    GA(std::vector<Cam*>& cam,const size_t nbrpoints);
+    GA(std::vector<Cam*>& cam, std::vector<Truck::Priority>& priorityList);
     ~GA();
     std::array<int,NUMBER_OF_CAMS> getfinalCamPos() const;
 
 private:
     std::ofstream output_file;              //store result of GA
     std::vector<Cam*>& camlist;
-    const size_t nbrpoints;                 //number of points to observe
+    std::vector<Truck::Priority>& priorityList;
+    size_t nbrpoints;                 //number of points to observe
     const size_t nbrcams=camlist.size();    //number of cameras
    // std::vector<int> cam=std::vector<int>(nbrcams);
 
@@ -45,7 +46,7 @@ private:
          }
 
      };
-    struct MyMiddleCost{int objective;};
+    struct MyMiddleCost{double objective;};
     struct MyTest;
     typedef EA::Genetic<MySolution,MyMiddleCost> GA_Type;
     typedef EA::GenerationType<MySolution,MyMiddleCost> Generation_Type;

@@ -38,7 +38,7 @@ public:
             const osg::Vec3 posInWorld = _node->getBound().center() * osg::computeLocalToWorld(_node->getParentalNodePaths()[0]);
             _pos->push_back(posInWorld);
             std::cout<<node.getName()<<": "<<posInWorld.x()<<"|"<<posInWorld.y()<<"|"<<posInWorld.z()<<std::endl;
-            if(_name == "px")
+            if(_name == "pxONE" || _name == "pxTWO")
                _node->setNodeMask(0);
         }// Keep traversing the rest of the scene graph.
         traverse( node );

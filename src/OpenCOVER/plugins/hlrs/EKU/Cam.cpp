@@ -59,7 +59,7 @@ void Cam::calcVisMat(const osg::Vec3Array &observationPoints)
            (std::abs(newPoint.z())<=Cam::imgHeight/2 * newPoint.x()/Cam::depthView))
         {
             if(calcIntersection(p)==false)
-                visMat.push_back(1);
+                visMat.push_back(1);//*calcRangeDistortionFactor(newPoint));//*calcRangeDistortionFactor(newPoint));
             else
                 visMat.push_back(0);
         }
@@ -103,7 +103,7 @@ double Cam::calcRangeDistortionFactor(const osg::Vec3d &point)
 
     //SRC = Sensor Range Coefficient
     //normalized Rayleigh distribution function
-    double SRC = sigma*exp(0.5) * x / pow(sigma,2) * exp((pow(-x,2)) / (2*pow(sigma,2)));
+    double SRC = sigma*exp(0.5) * (x / pow(sigma,2)) * exp(-(pow(x,2)) / (2*pow(sigma,2)));
     return 1/SRC;
 }
 

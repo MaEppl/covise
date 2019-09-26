@@ -3,7 +3,7 @@
 using namespace opencover;
 size_t Truck:: count = 0;
 
-Truck::Truck(osg::Vec3 pos):pos(pos)
+Truck::Truck(osg::Vec3 pos,Priority priority):pos(pos),priority(priority)
 {
 
     count++;
@@ -16,7 +16,10 @@ Truck::Truck(osg::Vec3 pos):pos(pos)
     truckGeode->setName("Truck" +std::to_string(Truck::count));
 
     osg::Vec4 _color;
-    _color.set(1.0, 0.0, 0.0, 1.0);
+    if(priority == PRIO1)
+        _color.set(1.0, 0.0, 0.0, 1.0);
+    else if(priority == PRIO2)
+         _color.set(1.0, 0.0, 1.0, 1.0);
     truckDrawable->setColor(_color);
     truckDrawable->setUseDisplayList(false);
     osg::StateSet *mystateSet = truckGeode->getOrCreateStateSet();
@@ -70,5 +73,8 @@ void Truck::updateColor()
 
 void Truck::resetColor()
 {
-    truckDrawable->setColor(osg::Vec4(1.0, 0.0, 0.0, 1.0f));
+    if(priority == PRIO1)
+        truckDrawable->setColor(osg::Vec4(1.0, 0.0, 0.0, 1.0));
+    else if(priority == PRIO2)
+         truckDrawable->setColor(osg::Vec4(1.0, 0.0, 1.0, 1.0));
 }

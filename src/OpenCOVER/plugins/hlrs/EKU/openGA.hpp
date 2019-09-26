@@ -243,7 +243,7 @@ template<typename GeneType,typename MiddleCostType>
 class Genetic
 {
 private:
-	std::mt19937_64 rng; // random generator
+    std::mt19937_64 rng; // random generator
 	std::uniform_real_distribution<double> unif_dist;
 	int average_stall_count;
 	int best_stall_count;
@@ -338,7 +338,7 @@ public:
 		// initialize the random number generator with time-dependent seed
 		uint64_t timeSeed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 		std::seed_seq ss{uint32_t(timeSeed & 0xffffffff), uint32_t(timeSeed>>32)};
-		rng.seed(ss);
+        rng.seed(10);//ss
 		std::uniform_real_distribution<double> unif(0, 1);
 		if(N_threads==0) // number of CPU cores not detected.
 			N_threads=8;

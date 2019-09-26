@@ -18,9 +18,13 @@ public:
 
     osg::Box *truck;
     osg::Vec3 pos;
+    enum Priority{
+        PRIO2 = 1, // must be observed with at least 1 camera
+        PRIO1 = 2, //must be observed with at least 2 cameras
+    };
 
-    Truck(osg::Vec3 pos);
-    Truck(const Truck&) { ++count; }
+    Truck(osg::Vec3 pos, Priority priority);
+   // Truck(const Truck&, Priority priority) { ++count; }
     ~Truck();
     virtual bool destroy();
     static size_t count;
@@ -30,10 +34,10 @@ public:
     void resetColor();
 
 private:
-    const float length = 7.0f;
-    const float width = 2.0f;
+    const float length = 3.0f;
+    const float width = 3.0f;
     const float height = 2.0f;
-
+    const int priority;
     osg::ref_ptr<osg::Geode> truckGeode;
     osg::ref_ptr<osgText::Text> text;
     osg::ref_ptr<osg::TessellationHints> hint;

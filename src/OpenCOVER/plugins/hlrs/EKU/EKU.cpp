@@ -52,7 +52,9 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     fprintf(stderr, "EKUplugin::EKUplugin\n");
 
     // read file
-    scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/osgt/EKU_Box_large.osgt");
+    scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/osgt/EKU_Box_large1_PRIORIY-Areas.osgt");
+   // scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/osgt/easy.osgt");
+
     if (!scene.valid())
       {
           osg::notify( osg::FATAL ) << "Unable to load data file. Exiting." << std::endl;
@@ -60,12 +62,24 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
       }
 
     //all Points to observe from file
+    std::vector<Truck::Priority> priorityList;
     std::vector<osg::Vec3> truckPos;
-    FindNamedNode *fnnPoints= new FindNamedNode( "px",&truckPos);
-    scene->accept(*fnnPoints );
-    delete fnnPoints;
+    FindNamedNode *fnnPointsPRIO1= new FindNamedNode( "pxONE",&truckPos);
+    scene->accept(*fnnPointsPRIO1 );
+    delete fnnPointsPRIO1;
     for(const auto& x : truckPos)
-        trucks.push_back(new Truck(x));
+    {
+        trucks.push_back(new Truck(x,Truck::PRIO1));
+        priorityList.push_back(Truck::PRIO1);
+    }
+    FindNamedNode *fnnPointsPRIO2= new FindNamedNode( "pxTWO",&truckPos);
+    scene->accept(*fnnPointsPRIO2 );
+    delete fnnPointsPRIO2;
+    for(const auto& x : truckPos)
+    {
+        trucks.push_back(new Truck(x,Truck::PRIO2));
+        priorityList.push_back(Truck::PRIO2);
+    }
 
 
     osg::Vec3Array* obsPoints = new osg::Vec3Array; //Note: Remove this unecessary
@@ -183,7 +197,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
        {
 
          const size_t pointsToObserve = trucks.size();
-         ga =new GA(cameras,pointsToObserve);
+         ga =new GA(cameras,priorityList);
          auto finalCamIndex = ga->getfinalCamPos();
 
          size_t cnt2=0;
@@ -225,7 +239,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     cover->getObjectsRoot()->addChild(finalScene.get());
 
     //Write obj file
-    osgDB::writeNodeFile(*finalScene, "OpenCOVER/plugins/hlrs/EKU/EKU_result.obj");
+  //  osgDB::writeNodeFile(*finalScene, "OpenCOVER/plugins/hlrs/EKU/EKU_result.obj");
 }
 
 EKU::~EKU()
@@ -243,7 +257,7 @@ void EKU::doAddTruck()
 {
 
     size_t pos = trucks.size();
-    trucks.push_back(new Truck(osg::Vec3((pos+1)*2,0,0)));
+ //  trucks.push_back(new Truck(osg::Vec3((pos+1)*2,0,0)));
 }
 
 

@@ -49,7 +49,7 @@ public:
 
     //check if points are visible for this camera
     void calcVisMat(const osg::Vec3Array &observationPoints);
-    std::vector<int> visMat;
+    std::vector<double> visMat;
     std::string getName()const{return name;}
 protected:
     const std::string name;
