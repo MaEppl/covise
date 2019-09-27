@@ -230,11 +230,7 @@ int Vrml97Plugin::loadVrml(const char *filename, osg::Group *group, const char *
 
 			// send sensors to GUI (a message for each sensor)
 			coGRObjSensorMsg sensorMsg(coGRMsg::SENSOR, plugin->vrmlFilename.c_str(), i);
-			Message grmsg;
-			grmsg.type = COVISE_MESSAGE_UI;
-			grmsg.data = (char*)(sensorMsg.c_str());
-			grmsg.length = strlen(grmsg.data) + 1;
-			coVRPluginList::instance()->sendVisMessage(&grmsg);
+            cover->sendGrMessage(sensorMsg);
 		}
 		return 0;
 	}

@@ -92,9 +92,9 @@ static void initPinboard(VRPinboard *pb)
 }
 #endif
 
-static void messageCallback(int len, const void *buf)
+static void messageCallback(const DataHandle &dh)
 {
-    coVRPluginList::instance()->forwardMessage(len, buf);
+    coVRPluginList::instance()->forwardMessage(dh);
 }
 
 bool CovisePlugin::init()
@@ -106,7 +106,8 @@ bool CovisePlugin::init()
     if (!cover->visMenu)
     {
         cover->visMenu = new ui::Menu("COVISE", this);
-        auto e = new ui::Action(cover->visMenu, "Execute");
+        auto e = new ui::Action("Execute", cover->visMenu);
+        cover->visMenu->add(e, ui::Container::KeepFirst);
         e->setShortcut("e");
         e->setCallback([this](){
             executeAll();

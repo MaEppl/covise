@@ -12,6 +12,8 @@
 #include<cstdlib>
 #include<ctime>
 #include<algorithm>
+#include <array>
+
 #include "GA.hpp"
 #define CAMS_PER_CAMPOINT 16
 #define NUMBER_OF_CAMS 423

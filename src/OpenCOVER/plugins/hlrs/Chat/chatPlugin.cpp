@@ -21,7 +21,7 @@
 #include <cover/coVRMSController.h>
 #include <cover/coVRTui.h>
 #include <config/CoviseConfig.h>
-#include "ChatPlugin.h"
+#include "chatPlugin.h"
 #include <net/udpMessage.h>
 #include <net/udp_message_types.h>
 
@@ -134,11 +134,10 @@ bool ChatPlugin::update()
 		do{
 			audioBuffer = inStream->read(frameSize);
 			int encodedLength = encodeSpeex();
-			audioMessage.length = encodedLength;
-			audioMessage.data = (char*)cbits;
+			audioMessage.data = DataHandle((char*)cbits, encodedLength,false);
 			cover->sendVrbUdpMessage(&audioMessage);
 		} while (audioBuffer.length() > 0);
-		audioMessage.data = nullptr;
+		audioMessage.data = DataHandle(nullptr, 0, false);;
 	}
 	return true;
 }
