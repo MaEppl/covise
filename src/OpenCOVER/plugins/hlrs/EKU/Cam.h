@@ -22,6 +22,7 @@
 #include<osgText/Font>
 #include<osgText/Text>
 #include<osg/ShadeModel>
+#include <osg/LightModel>
 
 #include<Sensor.h>
 
@@ -92,4 +93,20 @@ public:
     osg::ref_ptr<osg::Geode> getCamGeode()const{return camGeode;}
 };
 
+class CamPosition
+{
+public:
+    CamPosition(osg::Vec3 pos);
+    static size_t counter;
 
+    osg::ref_ptr<osg::Geode> getCamGeode()const{return geode;}
+
+private:
+    std::string name;
+    osg::Vec3 position;
+    osg::ShapeDrawable *shapDr;
+    osg::ref_ptr<osg::Geode> geode;
+
+    void setStateSet(osg::StateSet *stateSet);
+
+};

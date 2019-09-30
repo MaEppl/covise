@@ -53,6 +53,10 @@ Pump::Pump(osg::ref_ptr<osg::Node> truck, osg::Vec3 pos =osg::Vec3(20,0,0), int 
     safetyZones.at(0) = new Truck(osg::Vec3(-2.3,0,9),Truck::PRIO1); //safetyZone Dimensions: 2,2,8
     safetyZones.at(1) = new Truck(osg::Vec3(2.3,0,9),Truck::PRIO1);
 
+    //create possible Cam locations
+    possibleCamLocations.push_back(new CamPosition(osg::Vec3(1.4,2,1)));
+    possibleCamLocations.push_back(new CamPosition(osg::Vec3(-1.4,2,1)));
+
     //Rotation
     osg::Matrix rotate;
     osg::Quat xRot, yRot;
@@ -63,9 +67,14 @@ Pump::Pump(osg::ref_ptr<osg::Node> truck, osg::Vec3 pos =osg::Vec3(20,0,0), int 
     rotMat = new osg::MatrixTransform();
     rotMat ->setName("Rotation");
     rotMat->setMatrix(rotate);
+
     rotMat->addChild(truck.get());
     for(const auto& x : safetyZones)
         rotMat->addChild(x->getTruckDrawable().get());
+    for(const auto& x : possibleCamLocations)
+        rotMat->addChild(x->getCamGeode().get());
+
+
 
     //Translation
     transMat= new osg::MatrixTransform();

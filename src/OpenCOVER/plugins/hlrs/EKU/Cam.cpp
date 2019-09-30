@@ -448,3 +448,31 @@ void CamDrawable::resetColor()
     colors->dirty();
 }
 
+size_t CamPosition::counter =0;
+CamPosition::CamPosition(osg::Vec3 pos):position(pos)
+{
+    counter ++;
+    //Creating an osg::Sphere
+  //  mySphere = new osg::Sphere(position, 3.);
+    osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(new osg::Sphere(position,0.15));
+    mySphereDrawable->setColor(osg::Vec4(0., 1., 0., 1.0f));
+    geode = new osg::Geode();
+    osg::StateSet *mystateSet = geode->getOrCreateStateSet();
+    setStateSet(mystateSet);
+    geode->setName("Cam "+std::to_string(CamPosition::counter));
+    geode->addDrawable(mySphereDrawable);
+}
+
+void CamPosition::setStateSet(osg::StateSet *stateSet)
+{
+    osg::Material *material = new osg::Material();
+    material->setColorMode(osg::Material::DIFFUSE);
+    material->setDiffuse(osg::Material::FRONT_AND_BACK, osg::Vec4(1.0f, 0.0f, 0.0f, 0.5f));
+    osg::LightModel *defaultLm;
+    defaultLm = new osg::LightModel();
+    defaultLm->setLocalViewer(true);
+    defaultLm->setTwoSided(true);
+    defaultLm->setColorControl(osg::LightModel::SINGLE_COLOR);
+    stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
+    stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
+}

@@ -74,7 +74,7 @@ public:
     Pump(osg::ref_ptr<osg::Node> truck, osg::Vec3 pos, int rotZ);
     ~Pump();
 
-    std::vector<Cam*> possibleCamLocations;
+    std::vector<CamPosition*> possibleCamLocations;
     std::vector<CamDrawable*> placedCameras;
 
     osg::Vec3 getPos()const{return position;}
