@@ -11,15 +11,18 @@ Truck::Truck(osg::Vec3 pos,Priority priority):pos(pos),priority(priority)
     osg::Box *truck = new osg::Box(pos,length,width,height);
     truckDrawable = new osg::ShapeDrawable(truck,hint.get());
 
+
     // Declare a instance of the geode class:
     truckGeode = new osg::Geode();
-    truckGeode->setName("Truck" +std::to_string(Truck::count));
-
+    truckGeode->setName("SafetyZone" +std::to_string(Truck::count));
+    osg::StateSet *stateset = truckGeode->getOrCreateStateSet();
+    stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+    stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA ,GL_ONE_MINUS_SRC_ALPHA), osg::StateAttribute::ON);
     osg::Vec4 _color;
     if(priority == PRIO1)
-        _color.set(1.0, 0.0, 0.0, 1.0);
+        _color.set(1.0, 0.0, 0.0, 0.5);
     else if(priority == PRIO2)
-         _color.set(1.0, 0.0, 1.0, 1.0);
+         _color.set(1.0, 0.0, 1.0, 0.5);
     truckDrawable->setColor(_color);
     truckDrawable->setUseDisplayList(false);
     osg::StateSet *mystateSet = truckGeode->getOrCreateStateSet();
@@ -68,13 +71,13 @@ bool::Truck::destroy()
 
 void Truck::updateColor()
 {
-    truckDrawable->setColor(osg::Vec4(1., 1., 0., 1.0f));
+    truckDrawable->setColor(osg::Vec4(1., 1., 0., 0.5f));
 }
 
 void Truck::resetColor()
 {
     if(priority == PRIO1)
-        truckDrawable->setColor(osg::Vec4(1.0, 0.0, 0.0, 1.0));
+        truckDrawable->setColor(osg::Vec4(1.0, 0.0, 0.0, 0.5));
     else if(priority == PRIO2)
-         truckDrawable->setColor(osg::Vec4(1.0, 0.0, 1.0, 1.0));
+         truckDrawable->setColor(osg::Vec4(1.0, 0.0, 1.0, 0.5));
 }

@@ -41,6 +41,45 @@ void EKU::preFrame()
         interActing = false; //unregister interaction
     }
 }
+size_t Pump::counter = 0;
+Pump::Pump(osg::ref_ptr<osg::Node> truck, osg::Vec3 pos =osg::Vec3(20,0,0), int rotationZ = 0):position(pos),truck(truck),rotZ(rotationZ)
+{
+    Pump::counter ++;
+    group = new osg::Group;
+    group->setName("Truck"+std::to_string(Pump::counter));
+    truck->setName("Pump"+std::to_string(Pump::counter));
+
+    //create safety Zones
+    safetyZones.at(0) = new Truck(osg::Vec3(-2.3,0,9),Truck::PRIO1); //safetyZone Dimensions: 2,2,8
+    safetyZones.at(1) = new Truck(osg::Vec3(2.3,0,9),Truck::PRIO1);
+
+    //Rotation
+    osg::Matrix rotate;
+    osg::Quat xRot, yRot;
+    xRot.makeRotate(osg::DegreesToRadians(90.0),osg::X_AXIS);
+    yRot.makeRotate(osg::DegreesToRadians(270.0+rotZ),osg::Y_AXIS);
+    osg::Quat fullRot = yRot*xRot;
+    rotate.setRotate(fullRot);
+    rotMat = new osg::MatrixTransform();
+    rotMat ->setName("Rotation");
+    rotMat->setMatrix(rotate);
+    rotMat->addChild(truck.get());
+    for(const auto& x : safetyZones)
+        rotMat->addChild(x->getTruckDrawable().get());
+
+    //Translation
+    transMat= new osg::MatrixTransform();
+    transMat->setName("Translation");
+    osg::Matrix translate;
+    translate.setTrans(pos.x(),pos.y(),pos.z());
+    transMat->setMatrix(translate);
+    transMat->addChild(rotMat.get());
+
+    // Group
+   // group = new osg::Group;
+   // group->setName("Truck"+std::to_string(Pump::counter));
+    group->addChild(transMat.get());
+}
 
 
 EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
@@ -50,7 +89,53 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     fprintf(stderr, "EKUplugin::EKUplugin\n");
 
     // read file
-    scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/osgt/EKU_Box_large1_PRIORIY-Areas.osgt");
+ //   scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/osgt/EKU_Box_large1_PRIORIY-Areas.osgt");
+    //scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/truck_surface.stl");
+    scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Container/12281_Container_v2_L2.obj");
+    //scene = coVRFileManager::instance()->loadFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/truck_surface.stl");
+    truck = coVRFileManager::instance()->loadFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/truck_surface.stl",NULL,finalScene);
+    if (!truck.valid())
+    {
+          osg::notify( osg::FATAL ) << "Unable to load truck data file. Exiting." << std::endl;
+    }
+     scene->setName("Own");
+
+    //draw Pumps:
+    allPumps.push_back(new Pump(truck));
+    int cnt =0;
+    osg::Vec3f a(1,1,1);
+
+    const osg::Vec3f b(2,2,2);
+    const osg::Vec3f c = a.operator *(3);
+
+    for(int i = 0;i<9;i++)
+    {
+        osg::Vec3 posOld=allPumps.back()->getPos();;
+        osg::Vec3 posNew;
+        int rotZ = allPumps.back()->getRot();
+        if(cnt % 2 == 0)
+        {
+             posNew = {posOld.x()*-1,posOld.y(),posOld.z()};
+            allPumps.push_back(new Pump(truck,posNew,180));
+
+        }else
+        {
+             posNew = {posOld.x()*-1,posOld.y()+5,posOld.z()};
+             allPumps.push_back(new Pump(truck,posNew));
+        }
+
+        cnt ++;
+    }
+
+   // Pump *i = new Pump(truck,osg::Vec3(10,10,0),30);
+   // Pump *i2 = new Pump(truck,osg::Vec3(10,20,0),10);
+  //  Pump *i3 = new Pump(truck);
+    for(const auto & x:allPumps)
+        cover->getObjectsRoot()->addChild(x->getPumpDrawable().get());
+
+//   cover->getObjectsRoot()->addChild(scene.get());
+
+  //    scene = coVRFileManager::instance()->loadFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Container/12281_Container_v2_L2.obj");
    // scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/osgt/easy.osgt");
 
     if (!scene.valid())
@@ -234,7 +319,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     for(const auto& x : userInteraction)
         sensorList.append(x);
 
-    cover->getObjectsRoot()->addChild(finalScene.get());
+//    cover->getObjectsRoot()->addChild(finalScene.get());
 
     //Write obj file
   //  osgDB::writeNodeFile(*finalScene, "OpenCOVER/plugins/hlrs/EKU/EKU_result.obj");
@@ -253,9 +338,8 @@ bool EKU::init()
 
 void EKU::doAddTruck()
 {
-
-    size_t pos = trucks.size();
- //  trucks.push_back(new Truck(osg::Vec3((pos+1)*2,0,0)));
+    allPumps.push_back(new Pump(truck,allPumps.back()->getPos()+osg::Vec3(20,20,0),30));
+    cover->getObjectsRoot()->addChild(allPumps.back()->getPumpDrawable().get());
 }
 
 

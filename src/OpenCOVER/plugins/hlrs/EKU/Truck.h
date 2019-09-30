@@ -34,9 +34,9 @@ public:
     void resetColor();
 
 private:
-    const float length = 3.0f;
-    const float width = 3.0f;
-    const float height = 2.0f;
+    const float length = 2.0f;//8
+    const float width = 2.0f;//2
+    const float height = 8.0f;//2
     const int priority;
     osg::ref_ptr<osg::Geode> truckGeode;
     osg::ref_ptr<osgText::Text> text;

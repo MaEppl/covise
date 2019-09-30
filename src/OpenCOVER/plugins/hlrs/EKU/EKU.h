@@ -66,6 +66,31 @@ class Action;
 
 
 using namespace opencover;
+class Pump
+{
+public:
+    static size_t counter;
+
+    Pump(osg::ref_ptr<osg::Node> truck, osg::Vec3 pos, int rotZ);
+    ~Pump();
+
+    std::vector<Cam*> possibleCamLocations;
+    std::vector<CamDrawable*> placedCameras;
+
+    osg::Vec3 getPos()const{return position;}
+    int getRot()const{return rotZ;}
+    osg::ref_ptr<osg::Group> getPumpDrawable()const{return group;}
+
+private:
+    std::string name;
+    osg::Vec3 position;
+    int rotZ;
+    std::array<Truck*,2> safetyZones;
+    osg::ref_ptr<osg::Node> truck;
+    osg::ref_ptr<osg::MatrixTransform> transMat;
+    osg::ref_ptr<osg::MatrixTransform> rotMat;
+    osg::ref_ptr<osg::Group> group;
+};
 
 class mySensor;
 class EKU: public opencover::coVRPlugin, public opencover::ui::Owner
@@ -85,6 +110,7 @@ public:
     std::vector<Truck*> trucks;
     std::vector<Cam*> cameras;
     std::vector<CamDrawable*> finalCams;
+    std::vector<Pump*> allPumps;
 
     GA *ga;
     static EKU *plugin;
@@ -111,11 +137,14 @@ private:
     osg::Geode* createPoints();
     osg::ref_ptr<osg::Group> finalScene;
 
+    osg::ref_ptr<osg::Node> truck;
+
   //  FileReaderWriter *readerWriter;
   //  FindNamedNode fnn;//NOTE: make to pointer
 
-
-
-
 };
+
+
+
+
 #endif
