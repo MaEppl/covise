@@ -8,8 +8,8 @@
 #pragma once
 #include <openGA.hpp>
 #include <Cam.h>
-#define NUMBER_OF_CAMS 423
-//8:384 , 9:423
+#define NUMBER_OF_CAMS 192
+//8:384 , 9:423 ,current: 192
 class GA
 {
 public:

@@ -71,11 +71,12 @@ class Pump
 public:
     static size_t counter;
 
-    Pump(osg::ref_ptr<osg::Node> truck, osg::Vec3 pos, int rotZ);
+    Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface, osg::Vec3 pos, int rotZ);
     ~Pump();
 
     std::vector<CamPosition*> possibleCamLocations;
     std::vector<CamDrawable*> placedCameras;
+    std::array<Truck*,2> safetyZones;
 
     osg::Vec3 getPos()const{return position;}
     int getRot()const{return rotZ;}
@@ -85,8 +86,8 @@ private:
     std::string name;
     osg::Vec3 position;
     int rotZ;
-    std::array<Truck*,2> safetyZones;
     osg::ref_ptr<osg::Node> truck;
+    osg::ref_ptr<osg::Node> truckSurfaceBox;
     osg::ref_ptr<osg::MatrixTransform> transMat;
     osg::ref_ptr<osg::MatrixTransform> rotMat;
     osg::ref_ptr<osg::Group> group;
@@ -115,6 +116,7 @@ public:
     GA *ga;
     static EKU *plugin;
     osg::ref_ptr<osg::Node> scene;
+    osg::ref_ptr<osg::Group> finalScene;
 
 private:
     //UI
@@ -131,13 +133,28 @@ private:
     coSensorList sensorList;
     std::vector<mySensor*> userInteraction;
 
-
-    //Landscape
+     //Landscape
+    void createScene();
     osg::Geode* createPolygon();
     osg::Geode* createPoints();
-    osg::ref_ptr<osg::Group> finalScene;
+    osg::ref_ptr<osg::Node> silo1;
+    osg::ref_ptr<osg::Node> silo2;
+    osg::ref_ptr<osg::Node> container;
+
 
     osg::ref_ptr<osg::Node> truck;
+    osg::ref_ptr<osg::Node> truckSurfaceBox;
+
+
+    //Raycasting for intersection calculation is too slow with many vertices
+    void disactivateDetailedRendering(){
+         truck->setNodeMask(0);
+         truckSurfaceBox->setNodeMask(UINT_MAX);
+    }
+    void activateDetailedRendering(){
+         truck->setNodeMask(UINT_MAX);
+         truckSurfaceBox->setNodeMask(0);
+    }
 
   //  FileReaderWriter *readerWriter;
   //  FindNamedNode fnn;//NOTE: make to pointer

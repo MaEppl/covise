@@ -77,7 +77,8 @@ bool Cam::calcIntersection(const osg::Vec3d& end)
     osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector = new osgUtil::LineSegmentIntersector(pos,end);
     intersector->setIntersectionLimit(osgUtil::Intersector::IntersectionLimit::LIMIT_ONE_PER_DRAWABLE);
     osgUtil::IntersectionVisitor visitor(intersector);
-    EKU::plugin->scene->accept(visitor); // NOTE: how to do this rigth ? wihout acces to class EKU?
+   // EKU::plugin->finalScene->accept(visitor);// NOTE: how to do this rigth ? wihout acces to class EKU?
+    cover->getObjectsRoot()->accept(visitor);
     const osgUtil::LineSegmentIntersector::Intersections hits = intersector->getIntersections();
     std::cout<<"Intersect: "<<hits.size()<<" with ";
     size_t numberOfNonRelevantObstacles = 0;
@@ -86,7 +87,7 @@ bool Cam::calcIntersection(const osg::Vec3d& end)
         std::string name = hitr->nodePath.back()->getName();
 
         // Nodes with cx and px are safety areas or possible camera positions, these are no real obstacles
-        if((name.find("cx") != std::string::npos) || (name.find("px") != std::string::npos))
+        if((name.find("Cam") != std::string::npos) || (name.find("SafetyZone") != std::string::npos) || (name.find("Pyramid") != std::string::npos))
             ++numberOfNonRelevantObstacles;
         std::cout<<hitr->nodePath.back()->getName()<<" & ";
     }
@@ -449,12 +450,12 @@ void CamDrawable::resetColor()
 }
 
 size_t CamPosition::counter =0;
-CamPosition::CamPosition(osg::Vec3 pos):position(pos)
+CamPosition::CamPosition(osg::Vec3 pos):worldPosition(pos)
 {
     counter ++;
     //Creating an osg::Sphere
   //  mySphere = new osg::Sphere(position, 3.);
-    osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(new osg::Sphere(position,0.15));
+    osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(new osg::Sphere(worldPosition,0.15));
     mySphereDrawable->setColor(osg::Vec4(0., 1., 0., 1.0f));
     geode = new osg::Geode();
     osg::StateSet *mystateSet = geode->getOrCreateStateSet();
@@ -462,7 +463,13 @@ CamPosition::CamPosition(osg::Vec3 pos):position(pos)
     geode->setName("Cam "+std::to_string(CamPosition::counter));
     geode->addDrawable(mySphereDrawable);
 }
+void CamPosition::updatePosInWorld()
+{
+    worldPosition = geode->getBound().center() * osg::computeLocalToWorld(geode->getParentalNodePaths()[0])/1000;
+    auto test = osg::computeLocalToWorld(geode->getParentalNodePaths()[0]);
+    std::cout<<worldPosition.x()<<"|"<<worldPosition.y()<<"|"<<worldPosition.z()<<std::endl;
 
+}
 void CamPosition::setStateSet(osg::StateSet *stateSet)
 {
     osg::Material *material = new osg::Material();

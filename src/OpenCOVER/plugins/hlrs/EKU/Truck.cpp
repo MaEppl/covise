@@ -81,3 +81,7 @@ void Truck::resetColor()
     else if(priority == PRIO2)
          truckDrawable->setColor(osg::Vec4(1.0, 0.0, 1.0, 0.5));
 }
+void Truck::updatePosInWorld()
+{
+    pos = truckGeode->getBound().center() * osg::computeLocalToWorld(truckGeode->getParentalNodePaths()[0]) / 1000;
+}

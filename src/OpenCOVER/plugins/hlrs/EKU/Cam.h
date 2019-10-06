@@ -100,10 +100,14 @@ public:
     static size_t counter;
 
     osg::ref_ptr<osg::Geode> getCamGeode()const{return geode;}
-
+    void updatePosInWorld();
+    osg::Vec3 getPosition(){
+        updatePosInWorld();
+        std::cout<<worldPosition.x()<<" "<<worldPosition.y()<<" "<<worldPosition.z()<<std::endl;
+        return worldPosition;}
 private:
     std::string name;
-    osg::Vec3 position;
+    osg::Vec3 worldPosition;
     osg::ShapeDrawable *shapDr;
     osg::ref_ptr<osg::Geode> geode;
 

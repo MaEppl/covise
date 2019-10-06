@@ -27,6 +27,15 @@ public:
        // _pos = new osg::Vec3Array; //NOTE: right way to make new here?
     }
 
+    FindNamedNode( const std::string& name)
+      : osg::NodeVisitor( // Traverse all children.
+                osg::NodeVisitor::TRAVERSE_ALL_CHILDREN ),
+        _name( name ) {}
+
+    // This method gets called for every node in the scene
+    //   graph. Check each node to see if its name matches
+    //   o
+
     // This method gets called for every node in the scene
     //   graph. Check each node to see if its name matches
     //   out target. If so, return position
@@ -38,7 +47,7 @@ public:
             const osg::Vec3 posInWorld = _node->getBound().center() * osg::computeLocalToWorld(_node->getParentalNodePaths()[0]);
             _pos->push_back(posInWorld);
             std::cout<<node.getName()<<": "<<posInWorld.x()<<"|"<<posInWorld.y()<<"|"<<posInWorld.z()<<std::endl;
-            if(_name == "pxONE" || _name == "pxTWO")
+            if(_name == "pxONE" || _name == "pxTWO" || _name == "enviro")
                _node->setNodeMask(0);
         }// Keep traversing the rest of the scene graph.
         traverse( node );

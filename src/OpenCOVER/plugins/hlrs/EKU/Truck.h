@@ -17,7 +17,7 @@ class Truck
 public:
 
     osg::Box *truck;
-    osg::Vec3 pos;
+
     enum Priority{
         PRIO2 = 1, // must be observed with at least 1 camera
         PRIO1 = 2, //must be observed with at least 2 cameras
@@ -32,12 +32,17 @@ public:
     osg::ref_ptr<osg::Geode> getTruckDrawable()const{return truckGeode;}
     void updateColor();
     void resetColor();
-
+    void updatePosInWorld();
+    osg::Vec3 getPosition(){
+        updatePosInWorld();
+       // std::cout<<worldPosition.x()<<" "<<worldPosition.y()<<" "<<worldPosition.z()<<std::endl;
+        return pos;}
 private:
     const float length = 2.0f;//8
     const float width = 2.0f;//2
     const float height = 8.0f;//2
     const int priority;
+    osg::Vec3 pos;
     osg::ref_ptr<osg::Geode> truckGeode;
     osg::ref_ptr<osgText::Text> text;
     osg::ref_ptr<osg::TessellationHints> hint;
