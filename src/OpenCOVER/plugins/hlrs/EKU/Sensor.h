@@ -19,6 +19,7 @@ public:
     mySensor(osg::Node *node, std::string name,vrui::coTrackerButtonInteraction *_interactionA, osg::ShapeDrawable *cSphDr);
     mySensor(osg::Node *node, std::string name,vrui::coTrackerButtonInteraction *_interactionA, CamDrawable *camDr,std::vector<Truck*> *observationPoints, std::vector<CamDrawable*> *cams);
     mySensor(osg::Node *node,int pos, std::string name,vrui::coTrackerButtonInteraction *_interactionA, Truck *safetyDraw ,std::vector<CamDrawable*> *cams);
+    mySensor(osg::Node *node, std::string name,vrui::coTrackerButtonInteraction *_interactionA);
     ~mySensor();
 
     void activate();

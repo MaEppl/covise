@@ -30,6 +30,7 @@ public:
     static size_t count;
 
     osg::ref_ptr<osg::Geode> getTruckDrawable()const{return truckGeode;}
+    void preFrame();
     void updateColor();
     void resetColor();
     void updatePosInWorld();
@@ -48,6 +49,13 @@ private:
     osg::ref_ptr<osg::TessellationHints> hint;
     osg::ShapeDrawable *truckDrawable;
     void setStateSet(osg::StateSet *stateSet);
+
+    //user Interaction
+ /*   mySensor *aSensor;
+    vrui::coTrackerButtonInteraction *myinteraction;
+    bool interActing;
+    coSensorList sensorList;
+    */
 };
 
 

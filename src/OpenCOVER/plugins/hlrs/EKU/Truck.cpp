@@ -40,6 +40,13 @@ Truck::Truck(osg::Vec3 pos,Priority priority):pos(pos),priority(priority)
   //  text->setPosition(truck->getCenter());
 
     //truckGeode->addChild(text.get());
+
+    //User Interaction
+  /*  myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::AllButtons, "MoveMode", vrui::coInteraction::Medium);
+    interActing = false;
+    aSensor = new mySensor(truckGeode, name, myinteraction);
+    sensorList.append(aSensor);
+    */
 }
 
 void Truck::setStateSet(osg::StateSet *stateSet)

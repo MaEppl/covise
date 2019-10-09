@@ -157,9 +157,12 @@ CamDrawable::CamDrawable(Cam* cam):cam(cam)
 CamDrawable::~CamDrawable()
 {
     std::cout<<"CamDrawable Destructor called"<<std::endl;
-  //  group->getParent(0)->removeChild(group);
-  //  verts->resize(0);
-   // verts->dirty();
+    count--;
+  //  delete cam;
+    cover->getObjectsRoot()->removeChild(group.get());
+//    cover->getObjectsRoot()->removeChild(transMat.get());
+
+
 }
 
 osg::Geode* CamDrawable::plotCam()
@@ -455,13 +458,14 @@ CamPosition::CamPosition(osg::Vec3 pos):worldPosition(pos)
     counter ++;
     //Creating an osg::Sphere
   //  mySphere = new osg::Sphere(position, 3.);
-    osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(new osg::Sphere(worldPosition,0.15));
-    mySphereDrawable->setColor(osg::Vec4(0., 1., 0., 1.0f));
+    sphere = new osg::Sphere(worldPosition,0.15);
+    shapDr = new osg::ShapeDrawable(sphere);
+    shapDr->setColor(osg::Vec4(0., 1., 0., 1.0f));
     geode = new osg::Geode();
     osg::StateSet *mystateSet = geode->getOrCreateStateSet();
     setStateSet(mystateSet);
     geode->setName("Cam "+std::to_string(CamPosition::counter));
-    geode->addDrawable(mySphereDrawable);
+    geode->addDrawable(shapDr);
 }
 void CamPosition::updatePosInWorld()
 {

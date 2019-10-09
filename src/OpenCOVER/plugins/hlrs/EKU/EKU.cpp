@@ -14,7 +14,7 @@ using namespace opencover;
 
 EKU *EKU::plugin = NULL;
 
-void EKU::preFrame()
+void Pump::preFrame()
 {
     sensorList.update();
     //Test if button is pressed
@@ -27,14 +27,14 @@ void EKU::preFrame()
         {
             //remember invStartHand-Matrix, when interaction started and mouse button was pressed
             invStartHand.invert(cover->getPointerMat() * cover->getInvBaseMat());
-            startPos = mymtf->getMatrix(); //remember position of sphere, when interaction started
+            startPos = transMat->getMatrix(); //remember position of sphere, when interaction started
             interActing = true; //register interaction
         }
         else
         {
             //calc the tranformation matrix when interacting is running and mouse button was pressed
-            osg::Matrix transMat = startPos * invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
-            mymtf->setMatrix(transMat);
+            osg::Matrix trans = startPos * invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
+            transMat->setMatrix(trans);
         }
     }
     if (myinteraction->wasStopped() && state == false)
@@ -42,14 +42,54 @@ void EKU::preFrame()
         interActing = false; //unregister interaction
     }
 }
+void EKU::preFrame()
+{
+    sensorList.update();
+    //Test if button is pressed
+    int state = cover->getPointerButton()->getState();
+  /*  if (myinteraction->isRunning()) //when interacting the Sphere will be moved
+    {
+        static osg::Matrix invStartHand;
+        static osg::Matrix startPos;
+        if (!interActing)
+        {
+            //remember invStartHand-Matrix, when interaction started and mouse button was pressed
+            invStartHand.invert(cover->getPointerMat() * cover->getInvBaseMat());
+            startPos = mymtf->getMatrix(); //remember position of sphere, when interaction started
+            interActing = true; //register interaction
+
+        }
+        else
+        {
+            //calc the tranformation matrix when interacting is running and mouse button was pressed
+            osg::Matrix trans = startPos * invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
+
+            mymtf->setMatrix(trans);
+        }
+    }
+    if (myinteraction->wasStopped() && state == false)
+    {
+        interActing = false; //unregister interaction
+    }
+    */for(const auto &x: allPumps)
+        x->preFrame();
+}
+void EKU::calcPercentageOfCoveredSafetyZones()
+{
+    std::cout<<"PRIO1 zones covered by 2 cameras: " <<std::endl;
+    std::cout<<"PRIO1 zones covered by 1 camera: " <<std::endl;
+    std::cout<<"PRIO1 zones not covered: " <<std::endl;
+    std::cout<<"PRIO2 zones covered by at least 1 camera: " <<std::endl;
+    std::cout<<"PRIO2 zones not covered: " <<std::endl;
+}
 size_t Pump::counter = 0;
 Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =nullptr, osg::Vec3 pos =osg::Vec3(20,0,0), int rotationZ = 0):position(pos),truck(truck),truckSurfaceBox(truckSurface),rotZ(rotationZ)
 {
     Pump::counter ++;
     group = new osg::Group;
-    group->setName("Truck"+std::to_string(Pump::counter));
-    truck->setName("Pump"+std::to_string(Pump::counter));
-
+    group->setName("DetailedTruck+Cam+Safety"+std::to_string(Pump::counter));
+    truck->setName("DetailedTruck"+std::to_string(Pump::counter));
+    name = "DetailedTruck+Cam+Safety"+std::to_string(Pump::counter);
     //create safety Zones
     safetyZones.at(0) = new Truck(osg::Vec3(-2.3,0,9),Truck::PRIO2); //safetyZone Dimensions: 2,2,8
     safetyZones.at(1) = new Truck(osg::Vec3(2.3,0,9),Truck::PRIO2);
@@ -76,6 +116,8 @@ Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =n
         rotMat->addChild(x->getTruckDrawable().get());
     for(const auto& x : possibleCamLocations)
         rotMat->addChild(x->getCamGeode().get());
+    rotMat->addChild(truck.get());
+    rotMat->addChild(truckSurfaceBox.get());
 
     auto worldPosition2 = possibleCamLocations[0]->getCamGeode()->getBound().center() * osg::computeLocalToWorld(possibleCamLocations[0]->getCamGeode()->getParentalNodePaths()[0]);
      std::cout<<"afterRot"<<worldPosition2.x()<<"|"<<worldPosition2.y()<<"|"<<worldPosition2.z()<<std::endl;
@@ -96,6 +138,34 @@ Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =n
 
     auto worldPosition3 = possibleCamLocations[0]->getCamGeode()->getBound().center() * osg::computeLocalToWorld(possibleCamLocations[0]->getCamGeode()->getParentalNodePaths()[0]);
      std::cout<<"afterTrans:"<<worldPosition3.x()<<"|"<<worldPosition3.y()<<"|"<<worldPosition3.z()<<std::endl;
+
+     //User Interaction
+     myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonC, "MoveMode", vrui::coInteraction::Highest);
+     interActing = false;
+     aSensor = new mySensor(transMat, name, myinteraction);
+     sensorList.append(aSensor);
+}
+Pump::~Pump()
+{
+   // cover->getObjectsRoot()->removeChild(this->getPumpDrawable().get());
+    for (auto it = possibleCamLocations.begin(); it != possibleCamLocations.end(); it++)
+    {
+        delete *it;
+    }
+    possibleCamLocations.clear();
+
+    for (auto it = placedCameras.begin(); it != placedCameras.end(); it++)
+    {
+        delete *it;
+    }
+    placedCameras.clear();
+
+    for (auto it = safetyZones.begin(); it != safetyZones.end(); it++)
+    {
+        delete *it;
+    }
+   // safetyZones.er
+
 }
 void EKU::createScene()
 {   //add silo
@@ -170,6 +240,9 @@ void EKU::createScene()
         std::cout<<"Container loaded"<<std::endl;
 
     }
+
+    cover->getObjectsRoot()->addChild(finalScene.get());
+
 }
 
 EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
@@ -181,29 +254,26 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     finalScene->setName("finalScene");
     createScene();
     // read file
- //   scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/osgt/EKU_Box_large1_PRIORIY-Areas.osgt");
-    //scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/truck_surface.stl");
-    scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Container/12281_Container_v2_L2.obj");
-    //scene = coVRFileManager::instance()->loadFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/truck_surface.stl");
+
     truck = coVRFileManager::instance()->loadFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/truck_surface.stl",NULL,finalScene);
     if (!truck.valid())
     {
           osg::notify( osg::FATAL ) << "Unable to load truck data file. Exiting." << std::endl;
     }
-    // don't show the many vertices of the truck. Only use truck surface
 
     truckSurfaceBox = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/Truck_surface_box.osgt");
     if (!truck.valid())
     {
           osg::notify( osg::FATAL ) << "Unable to load truck data file. Exiting." << std::endl;
     }
+
+    // don't show the many vertices of the truck. Only use truck surface
     disactivateDetailedRendering();
-     scene->setName("Aufbau");
 
     //draw Pumps:
     allPumps.push_back(new Pump(truck,truckSurfaceBox));
     int cnt =0;
-   for(int i = 0;i<5;i++)
+    for(int i = 0;i<5;i++)
     {
         osg::Vec3 posOld=allPumps.back()->getPos();;
         osg::Vec3 posNew;
@@ -224,25 +294,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     for(const auto & x:allPumps)
     {
-        //finalScene->addChild(x->getPumpDrawable().get());
         cover->getObjectsRoot()->addChild(x->getPumpDrawable().get());
-      //  x->possibleCamLocations.front()->getPosition();
-       // x->possibleCamLocations.[1]->getPosition();
-}
 
-//   cover->getObjectsRoot()->addChild(scene.get());
+    }
 
-  //    scene = coVRFileManager::instance()->loadFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Container/12281_Container_v2_L2.obj");
-   // scene = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/osgt/easy.osgt");
 
-    if (!scene.valid())
-      {
-          osg::notify( osg::FATAL ) << "Unable to load data file. Exiting." << std::endl;
-          //return( 1 );
-      }
 
     //all Points to observe from file
-    std::vector<Truck::Priority> priorityList;
+
   /*  std::vector<osg::Vec3> truckPos;
     FindNamedNode *fnnPointsPRIO1= new FindNamedNode( "pxONE",&truckPos);
     scene->accept(*fnnPointsPRIO1 );
@@ -261,6 +320,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         priorityList.push_back(Truck::PRIO2);
     }
 */
+    //######################################################################
     for(const auto& x1 : allPumps)
     {
         for(const auto& x2 : x1->safetyZones)
@@ -278,10 +338,10 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     //all possible camera locations from file
     std::vector<osg::Vec3> camPos;
- /*   FindNamedNode *fnnCam= new FindNamedNode( "cx",&camPos);
-    scene->accept(*fnnCam );
-    delete fnnCam;
-*/
+ //   FindNamedNode *fnnCam= new FindNamedNode( "cx",&camPos);
+ //   scene->accept(*fnnCam );
+ //   delete fnnCam;
+
     for(const auto& x1 : allPumps)
     {
         for(const auto& x2 : x1->possibleCamLocations)
@@ -344,6 +404,41 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             doRemoveTruck();
     });
 
+    //Optimize orientation
+    OptOrient = new ui::Action(EKUMenu , "OpOrient");
+    OptOrient->setCallback([this](){
+
+    });
+
+    //Optimize nbr of cameras
+
+    OptNbrCams = new ui::Action(EKUMenu , "OptNbrCameras");
+    OptNbrCams->setCallback([this](){
+
+        for(const auto& x: finalCams)
+            x->~CamDrawable();
+        finalCams.clear();
+
+        ga =new GA(cameras,priorityList);
+        auto finalCamIndex = ga->getfinalCamPos();
+
+        size_t cnt2=0;
+        for(auto& x:finalCamIndex)
+        {
+            if(x==1){
+                   finalCams.push_back(new CamDrawable(cameras.at(cnt2)));
+               }
+           cnt2++;
+        }
+        for(const auto& x:finalCams)
+        {
+            cover->getObjectsRoot()->addChild(x->getCamDrawable().get());
+            //add User interaction to each final camera
+        //   userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&trucks,&finalCams));
+        }
+
+    });
+
     //FOV
     FOVRegulator = new ui::Slider(EKUMenu , "Slider1");
     FOVRegulator->setText("FOV");
@@ -398,56 +493,29 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             }
         }
     });
-
-
-     // Start GA algorithm and plot final cams
-
-       {
-
-         const size_t pointsToObserve = trucks.size();
-         ga =new GA(cameras,priorityList);
-         auto finalCamIndex = ga->getfinalCamPos();
-
-         size_t cnt2=0;
-         const std::string camName="Cam";
-         for(auto& x:finalCamIndex)
-         {
-             if(x==1){
-                //finalCams.push_back(new CamDrawable(cameras.at(cnt2)->pos,cameras.at(cnt2)->rot,camName+std::to_string(cnt2)));
-                    finalCams.push_back(new CamDrawable(cameras.at(cnt2)));
-                }
-            cnt2++;
-         }
-     }
-
-    //Draw final Scene
- //   finalScene = new osg::Group;
- //   finalScene->setName("finalScene");
-    finalScene->addChild(scene.get());
-  //  for(const auto & x:allPumps)
-    //  finalScene->addChild(x->getPumpDrawable().get());
-    myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonA, "MoveMode", vrui::coInteraction::Medium);
+    //User Interaction
+    myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::AllButtons, "MoveMode", vrui::coInteraction::Medium);
     interActing = false;
+    mymtf = new osg::MatrixTransform();
     for(const auto& x:finalCams)
     {
-        finalScene->addChild(x->getCamDrawable().get());
+      //  finalScene->addChild(x->getCamDrawable().get());
         //add User interaction to each final camera
-        userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&trucks,&finalCams));
+    //   userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&trucks,&finalCams));
     }
     int cntTrucks =0;
     for(const auto& x:trucks)
     {
         //finalScene->addChild(x->getTruckDrawable().get());
         //add User interaction to each safety zone
-        userInteraction.push_back(new mySensor(x->getTruckDrawable(),cntTrucks, "Truck", myinteraction,x,&finalCams));
+    //    userInteraction.push_back(new mySensor(x->getTruckDrawable(),cntTrucks, "Truck", myinteraction,x,&finalCams));
         cntTrucks++;
     }
     // add sensors to sensorList
-    for(const auto& x : userInteraction)
-        sensorList.append(x);
+   // for(const auto& x : userInteraction)
+   //     sensorList.append(x);
 
-    //activateDetailedRendering();
-    cover->getObjectsRoot()->addChild(finalScene.get());
+   // activateDetailedRendering();
 
     //Write obj file
   //  osgDB::writeNodeFile(*finalScene, "OpenCOVER/plugins/hlrs/EKU/EKU_result.obj");
@@ -473,14 +541,20 @@ void EKU::doAddTruck()
 
 void EKU::doRemoveTruck()
 {
+    std::cout<<"nbr of Trucks before"<<allPumps.size()<<std::endl;
     if (!trucks.empty())
-       trucks.back()->destroy();
+    {
+     //  cover->getObjectsRoot()->removeChild(allPumps.back()->getPumpDrawable().get());
+       delete *allPumps.end();
+    }
 
-    delete trucks.back();
 
-    if(trucks.size()>0)
-        trucks.pop_back();
+   // if(trucks.size()>0)
+   //     trucks.pop_back();
 
+    std::cout<<"nbr of Trucks after"<<allPumps.size()<<std::endl;
+
+  //  cover->getObjectsRoot()->removeChild(allPumps.back()->getPumpDrawable().get())
     /*TOD:
     - delete Trucks from screen
     - when last element is deleted program chrashes (because first is not part of vector?)
@@ -490,61 +564,9 @@ void EKU::doAddCam()
 {
 
 }
-
-osg::Geode* EKU::createPolygon()
+void EKU::removeCamDrawable(CamDrawable* cam)
 {
-   // The Drawable geometry is held under Geode objects.
-   osg::Geode* geode = new osg::Geode();
-   geode->setName("Landscape");
-   osg::Geometry* geom = new osg::Geometry();
-   osg::StateSet *stateset = geode->getOrCreateStateSet();
-   // Associate the Geometry with the Geode.
-   geode->addDrawable(geom);
-   // Declare an array of vertices to create a simple polygon.
-   osg::Vec3Array* verts = new osg::Vec3Array;
-   verts->push_back( osg::Vec3( 50.0f,  50.0f,  0.0f) ); // 2 right back
-   verts->push_back( osg::Vec3( 50.0f, -50.0f,  0.0f) ); // 1 right front
-   verts->push_back( osg::Vec3(-50.0f,  50.0f,  0.0f) ); // 3 left  back
-   verts->push_back( osg::Vec3(-50.0f, -50.0f,  0.0f) ); // 0 left  front
-   // Associate this set of vertices with the Geometry.
-   geom->setVertexArray(verts);
-   // Next, create a primitive set and add it to the Geometry as a polygon.
-   osg::DrawElementsUInt* face =
-      new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-   face->push_back(0);
-   face->push_back(1);
-   face->push_back(2);
-   face->push_back(3);
-   geom->addPrimitiveSet(face);
-   //Create normal
-   osg::Vec3Array* normals = new osg::Vec3Array();
-   normals->push_back(osg::Vec3(0.f ,0.f, 1.f));  //left front
-   normals->push_back(osg::Vec3(0.f ,0.f, 1.f));
-   normals->push_back(osg::Vec3(0.f ,0.f, 1.f));
-   normals->push_back(osg::Vec3(0.f ,0.f, 1.f));
-   geom->setNormalArray(normals);
-   geom->setNormalBinding(osg::Geometry::BIND_OVERALL);
-
-    //create Materal
-    osg::Material *material = new osg::Material;
-    material->setColorMode(osg::Material::AMBIENT_AND_DIFFUSE);
-    material->setDiffuse(osg::Material::FRONT_AND_BACK, osg::Vec4(1.0f, 0.2f, 0.2f, 1.0f));
-    material->setAmbient(osg::Material::FRONT_AND_BACK, osg::Vec4(0.1f, 0.1f, 0.1f, 1.0f));
-    material->setSpecular(osg::Material::FRONT_AND_BACK, osg::Vec4(1.0, 1.0, 1.0, 1.0));
-    material->setShininess(osg::Material::FRONT_AND_BACK, 25.0);
-    stateset->setAttributeAndModes(material);
-    stateset->setNestRenderBins(false);
-
-   // Create a color for the polygon.
-   osg::Vec4Array* colors = new osg::Vec4Array;
-   colors->push_back( osg::Vec4(0.0f, 0.5f, 0.0f, 1.0f) ); // dark green
-   // The next step is to associate the array of colors with the geometry.
-   // Assign the color indices created above to the geometry and set the
-   // binding mode to _OVERALL.
-   geom->setColorArray(colors);
-   geom->setColorBinding(osg::Geometry::BIND_OVERALL);
-   // Return the geode as the root of this geometry.
-   return geode;
+    cam->~CamDrawable();
 }
 
 COVERPLUGIN(EKU)

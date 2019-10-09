@@ -28,7 +28,12 @@ mySensor::mySensor(osg::Node *node,int pos, std::string name,vrui::coTrackerButt
     _interA = _interactionA;
     safetyDr = safetyDraw;
 }
-
+mySensor::mySensor(osg::Node *node, std::string name,vrui::coTrackerButtonInteraction *_interactionA):coPickSensor(node)
+{
+    sensorName = name;
+    isActive = false;
+    _interA = _interactionA;
+}
 mySensor::~mySensor()
 {
 }
@@ -37,7 +42,7 @@ mySensor::~mySensor()
 void mySensor::activate()
 {
     isActive = true;
-    cout << "---Activate--" << sensorName.c_str() << endl;
+    cout << "---Activate--" << sensorName << endl;
     vrui::coInteractionManager::the()->registerInteraction(_interA);
     if(shapDr != nullptr)
         shapDr->setColor(osg::Vec4(1., 1., 0., 1.0f));
@@ -76,7 +81,7 @@ void mySensor::activate()
 //-----------------------------------------------------------
 void mySensor::disactivate()
 {
-    cout << "---Disactivate--" << sensorName.c_str() << endl;
+    cout << "---Disactivate--" << sensorName << endl;
     isActive = false;
     vrui::coInteractionManager::the()->unregisterInteraction(_interA);
     if(shapDr != nullptr)

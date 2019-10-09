@@ -52,7 +52,6 @@ class Action;
 #include<osg/Node>
 
 
-
 #include <iostream>
 #include <vector>
 #include<functional>
@@ -82,6 +81,9 @@ public:
     int getRot()const{return rotZ;}
     osg::ref_ptr<osg::Group> getPumpDrawable()const{return group;}
 
+    //User Interaction
+    void preFrame();
+
 private:
     std::string name;
     osg::Vec3 position;
@@ -91,6 +93,12 @@ private:
     osg::ref_ptr<osg::MatrixTransform> transMat;
     osg::ref_ptr<osg::MatrixTransform> rotMat;
     osg::ref_ptr<osg::Group> group;
+
+    //user Interaction
+    mySensor *aSensor;
+    vrui::coTrackerButtonInteraction *myinteraction;
+    bool interActing;
+    coSensorList sensorList;
 };
 
 class mySensor;
@@ -106,7 +114,7 @@ public:
     void doAddCam();
     void doRemoveCamera();
     //osg::Material *mtl;
-   void preFrame();
+    virtual void preFrame();
 
     std::vector<Truck*> trucks;
     std::vector<Cam*> cameras;
@@ -115,17 +123,18 @@ public:
 
     GA *ga;
     static EKU *plugin;
-    osg::ref_ptr<osg::Node> scene;
     osg::ref_ptr<osg::Group> finalScene;
 
 private:
     //UI
     ui::Menu *EKUMenu  = nullptr;
-    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*AddCam = nullptr;
+    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr;
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
     ui::Group *Frame = nullptr;
     ui::Label *Label = nullptr;
     ui::Button *MakeCamsInvisible = nullptr;
+
+    std::vector<Truck::Priority> priorityList;
 
     osg::MatrixTransform *mymtf;
     vrui::coTrackerButtonInteraction *myinteraction;
@@ -135,8 +144,6 @@ private:
 
      //Landscape
     void createScene();
-    osg::Geode* createPolygon();
-    osg::Geode* createPoints();
     osg::ref_ptr<osg::Node> silo1;
     osg::ref_ptr<osg::Node> silo2;
     osg::ref_ptr<osg::Node> container;
@@ -155,6 +162,10 @@ private:
          truck->setNodeMask(UINT_MAX);
          truckSurfaceBox->setNodeMask(0);
     }
+
+    void calcPercentageOfCoveredSafetyZones();
+
+    void removeCamDrawable(CamDrawable *cam);
 
   //  FileReaderWriter *readerWriter;
   //  FindNamedNode fnn;//NOTE: make to pointer

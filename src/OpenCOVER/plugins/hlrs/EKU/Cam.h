@@ -67,8 +67,8 @@ private:
 class CamDrawable
 {
 private:
-    osg::Vec3Array* verts;
-    osg::Vec4Array* colors;
+    osg::ref_ptr<osg::Vec3Array> verts;
+    osg::ref_ptr<osg::Vec4Array> colors;
     osg::ref_ptr<osg::Group> group;
     osg::ref_ptr<osg::Geode> camGeode;
     osg::ref_ptr<osg::MatrixTransform> transMat;
@@ -97,6 +97,7 @@ class CamPosition
 {
 public:
     CamPosition(osg::Vec3 pos);
+    ~CamPosition(){}
     static size_t counter;
 
     osg::ref_ptr<osg::Geode> getCamGeode()const{return geode;}
@@ -108,7 +109,8 @@ public:
 private:
     std::string name;
     osg::Vec3 worldPosition;
-    osg::ShapeDrawable *shapDr;
+    osg::ref_ptr<osg::ShapeDrawable> shapDr;
+    osg::ref_ptr<osg::Sphere> sphere;
     osg::ref_ptr<osg::Geode> geode;
 
     void setStateSet(osg::StateSet *stateSet);
