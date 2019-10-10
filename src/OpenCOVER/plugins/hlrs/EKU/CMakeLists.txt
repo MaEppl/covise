@@ -1,17 +1,16 @@
 SET(HEADERS
   EKU.h
   Cam.h
-  Truck.h
+  SafetyZone.h
   openGA.hpp
   GA.hpp
   FileReader.hpp
   Sensor.h
-  
 )
 SET(SOURCES
   EKU.cpp
   Cam.cpp
-  Truck.cpp
+  SafetyZone.cpp
   GA.cpp
   FileReader.cpp
   Sensor.cpp

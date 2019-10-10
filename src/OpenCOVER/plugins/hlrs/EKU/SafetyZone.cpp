@@ -1,21 +1,21 @@
-#include <Truck.h>
+#include <SafetyZone.h>
 
 using namespace opencover;
-size_t Truck:: count = 0;
+size_t SafetyZone:: count = 0;
 
-Truck::Truck(osg::Vec3 pos,Priority priority):pos(pos),priority(priority)
+SafetyZone::SafetyZone(osg::Vec3 pos,Priority priority):pos(pos),priority(priority)
 {
 
     count++;
-    fprintf(stderr, "new Truck\n");
-    osg::Box *truck = new osg::Box(pos,length,width,height);
-    truckDrawable = new osg::ShapeDrawable(truck,hint.get());
+    fprintf(stderr, "new SafetyZone\n");
+    zone = new osg::Box(pos,length,width,height);
+    safetyZoneDrawable = new osg::ShapeDrawable(zone,hint.get());
 
 
     // Declare a instance of the geode class:
-    truckGeode = new osg::Geode();
-    truckGeode->setName("SafetyZone" +std::to_string(Truck::count));
-    osg::StateSet *stateset = truckGeode->getOrCreateStateSet();
+    safetyZoneGeode = new osg::Geode();
+    safetyZoneGeode->setName("SafetyZone" +std::to_string(SafetyZone::count));
+    osg::StateSet *stateset = safetyZoneGeode->getOrCreateStateSet();
     stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
     stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA ,GL_ONE_MINUS_SRC_ALPHA), osg::StateAttribute::ON);
     osg::Vec4 _color;
@@ -23,33 +23,33 @@ Truck::Truck(osg::Vec3 pos,Priority priority):pos(pos),priority(priority)
         _color.set(1.0, 0.0, 0.0, 0.5);
     else if(priority == PRIO2)
          _color.set(1.0, 0.0, 1.0, 0.5);
-    truckDrawable->setColor(_color);
-    truckDrawable->setUseDisplayList(false);
-    osg::StateSet *mystateSet = truckGeode->getOrCreateStateSet();
+    safetyZoneDrawable->setColor(_color);
+    safetyZoneDrawable->setUseDisplayList(false);
+    osg::StateSet *mystateSet = safetyZoneGeode->getOrCreateStateSet();
     setStateSet(mystateSet);
 
     // Add the unit cube drawable to the geode:
-    truckGeode->addDrawable(truckDrawable);
+    safetyZoneGeode->addDrawable(safetyZoneDrawable);
 
 
     text = new osgText::Text;
   //  text->setName("Text");
-  //  text->setText("Truck"+std::to_string(Truck::count));
+  //  text->setText("SafetyZone"+std::to_string(SafetyZone::count));
     //text->setColor()
   //  text->setCharacterSize(4);
-  //  text->setPosition(truck->getCenter());
+  //  text->setPosition(SafetyZone->getCenter());
 
-    //truckGeode->addChild(text.get());
+    //SafetyZoneGeode->addChild(text.get());
 
     //User Interaction
   /*  myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::AllButtons, "MoveMode", vrui::coInteraction::Medium);
     interActing = false;
-    aSensor = new mySensor(truckGeode, name, myinteraction);
+    aSensor = new mySensor(SafetyZoneGeode, name, myinteraction);
     sensorList.append(aSensor);
     */
 }
 
-void Truck::setStateSet(osg::StateSet *stateSet)
+void SafetyZone::setStateSet(osg::StateSet *stateSet)
 {
     osg::Material *material = new osg::Material();
     material->setColorMode(osg::Material::DIFFUSE);
@@ -62,33 +62,33 @@ void Truck::setStateSet(osg::StateSet *stateSet)
     */stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
   //  stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
 }
-Truck::~Truck()
+SafetyZone::~SafetyZone()
 {
-    fprintf(stderr, "Removed Truck\n");
+    fprintf(stderr, "Removed SafetyZone\n");
 }
 
-bool::Truck::destroy()
+bool::SafetyZone::destroy()
 {
     //is this function necessary or do it in Destructor?
     //free memory space???
     //call desctuctor???
-    cover->getObjectsRoot()->removeChild(truckGeode.get());
+    cover->getObjectsRoot()->removeChild(safetyZoneGeode.get());
     return true;
 }
 
-void Truck::updateColor()
+void SafetyZone::updateColor()
 {
-    truckDrawable->setColor(osg::Vec4(1., 1., 0., 0.5f));
+    safetyZoneDrawable->setColor(osg::Vec4(1., 1., 0., 0.5f));
 }
 
-void Truck::resetColor()
+void SafetyZone::resetColor()
 {
     if(priority == PRIO1)
-        truckDrawable->setColor(osg::Vec4(1.0, 0.0, 0.0, 0.5));
+        safetyZoneDrawable->setColor(osg::Vec4(1.0, 0.0, 0.0, 0.5));
     else if(priority == PRIO2)
-         truckDrawable->setColor(osg::Vec4(1.0, 0.0, 1.0, 0.5));
+         safetyZoneDrawable->setColor(osg::Vec4(1.0, 0.0, 1.0, 0.5));
 }
-void Truck::updatePosInWorld()
+void SafetyZone::updatePosInWorld()
 {
-    pos = truckGeode->getBound().center() * osg::computeLocalToWorld(truckGeode->getParentalNodePaths()[0]) / 1000;
+    pos = safetyZoneGeode->getBound().center() * osg::computeLocalToWorld(safetyZoneGeode->getParentalNodePaths()[0]) / 1000;
 }

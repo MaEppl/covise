@@ -58,7 +58,7 @@ class Action;
 
 #include <cover/ui/Owner.h>
 #include<Cam.h>
-#include<Truck.h>
+#include<SafetyZone.h>
 #include<GA.hpp>
 #include<FileReader.hpp>
 #include<Sensor.h>
@@ -75,7 +75,7 @@ public:
 
     std::vector<CamPosition*> possibleCamLocations;
     std::vector<CamDrawable*> placedCameras;
-    std::array<Truck*,2> safetyZones;
+    std::array<SafetyZone*,2> safetyZones;
 
     osg::Vec3 getPos()const{return position;}
     int getRot()const{return rotZ;}
@@ -116,7 +116,7 @@ public:
     //osg::Material *mtl;
     virtual void preFrame();
 
-    std::vector<Truck*> trucks;
+    std::vector<SafetyZone*> safetyZones;
     std::vector<Cam*> cameras;
     std::vector<CamDrawable*> finalCams;
     std::vector<Pump*> allPumps;
@@ -134,7 +134,7 @@ private:
     ui::Label *Label = nullptr;
     ui::Button *MakeCamsInvisible = nullptr;
 
-    std::vector<Truck::Priority> priorityList;
+    std::vector<SafetyZone::Priority> priorityList;
 
     osg::MatrixTransform *mymtf;
     vrui::coTrackerButtonInteraction *myinteraction;

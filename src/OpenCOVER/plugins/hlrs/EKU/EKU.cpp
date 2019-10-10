@@ -39,9 +39,9 @@ void Pump::preFrame()
             //no translation in z
             trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),startPos.getTrans().z());
             //rotation only around z
-            zRot.makeRotate(trans.getRotate().z(), osg::Z_AXIS);         //   trans.setRotate();
-            yRot.makeRotate(startPos.getRotate().y(), osg::Y_AXIS);         //   trans.setRotate();
-            xRot.makeRotate(startPos.getRotate().x(), osg::X_AXIS);         //   trans.setRotate();
+            zRot.makeRotate(trans.getRotate().z(), osg::Z_AXIS);
+            yRot.makeRotate(startPos.getRotate().y(), osg::Y_AXIS);
+            xRot.makeRotate(startPos.getRotate().x(), osg::X_AXIS);
             trans.setRotate(xRot*yRot*zRot);
             transMat->setMatrix(trans);
             std::cout<<"actual Pos: " <<trans.getTrans().x() <<","<<trans.getTrans().y() <<","<<trans.getTrans().z() <<std::endl;
@@ -102,8 +102,8 @@ Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =n
     truck->setName("DetailedTruck"+std::to_string(Pump::counter));
     name = "DetailedTruck+Cam+Safety"+std::to_string(Pump::counter);
     //create safety Zones
-    safetyZones.at(0) = new Truck(osg::Vec3(-2.3,0,9),Truck::PRIO2); //safetyZone Dimensions: 2,2,8
-    safetyZones.at(1) = new Truck(osg::Vec3(2.3,0,9),Truck::PRIO2);
+    safetyZones.at(0) = new SafetyZone(osg::Vec3(-2.3,0,9),SafetyZone::PRIO2); //safetyZone Dimensions: 2,2,8
+    safetyZones.at(1) = new SafetyZone(osg::Vec3(2.3,0,9),SafetyZone::PRIO2);
 
     //create possible Cam locations
     possibleCamLocations.push_back(new CamPosition(osg::Vec3(1.5,1.6,-0.5)));//to side , height , forward
@@ -124,7 +124,7 @@ Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =n
     rotMat->addChild(truck.get());
     rotMat->addChild(truckSurfaceBox.get());
    for(const auto& x : safetyZones)
-        rotMat->addChild(x->getTruckDrawable().get());
+        rotMat->addChild(x->getSafetyZoneDrawable().get());
     for(const auto& x : possibleCamLocations)
         rotMat->addChild(x->getCamGeode().get());
     rotMat->addChild(truck.get());
@@ -319,16 +319,16 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     delete fnnPointsPRIO1;
     for(const auto& x : truckPos)
     {
-        trucks.push_back(new Truck(x,Truck::PRIO1));
-        priorityList.push_back(Truck::PRIO1);
+        trucks.push_back(new SafetyZone(x,SafetyZone::PRIO1));
+        priorityList.push_back(SafetyZone::PRIO1);
     }
     FindNamedNode *fnnPointsPRIO2= new FindNamedNode( "pxTWO",&truckPos);
     scene->accept(*fnnPointsPRIO2 );
     delete fnnPointsPRIO2;
     for(const auto& x : truckPos)
     {
-        trucks.push_back(new Truck(x,Truck::PRIO2));
-        priorityList.push_back(Truck::PRIO2);
+        trucks.push_back(new SafetyZone(x,SafetyZone::PRIO2));
+        priorityList.push_back(SafetyZone::PRIO2);
     }
 */
     //######################################################################
@@ -336,14 +336,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     {
         for(const auto& x2 : x1->safetyZones)
         {
-            trucks.push_back(x2);
-            priorityList.push_back(Truck::PRIO2);
+            safetyZones.push_back(x2);
+            priorityList.push_back(SafetyZone::PRIO2);
         }
     }
 
 
     osg::Vec3Array* obsPoints = new osg::Vec3Array; //Note: Remove this unecessary
-    for(auto x:trucks)
+    for(auto x:safetyZones)
         obsPoints->push_back( x->getPosition());
 
 
@@ -390,9 +390,22 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             }
         }
     }
-    //##################################################### delete this here #####################################
-  //  for(const auto& x : cameras)
-  //      finalCams.push_back(new CamDrawable(x));
+    //Create user Interation
+    myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonA, "MoveMode", vrui::coInteraction::Medium);
+    interActing = false;
+    mymtf = new osg::MatrixTransform();
+    // add sensors to sensorList
+   // for(const auto& x : userInteraction)
+   //     sensorList.append(x);
+
+    int cntsafetyZones =0;
+    for(const auto& x:safetyZones)
+    {
+        //finalScene->addChild(x->getSafetyZoneDrawable().get());
+        //add User interaction to each safety zone
+    //    userInteraction.push_back(new mySensor(x->getSafetyZoneDrawable(),cntsafetyZones, "SafetyZone", myinteraction,x,&finalCams));
+        cntsafetyZones++;
+    }
 
     //Create UI
     EKUMenu  = new ui::Menu("EKU", this);
@@ -445,8 +458,11 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         {
             cover->getObjectsRoot()->addChild(x->getCamDrawable().get());
             //add User interaction to each final camera
-        //   userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&trucks,&finalCams));
+            userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&safetyZones,&finalCams));
         }
+        // add sensors to sensorList
+        for(const auto& x : userInteraction)
+            sensorList.append(x);
 
     });
 
@@ -504,27 +520,15 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             }
         }
     });
-    //User Interaction
-    myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::AllButtons, "MoveMode", vrui::coInteraction::Medium);
-    interActing = false;
-    mymtf = new osg::MatrixTransform();
+
     for(const auto& x:finalCams)
     {
       //  finalScene->addChild(x->getCamDrawable().get());
         //add User interaction to each final camera
-    //   userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&trucks,&finalCams));
+    //   userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&safetyZones,&finalCams));
     }
-    int cntTrucks =0;
-    for(const auto& x:trucks)
-    {
-        //finalScene->addChild(x->getTruckDrawable().get());
-        //add User interaction to each safety zone
-    //    userInteraction.push_back(new mySensor(x->getTruckDrawable(),cntTrucks, "Truck", myinteraction,x,&finalCams));
-        cntTrucks++;
-    }
-    // add sensors to sensorList
-   // for(const auto& x : userInteraction)
-   //     sensorList.append(x);
+
+
 
    // activateDetailedRendering();
 
@@ -553,11 +557,10 @@ void EKU::doAddTruck()
 void EKU::doRemoveTruck()
 {
     std::cout<<"nbr of Trucks before"<<allPumps.size()<<std::endl;
-    if (!trucks.empty())
-    {
+
      //  cover->getObjectsRoot()->removeChild(allPumps.back()->getPumpDrawable().get());
-       delete *allPumps.end();
-    }
+
+
 
 
    // if(trucks.size()>0)

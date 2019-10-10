@@ -7,18 +7,18 @@
 #include<PluginUtil/coSensor.h>
 
 #include<Cam.h>
-#include<Truck.h>
+#include<SafetyZone.h>
 using namespace covise;
 using namespace opencover;
 
-class Truck;
+class SafetyZone;
 class CamDrawable;
 class mySensor : public coPickSensor
 {
 public:
     mySensor(osg::Node *node, std::string name,vrui::coTrackerButtonInteraction *_interactionA, osg::ShapeDrawable *cSphDr);
-    mySensor(osg::Node *node, std::string name,vrui::coTrackerButtonInteraction *_interactionA, CamDrawable *camDr,std::vector<Truck*> *observationPoints, std::vector<CamDrawable*> *cams);
-    mySensor(osg::Node *node,int pos, std::string name,vrui::coTrackerButtonInteraction *_interactionA, Truck *safetyDraw ,std::vector<CamDrawable*> *cams);
+    mySensor(osg::Node *node, std::string name,vrui::coTrackerButtonInteraction *_interactionA, CamDrawable *camDr,std::vector<SafetyZone*> *observationPoints, std::vector<CamDrawable*> *cams);
+    mySensor(osg::Node *node,int pos, std::string name,vrui::coTrackerButtonInteraction *_interactionA, SafetyZone *safetyDraw ,std::vector<CamDrawable*> *cams);
     mySensor(osg::Node *node, std::string name,vrui::coTrackerButtonInteraction *_interactionA);
     ~mySensor();
 
@@ -33,8 +33,8 @@ private:
     vrui::coTrackerButtonInteraction *_interA;
     osg::ShapeDrawable *shapDr = nullptr;
     CamDrawable *camDr = nullptr;
-    Truck *safetyDr = nullptr;
-    std::vector<Truck*> *observationPoints=nullptr;
+    SafetyZone *safetyDr = nullptr;
+    std::vector<SafetyZone*> *observationPoints=nullptr;
     std::vector<CamDrawable*> *cams=nullptr;
     int pos;
 };

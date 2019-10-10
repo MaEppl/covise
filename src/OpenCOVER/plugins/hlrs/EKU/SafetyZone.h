@@ -11,25 +11,25 @@
 #include<Sensor.h>
 using namespace opencover;
 
-class Truck
+class SafetyZone
 {
     friend class mySensor;
 public:
 
-    osg::Box *truck;
+    osg::Box *zone;
 
     enum Priority{
         PRIO2 = 1, // must be observed with at least 1 camera
         PRIO1 = 2, //must be observed with at least 2 cameras
     };
 
-    Truck(osg::Vec3 pos, Priority priority);
-   // Truck(const Truck&, Priority priority) { ++count; }
-    ~Truck();
+    SafetyZone(osg::Vec3 pos, Priority priority);
+   // SafetyZone(const SafetyZone&, Priority priority) { ++count; }
+    ~SafetyZone();
     virtual bool destroy();
     static size_t count;
 
-    osg::ref_ptr<osg::Geode> getTruckDrawable()const{return truckGeode;}
+    osg::ref_ptr<osg::Geode> getSafetyZoneDrawable()const{return safetyZoneGeode;}
     void preFrame();
     void updateColor();
     void resetColor();
@@ -41,13 +41,13 @@ public:
 private:
     const float length = 2.0f;//8
     const float width = 2.0f;//2
-    const float height = 8.0f;//2
+    const float height = 8.0f;//2sss
     const int priority;
     osg::Vec3 pos;
-    osg::ref_ptr<osg::Geode> truckGeode;
+    osg::ref_ptr<osg::Geode> safetyZoneGeode;
     osg::ref_ptr<osgText::Text> text;
     osg::ref_ptr<osg::TessellationHints> hint;
-    osg::ShapeDrawable *truckDrawable;
+    osg::ShapeDrawable *safetyZoneDrawable;
     void setStateSet(osg::StateSet *stateSet);
 
     //user Interaction

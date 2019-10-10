@@ -11,7 +11,7 @@ mySensor::mySensor(osg::Node *node, std::string name, vrui::coTrackerButtonInter
     shapDr = cSphDr;
 }
 
-mySensor::mySensor(osg::Node *node, std::string name, vrui::coTrackerButtonInteraction *_interactionA, CamDrawable *camDraw,std::vector<Truck*> *observationPoints,std::vector<CamDrawable*> *cams)
+mySensor::mySensor(osg::Node *node, std::string name, vrui::coTrackerButtonInteraction *_interactionA, CamDrawable *camDraw,std::vector<SafetyZone*> *observationPoints,std::vector<CamDrawable*> *cams)
     : observationPoints(observationPoints), cams(cams), coPickSensor(node)
 {
     sensorName = name;
@@ -20,7 +20,7 @@ mySensor::mySensor(osg::Node *node, std::string name, vrui::coTrackerButtonInter
     camDr = camDraw;
 }
 
-mySensor::mySensor(osg::Node *node,int pos, std::string name,vrui::coTrackerButtonInteraction *_interactionA, Truck *safetyDraw ,std::vector<CamDrawable*> *cams)
+mySensor::mySensor(osg::Node *node,int pos, std::string name,vrui::coTrackerButtonInteraction *_interactionA, SafetyZone *safetyDraw ,std::vector<CamDrawable*> *cams)
     :pos(pos),cams(cams),coPickSensor(node)
 {
     sensorName = name;
