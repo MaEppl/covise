@@ -23,18 +23,29 @@ void Pump::preFrame()
     {
         static osg::Matrix invStartHand;
         static osg::Matrix startPos;
+        static osg::Quat xRot,yRot, zRot;
         if (!interActing)
         {
             //remember invStartHand-Matrix, when interaction started and mouse button was pressed
             invStartHand.invert(cover->getPointerMat() * cover->getInvBaseMat());
             startPos = transMat->getMatrix(); //remember position of sphere, when interaction started
             interActing = true; //register interaction
+            std::cout<<"Start Pos: " <<startPos.getTrans().x() <<","<<startPos.getTrans().y() <<","<<startPos.getTrans().z() <<std::endl;
         }
         else
         {
             //calc the tranformation matrix when interacting is running and mouse button was pressed
             osg::Matrix trans = startPos * invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
+            //no translation in z
+            trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),startPos.getTrans().z());
+            //rotation only around z
+            zRot.makeRotate(trans.getRotate().z(), osg::Z_AXIS);         //   trans.setRotate();
+            yRot.makeRotate(startPos.getRotate().y(), osg::Y_AXIS);         //   trans.setRotate();
+            xRot.makeRotate(startPos.getRotate().x(), osg::X_AXIS);         //   trans.setRotate();
+            trans.setRotate(xRot*yRot*zRot);
             transMat->setMatrix(trans);
+            std::cout<<"actual Pos: " <<trans.getTrans().x() <<","<<trans.getTrans().y() <<","<<trans.getTrans().z() <<std::endl;
+
         }
     }
     if (myinteraction->wasStopped() && state == false)
