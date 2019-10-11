@@ -36,7 +36,7 @@ public:
     void updatePosInWorld();
     osg::Vec3 getPosition(){
         updatePosInWorld();
-       // std::cout<<worldPosition.x()<<" "<<worldPosition.y()<<" "<<worldPosition.z()<<std::endl;
+        std::cout<<"Safety Zone"<<pos.x()<<" "<<pos.y()<<" "<<pos.z()<<std::endl;
         return pos;}
 private:
     const float length = 2.0f;//8

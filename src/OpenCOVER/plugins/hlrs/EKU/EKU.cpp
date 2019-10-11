@@ -51,12 +51,23 @@ void Pump::preFrame()
     if (myinteraction->wasStopped() && state == false)
     {
         interActing = false; //unregister interaction
+        EKU::plugin ->updateObservationPointPosition();
+        for(auto x :EKU::plugin->finalCams)
+        {
+          x->cam->calcVisMat((EKU::plugin)->getObservationPoints());
+        }
+
     }
 }
 void EKU::preFrame()
 {
     sensorList.update();
-    //Test if button is pressed
+  /*  plugin ->updateObservationPointPosition();
+    for(auto x :plugin->finalCams)
+    {
+      x->cam->calcVisMat(*observationPoints);
+    }
+    *///Test if button is pressed
     int state = cover->getPointerButton()->getState();
   /*  if (myinteraction->isRunning()) //when interacting the Sphere will be moved
     {
@@ -78,12 +89,14 @@ void EKU::preFrame()
             mymtf->setMatrix(trans);
         }
     }
-    if (myinteraction->wasStopped() && state == false)
+    */if (myinteraction->wasStopped() && state == false)
     {
         interActing = false; //unregister interaction
     }
-    */for(const auto &x: allPumps)
+    for(const auto &x: allPumps)
         x->preFrame();
+
+
 }
 void EKU::calcPercentageOfCoveredSafetyZones()
 {
@@ -342,11 +355,9 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     }
 
 
-    osg::Vec3Array* obsPoints = new osg::Vec3Array; //Note: Remove this unecessary
-    for(auto x:safetyZones)
-        obsPoints->push_back( x->getPosition());
 
-
+   // observationPoints = new std::vector<osg::Vec3>;
+    updateObservationPointPosition();
     //all possible camera locations from file
     std::vector<osg::Vec3> camPos;
  //   FindNamedNode *fnnCam= new FindNamedNode( "cx",&camPos);
@@ -385,7 +396,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             for(const auto& x:camRots)
             {
                cnt++;
-               cameras.push_back(new Cam(c,x,*obsPoints,myString+std::to_string(cnt)));
+               cameras.push_back(new Cam(c,x,observationPoints,myString+std::to_string(cnt)));
 
             }
         }
@@ -442,10 +453,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         for(const auto& x: finalCams)
             x->~CamDrawable();
         finalCams.clear();
+        std::array<int,192> finalCamIndex;
+        if (coVRMSController::instance()->isMaster())
+        {
+                ga =new GA(cameras,priorityList);
+                finalCamIndex = ga->getfinalCamPos();
 
-        ga =new GA(cameras,priorityList);
-        auto finalCamIndex = ga->getfinalCamPos();
-
+        }
+        coVRMSController::instance()->syncData(&finalCamIndex, finalCamIndex.size());
         size_t cnt2=0;
         for(auto& x:finalCamIndex)
         {
@@ -471,13 +486,13 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     FOVRegulator->setText("FOV");
     FOVRegulator->setBounds(30., 120.);
     FOVRegulator->setValue(60.);
-    FOVRegulator->setCallback([this,obsPoints](double value, bool released){
+    FOVRegulator->setCallback([this](double value, bool released){
         this->disactivateDetailedRendering();
         for(auto x :finalCams)
         {
           //disactivateDetailedRendering();
           x->updateFOV(value);
-          x->cam->calcVisMat(*obsPoints);
+          x->cam->calcVisMat(observationPoints);
           //activateDetailedRendering();
         }
         this-> activateDetailedRendering();
@@ -488,13 +503,13 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     VisibilityRegulator->setText("Visibility");
     VisibilityRegulator->setBounds(10., 60.);
     VisibilityRegulator->setValue(30.0);
-    VisibilityRegulator->setCallback([this,obsPoints](double value, bool released){
+    VisibilityRegulator->setCallback([this](double value, bool released){
         this->disactivateDetailedRendering();
         for(auto x :finalCams)
         {
 
           x->updateVisibility(value);
-          x->cam->calcVisMat(*obsPoints);
+          x->cam->calcVisMat(observationPoints);
         }
         this-> activateDetailedRendering();
     });
@@ -581,6 +596,11 @@ void EKU::doAddCam()
 void EKU::removeCamDrawable(CamDrawable* cam)
 {
     cam->~CamDrawable();
+}
+
+void EKU::updateObservationPointPosition(){
+    for(const auto &x : safetyZones)
+        observationPoints.push_back( x->getPosition());
 }
 
 COVERPLUGIN(EKU)

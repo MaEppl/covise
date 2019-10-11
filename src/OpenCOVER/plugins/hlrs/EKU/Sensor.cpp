@@ -1,6 +1,6 @@
 #include <Sensor.h>
 #include <cover/RenderObject.h>
-
+#include <EKU.h>
 
 mySensor::mySensor(osg::Node *node, std::string name, vrui::coTrackerButtonInteraction *_interactionA, osg::ShapeDrawable *cSphDr)
     : coPickSensor(node)
@@ -116,7 +116,15 @@ void mySensor::disactivate()
         }
 
     }
-
+ /*   else
+    {
+        EKU::plugin ->updateObservationPointPosition();
+        for(auto x :EKU::plugin->finalCams)
+        {
+          x->cam->calcVisMat((EKU::plugin)->*observationPoints);
+        }
+    }
+*/
 
 }
 

@@ -20,7 +20,7 @@ double Cam::imgWidth = 2*depthView*std::tan(Cam::fov/2*osg::PI/180);
 double Cam::imgHeight = Cam::imgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
 
 
-Cam::Cam(const osg::Vec3 pos, const osg::Vec2 rot, const osg::Vec3Array &observationPoints,const std::string name):pos(pos),rot(rot),name(name)
+Cam::Cam(const osg::Vec3 pos, const osg::Vec2 rot, const std::vector<osg::Vec3> &observationPoints,const std::string name):pos(pos),rot(rot),name(name)
 {
 
     calcVisMat(observationPoints);
@@ -38,7 +38,7 @@ Cam::~Cam()
 }
 
 
-void Cam::calcVisMat(const osg::Vec3Array &observationPoints)
+void Cam::calcVisMat(const std::vector<osg::Vec3> &observationPoints)
 {
      visMat.clear();
 

@@ -34,7 +34,7 @@ class Action;
 }
 
 #include <cover/coVRPlugin.h>
-
+#include <cover/coVRMSController.h>
 #include <cover/ui/Button.h>
 #include <cover/ui/Slider.h>
 #include <cover/ui/Group.h>
@@ -113,10 +113,13 @@ public:
     void doRemoveTruck();
     void doAddCam();
     void doRemoveCamera();
+    void updateObservationPointPosition();
+    std::vector<osg::Vec3>& getObservationPoints(){return observationPoints;}
     //osg::Material *mtl;
     virtual void preFrame();
 
     std::vector<SafetyZone*> safetyZones;
+
     std::vector<Cam*> cameras;
     std::vector<CamDrawable*> finalCams;
     std::vector<Pump*> allPumps;
@@ -135,6 +138,7 @@ private:
     ui::Button *MakeCamsInvisible = nullptr;
 
     std::vector<SafetyZone::Priority> priorityList;
+    std::vector<osg::Vec3> observationPoints;
 
     osg::MatrixTransform *mymtf;
     vrui::coTrackerButtonInteraction *myinteraction;
@@ -164,6 +168,8 @@ private:
     }
 
     void calcPercentageOfCoveredSafetyZones();
+
+
 
     void removeCamDrawable(CamDrawable *cam);
 

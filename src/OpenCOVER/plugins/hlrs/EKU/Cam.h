@@ -38,7 +38,7 @@ public:
     static double depthView;
     static double focalLengthPixel;
 
-    Cam(const osg::Vec3 pos, const osg::Vec2 rot, const osg::Vec3Array &observationPoints,const std::string name);
+    Cam(const osg::Vec3 pos, const osg::Vec2 rot, const std::vector<osg::Vec3> &observationPoints, const std::string name);
     Cam(const osg::Vec3 pos, const osg::Vec2 rot,const std::string name);
     ~Cam();
 
@@ -49,7 +49,7 @@ public:
     //const osg::Vec3Array* obsPoints =nullptr; // NOTE: remove later
 
     //check if points are visible for this camera
-    void calcVisMat(const osg::Vec3Array &observationPoints);
+    void calcVisMat(const std::vector<osg::Vec3> &observationPoints);
     std::vector<double> visMat;
     std::string getName()const{return name;}
 protected:
