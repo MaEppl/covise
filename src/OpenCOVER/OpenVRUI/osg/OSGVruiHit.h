@@ -1,4 +1,4 @@
-/* This file is part of COVISE.
+﻿/* This file is part of COVISE.
 
    You can use it under the terms of the GNU Lesser General Public License
    version 2.1 or later, see lgpl-2.1.txt.
@@ -20,7 +20,6 @@ class vruiNode;
 
 class OSGVRUIEXPORT OSGVruiHit : public vruiHit
 {
-
 public:
     OSGVruiHit(const osgUtil::LineSegmentIntersector::Intersection &isect, bool mouseHit);
     virtual ~OSGVruiHit();
@@ -31,6 +30,7 @@ public:
     virtual bool isMouseHit() const;
 
     vruiNode *getNode();
+    virtual NodePath *getNodePath(){return &nodePathVar;}
 
     const osgUtil::LineSegmentIntersector::Intersection &getHit() const;
 
@@ -42,6 +42,7 @@ private:
     mutable coVector *isecWorldPoint;
     mutable coVector *isecNormal;
     mutable vruiNode *node;
+    NodePath nodePathVar;
 };
 }
 #endif

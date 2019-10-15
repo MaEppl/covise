@@ -27,6 +27,13 @@ OSGVruiHit::OSGVruiHit(const LineSegmentIntersector::Intersection &hit, bool mou
     isecWorldPoint = 0;
     isecNormal = 0;
     node = 0;
+    nodePathVar.reserve(hit.nodePath.size());
+
+    for(const auto node:hit.nodePath)
+    {
+        nodePathVar.push_back(new OSGVruiNode(node));
+    }
+
 }
 
 OSGVruiHit::~OSGVruiHit()

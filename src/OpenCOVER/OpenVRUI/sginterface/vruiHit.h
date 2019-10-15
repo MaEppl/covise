@@ -10,9 +10,12 @@
 
 #include <util/coTypes.h>
 #include <util/coVector.h>
+#include <vector>
+#include <OpenVRUI/sginterface/vruiNode.h>
 
 namespace vrui
 {
+typedef  std::vector<vruiNode *> NodePath;
 using covise::coVector;
 
 class vruiNode;
@@ -33,6 +36,7 @@ public:
     virtual bool isMouseHit() const = 0;
 
     virtual vruiNode *getNode() = 0;
+    virtual NodePath *getNodePath() {return NULL;}
 };
 }
 #endif

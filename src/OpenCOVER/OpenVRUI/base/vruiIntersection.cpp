@@ -9,6 +9,7 @@
 
 #include <OpenVRUI/sginterface/vruiActionUserData.h>
 #include <OpenVRUI/sginterface/vruiNode.h>
+#include <OpenVRUI/sginterface/vruiHit.h>
 #include <OpenVRUI/sginterface/vruiRendererInterface.h>
 
 #include <OpenVRUI/util/vruiLog.h>
@@ -78,32 +79,31 @@ void vruiIntersection::callActions(vruiNode *node, vruiHit *hit)
         VRUILOG("vruiIntersection::callActions err: you have to set frameIndex in subclass " << getClassName())
         return;
     }
-
     unsigned int thisFrame = (*frames()[frameIndex]);
 
-    for (int ctr = 0; ctr < node->getNumParents(); ++ctr)
-    {
-        callActions(node->getParent(ctr), hit);
-    }
+  // NodePath nodepath =*hit->getNodePath();
 
-    // if we don't have any userdata attached to this node, then nothing to do
+    for(const auto &node : *hit->getNodePath()) {
 
-    vruiActionUserData *actionData = dynamic_cast<vruiActionUserData *>(node->getUserData(getActionName()));
+        // if we don't have any userdata attached to this node, then nothing to do
 
-    if ((actionData) && (actionData->action))
-    {
-        int recall = actionData->action->hitAll(hit);
-        if (recall & coAction::ACTION_CALL_ON_MISS)
+        vruiActionUserData *actionData = dynamic_cast<vruiActionUserData *>(node->getUserData(getActionName()));//node
+
+        if ((actionData) && (actionData->action))
         {
-            if ((thisFrame != 0) && (actionData->action->getFrame()+1 != thisFrame))
+            int recall = actionData->action->hitAll(hit);
+            if (recall & coAction::ACTION_CALL_ON_MISS)
             {
-                actionList.push_back(actionData->action);
+                if ((thisFrame != 0) && (actionData->action->getFrame()+1 != thisFrame))
+                {
+                    actionList.push_back(actionData->action);
+                }
+                actionData->action->setFrame(thisFrame);
             }
-            actionData->action->setFrame(thisFrame);
-        }
-        else
-        {
-            actionData->action->setFrame(thisFrame + 10);
+            else
+            {
+                actionData->action->setFrame(thisFrame + 10);
+            }
         }
     }
 }
