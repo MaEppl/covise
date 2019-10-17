@@ -70,7 +70,7 @@ class Pump
 public:
     static size_t counter;
 
-    Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface, osg::Vec3 pos, int rotZ);
+    Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> PumptruckSurface, osg::Vec3 pos, int rotZ);
     ~Pump();
 
     std::vector<CamPosition*> possibleCamLocations;
@@ -79,7 +79,7 @@ public:
 
     osg::Vec3 getPos()const{return position;}
     int getRot()const{return rotZ;}
-    osg::ref_ptr<osg::Group> getPumpDrawable()const{return group;}
+    osg::ref_ptr<osg::Group> getPumpDrawable()const{return fullMat;}
 
     //User Interaction
     void preFrame();
@@ -92,7 +92,10 @@ private:
     osg::ref_ptr<osg::Node> truckSurfaceBox;
     osg::ref_ptr<osg::MatrixTransform> transMat;
     osg::ref_ptr<osg::MatrixTransform> rotMat;
+    osg::ref_ptr<osg::MatrixTransform> fullMat;
+
     osg::ref_ptr<osg::Group> group;
+    osg::ref_ptr<osg::Group> group1;
 
     //user Interaction
     mySensor *aSensor;
@@ -140,11 +143,11 @@ private:
     std::vector<SafetyZone::Priority> priorityList;
     std::vector<osg::Vec3> observationPoints;
 
-    osg::MatrixTransform *mymtf;
-    vrui::coTrackerButtonInteraction *myinteraction;
-    bool interActing;
-    coSensorList sensorList;
-    std::vector<mySensor*> userInteraction;
+  //  osg::MatrixTransform *mymtf;
+  //  vrui::coTrackerButtonInteraction *myinteraction;
+  // bool interActing;
+  //  coSensorList sensorList;
+  //  std::vector<mySensor*> userInteraction;
 
      //Landscape
     void createScene();

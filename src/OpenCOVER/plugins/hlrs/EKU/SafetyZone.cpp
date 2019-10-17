@@ -10,7 +10,7 @@ SafetyZone::SafetyZone(osg::Vec3 pos,Priority priority):pos(pos),priority(priori
     fprintf(stderr, "new SafetyZone\n");
     zone = new osg::Box(pos,length,width,height);
     safetyZoneDrawable = new osg::ShapeDrawable(zone,hint.get());
-
+    name = "Zone "+std::to_string(SafetyZone::count);
 
     // Declare a instance of the geode class:
     safetyZoneGeode = new osg::Geode();
@@ -91,4 +91,6 @@ void SafetyZone::resetColor()
 void SafetyZone::updatePosInWorld()
 {
     pos = safetyZoneGeode->getBound().center() * osg::computeLocalToWorld(safetyZoneGeode->getParentalNodePaths()[0]) / 1000;
+    std::cout<<name<<pos.x()<<" "<<pos.y()<<" "<<pos.z()<<std::endl;
+
 }

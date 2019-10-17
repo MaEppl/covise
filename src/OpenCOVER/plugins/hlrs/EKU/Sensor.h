@@ -22,11 +22,11 @@ public:
     mySensor(osg::Node *node, std::string name,vrui::coTrackerButtonInteraction *_interactionA);
     ~mySensor();
 
-    void activate();
-    void disactivate();
+    void activate() override;
+    void disactivate() override;
     std::string getSensorName();
     bool isSensorActive();
-
+    double getStartTime(){return startTime;}
 private:
     std::string sensorName;
     bool isActive;
@@ -37,5 +37,6 @@ private:
     std::vector<SafetyZone*> *observationPoints=nullptr;
     std::vector<CamDrawable*> *cams=nullptr;
     int pos;
+    double startTime;
 };
 

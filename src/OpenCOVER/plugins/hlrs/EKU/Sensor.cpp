@@ -44,6 +44,8 @@ void mySensor::activate()
     isActive = true;
     cout << "---Activate--" << sensorName << endl;
     vrui::coInteractionManager::the()->registerInteraction(_interA);
+    startTime = cover->frameTime();
+    _interA->doActivation();
     if(shapDr != nullptr)
         shapDr->setColor(osg::Vec4(1., 1., 0., 1.0f));
     else if(camDr != nullptr)

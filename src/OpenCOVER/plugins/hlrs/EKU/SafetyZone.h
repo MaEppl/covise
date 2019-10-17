@@ -35,20 +35,39 @@ public:
     void resetColor();
     void updatePosInWorld();
     osg::Vec3 getPosition(){
-        updatePosInWorld();
-        std::cout<<"Safety Zone"<<pos.x()<<" "<<pos.y()<<" "<<pos.z()<<std::endl;
+//        updatePosInWorld();
+    //    std::cout<<name<<pos.x()<<" "<<pos.y()<<" "<<pos.z()<<std::endl;
         return pos;}
+    void setPosition( osg::Vec3 matrix1)
+    {
+        //pos=osg::Vec3{-2.3,0,9}*matrix1;
+       std::cout<<name<<" SZ: "<<matrix1.x()<<", "<<matrix1.y()<<", "<<matrix1.z()<<std::endl;
+
+     /*    updatePosInWorld();
+        osg::Matrix matrix2;
+        matrix2.setTrans(2.3,0,9);
+        matrix2.get
+        auto test =matrix2*matrix1;
+     */  // std::cout<<"test"<<test.x()<<" "<<test.y()<<" "<<test.z()<<std::endl;
+      //  pos ={(float)test.getTrans().x(),(float)test.getTrans().y(),(float)test.getTrans().z()};
+
+//        pos ={(float)matrix1.getTrans().x()+2.3f,(float)matrix1.getTrans().y(),(float)matrix1.getTrans().z()+9.0f};
+    }
+   // pos ={1.0,1.0,1.0};
 private:
     const float length = 2.0f;//8
     const float width = 2.0f;//2
     const float height = 8.0f;//2sss
     const int priority;
+    std::string name;
     osg::Vec3 pos;
     osg::ref_ptr<osg::Geode> safetyZoneGeode;
     osg::ref_ptr<osgText::Text> text;
     osg::ref_ptr<osg::TessellationHints> hint;
     osg::ShapeDrawable *safetyZoneDrawable;
     void setStateSet(osg::StateSet *stateSet);
+    osg::ref_ptr<osg::MatrixTransform> transMat;
+
 
     //user Interaction
  /*   mySensor *aSensor;
