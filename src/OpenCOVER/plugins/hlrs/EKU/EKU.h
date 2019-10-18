@@ -70,7 +70,7 @@ class Pump
 public:
     static size_t counter;
 
-    Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> PumptruckSurface, osg::Vec3 pos, int rotZ);
+    Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> PumptruckSurface, osg::ref_ptr<osg::Node> cabine, osg::Vec3 pos, int rotZ);
     ~Pump();
 
     std::vector<CamPosition*> possibleCamLocations;
@@ -90,9 +90,13 @@ private:
     int rotZ;
     osg::ref_ptr<osg::Node> truck;
     osg::ref_ptr<osg::Node> truckSurfaceBox;
+    osg::ref_ptr<osg::Node> truckCabine;
+
     osg::ref_ptr<osg::MatrixTransform> transMat;
     osg::ref_ptr<osg::MatrixTransform> rotMat;
     osg::ref_ptr<osg::MatrixTransform> fullMat;
+    osg::ref_ptr<osg::MatrixTransform> transCabine;
+    osg::ref_ptr<osg::MatrixTransform> rotCabine;
 
     osg::ref_ptr<osg::Group> group;
     osg::ref_ptr<osg::Group> group1;
@@ -158,6 +162,8 @@ private:
 
     osg::ref_ptr<osg::Node> truck;
     osg::ref_ptr<osg::Node> truckSurfaceBox;
+    osg::ref_ptr<osg::Node> truckCabine;
+
 
 
     //Raycasting for intersection calculation is too slow with many vertices

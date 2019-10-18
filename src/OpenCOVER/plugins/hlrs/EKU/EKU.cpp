@@ -19,7 +19,6 @@ void Pump::preFrame()
     sensorList.update();
     //Test if button is pressed
     int state = cover->getPointerButton()->getState();
-  // myinteraction->doActivation();
     if (myinteraction->isRunning()) //when interacting the Sphere will be moved
     {
 
@@ -31,7 +30,6 @@ void Pump::preFrame()
             //remember invStartHand-Matrix, when interaction started and mouse button was pressed
             invStartHand.invert(cover->getPointerMat() * cover->getInvBaseMat());
             startPos = fullMat->getMatrix(); //remember position of sphere, when interaction started
-            startPos1 = transMat->getMatrix();
             interActing = true; //register interaction
             std::cout<<"Start Pos: " <<startPos.getTrans().x() <<","<<startPos.getTrans().y() <<","<<startPos.getTrans().z() <<std::endl;
             std::cout<<"Start Pos: " <<startPos1.getTrans().x() <<","<<startPos1.getTrans().y() <<","<<startPos1.getTrans().z() <<std::endl;
@@ -41,7 +39,8 @@ void Pump::preFrame()
         {
             //calc the tranformation matrix when interacting is running and mouse button was pressed
             osg::Matrix trans = startPos * invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
-
+          //  Rot = trans.ge
+            //Rot.get();
            // safetyZones[1]->setPosition(safetyZones[1]->getPosition()*trans);
 
            // safetyZones[1]->setPosition(trans);
@@ -55,7 +54,7 @@ void Pump::preFrame()
     //       trans.setRotate(xRot*yRot*zRot);
            // osg::Quat xRotTest;
            // xRotTest.makeRotate(osg::DegreesToRadians(90.0),osg::Z_AXIS);
-           // trans.setRotate(startPos.getRotate());
+            trans.setRotate(startPos.getRotate());
 
             fullMat->setMatrix(trans);
           // std::cout<<name<<" Trans: zRot: " <<osg::RadiansToDegrees(trans.getRotate().z()) <<"Start: zRot"<<osg::RadiansToDegrees(startPos.getRotate().z())<<std::endl;
@@ -122,7 +121,7 @@ void EKU::calcPercentageOfCoveredSafetyZones()
     std::cout<<"PRIO2 zones not covered: " <<std::endl;
 }
 size_t Pump::counter = 0;
-Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =nullptr, osg::Vec3 pos =osg::Vec3(20,0,0), int rotationZ = 0):position(pos),truck(truck),truckSurfaceBox(truckSurface),rotZ(rotationZ)
+Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =nullptr, osg::ref_ptr<osg::Node> cabine =nullptr, osg::Vec3 pos =osg::Vec3(20,0,0), int rotationZ = 0):position(pos),truck(truck),truckSurfaceBox(truckSurface),rotZ(rotationZ),truckCabine(cabine)
 {
     Pump::counter ++;
     group = new osg::Group;
@@ -156,6 +155,27 @@ std::cout<<"stateset"<<    truck->getNodeMask()<<std::endl;
 
     group->addChild(truck.get());
    group->addChild(truckSurfaceBox.get());
+
+   //Drivers Cabine
+   rotCabine = new osg::MatrixTransform();
+   osg::Matrix rotate1;
+   osg::Quat xRot1, yRot1;
+   xRot1.makeRotate(osg::DegreesToRadians(90.0),osg::Z_AXIS);
+   yRot1.makeRotate(osg::DegreesToRadians(90.0),osg::Y_AXIS);
+   osg::Quat fullRot1 = yRot1*xRot1;
+   rotate1.setRotate(fullRot1);
+   rotCabine ->setName("RotCabine");
+   rotCabine->setMatrix(rotate1);
+   rotCabine->addChild(truckCabine.get());
+
+   transCabine= new osg::MatrixTransform();
+   transCabine->setName("TransCabine");
+   osg::Matrix translate1;
+   translate1.setTrans(osg::Vec3(-0.8,-0.8,-3.3));
+   transCabine->setMatrix(translate1);
+   transCabine->addChild(rotCabine.get());
+
+   group->addChild(transCabine.get());
    group1 = new osg::Group;
    group1->setName("bothTruckDrawables"+std::to_string(Pump::counter));
    for(const auto& x : safetyZones)
@@ -323,11 +343,18 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     }
     truckSurfaceBox->setName("Surface");
 
+    truckCabine = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/drivers_cab/AssetsvilleTruck/AssetVille.3ds");
+    if (!truckCabine.valid())
+    {
+          osg::notify( osg::FATAL ) << "Unable to load truck data cabine file. Exiting." << std::endl;
+    }
+    truckCabine->setName("TruckCabine");
+
     // don't show the many vertices of the truck. Only use truck surface
     disactivateDetailedRendering();
 
     //draw Pumps:
-    allPumps.push_back(new Pump(truck,truckSurfaceBox));
+    allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine));
     int cnt =0;
     for(int i = 0;i<5;i++)
     {
@@ -337,12 +364,12 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         if(cnt % 2 == 0)
         {
              posNew = {posOld.x()*-1,posOld.y(),posOld.z()};
-            allPumps.push_back(new Pump(truck,truckSurfaceBox,posNew,180));//180
+            allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine,posNew,180));//180
 
         }else
         {
              posNew = {posOld.x()*-1,posOld.y()+5,posOld.z()};//+5
-             allPumps.push_back(new Pump(truck,truckSurfaceBox,posNew));
+             allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine,posNew));
         }
 
         cnt ++;
@@ -596,7 +623,7 @@ bool EKU::init()
 
 void EKU::doAddTruck()
 {
-    allPumps.push_back(new Pump(truck,truckSurfaceBox,allPumps.back()->getPos()+osg::Vec3(20,20,0),30));
+    allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine,allPumps.back()->getPos()+osg::Vec3(20,20,0),30));
     cover->getObjectsRoot()->addChild(allPumps.back()->getPumpDrawable().get());
 }
 
