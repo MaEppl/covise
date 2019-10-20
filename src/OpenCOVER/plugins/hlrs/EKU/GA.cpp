@@ -15,12 +15,6 @@
 #include <array>
 
 #include "GA.hpp"
-#define CAMS_PER_CAMPOINT 16
-#define NUMBER_OF_CAMS 224
-//384 423 current: 192 224
-
-
-
 int GA:: myrandom() {
     if (rand() % 2 == 0)
         return 1;
@@ -175,12 +169,12 @@ void GA::SO_report_generation(int generation_number,const EA::GenerationType<MyS
         <<best_genes.to_string()<<"\n";
 }
 
-std::array<int,NUMBER_OF_CAMS> GA::getfinalCamPos() const
+std::vector<int> GA::getfinalCamPos() const
 {
-   std::array<int,NUMBER_OF_CAMS> result= ga_obj.last_generation.chromosomes.at(ga_obj.last_generation.best_chromosome_index).genes.cam;
+   std::vector<int>result= ga_obj.last_generation.chromosomes.at(ga_obj.last_generation.best_chromosome_index).genes.cam;
    return result ;
 }
-GA::GA(std::vector<Cam*>& cam, std::vector<SafetyZone::Priority>& priorityList):priorityList(priorityList),camlist(cam)
+GA::GA(std::vector<Cam*>& cam, std::vector<SafetyZone::Priority>& priorityList):priorityList(priorityList),camlist(cam),nbrCams(nbrCameras)
 {
     nbrpoints = priorityList.size();
     output_file.open("results.txt");

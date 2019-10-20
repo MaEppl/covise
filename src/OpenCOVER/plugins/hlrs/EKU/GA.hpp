@@ -8,14 +8,14 @@
 #pragma once
 #include <openGA.hpp>
 #include <Cam.h>
-#define NUMBER_OF_CAMS 224
+#define NBR_CAMS 224
 //8:384 , 9:423 ,current: 192
 class GA
 {
 public:
     GA(std::vector<Cam*>& cam, std::vector<SafetyZone::Priority>& priorityList);
     ~GA();
-    std::array<int,NUMBER_OF_CAMS> getfinalCamPos() const;
+    std::vector<int> getfinalCamPos() const;
 
 private:
     std::ofstream output_file;              //store result of GA
@@ -23,13 +23,10 @@ private:
     std::vector<SafetyZone::Priority>& priorityList;
     size_t nbrpoints;                 //number of points to observe
     const size_t nbrcams=camlist.size();    //number of cameras
-   // std::vector<int> cam=std::vector<int>(nbrcams);
 
-    struct MySolution{   // FIXME: Use template to generate std::array with another size
-        // std::vector<int> cam(100);
-         std::array<int,NUMBER_OF_CAMS> cam; //NOTE: why this type of declaration?
-
-
+    struct MySolution{
+        //https://stackoverflow.com/questions/40887305/c-initializing-a-vector-inside-a-struct-definition
+         std::vector<int> cam = std::vector<int>(NBR_CAMS, 0);
          std::string to_string() const
          {
 
@@ -47,7 +44,6 @@ private:
 
      };
     struct MyMiddleCost{double objective;};
-    struct MyTest;
     typedef EA::Genetic<MySolution,MyMiddleCost> GA_Type;
     typedef EA::GenerationType<MySolution,MyMiddleCost> Generation_Type;
     GA_Type ga_obj;
