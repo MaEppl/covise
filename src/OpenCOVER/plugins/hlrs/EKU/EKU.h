@@ -120,6 +120,7 @@ public:
     void doRemoveTruck();
     void doAddCam();
     void doRemoveCamera();
+
     std::vector<osg::Vec3>& getObservationPoints(){return observationPoints;}
     //osg::Material *mtl;
     virtual void preFrame();
@@ -137,7 +138,7 @@ public:
 private:
     //UI
     ui::Menu *EKUMenu  = nullptr;
-    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr;
+    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr;
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
     ui::Group *Frame = nullptr;
     ui::Label *Label = nullptr;
@@ -164,8 +165,7 @@ private:
     osg::ref_ptr<osg::Node> truckCabine;
 
 
-    void createSafetyZone(float xpos,float ypos);
-
+    void createSafetyZone(float xpos,float ypos,SafetyZone::Priority prio);
     void updateObservationPointPosition();
     void updateAllCameras();
     //Raycasting for intersection calculation is too slow with many vertices

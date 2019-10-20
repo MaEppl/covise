@@ -241,7 +241,7 @@ Pump::~Pump()
    // safetyZones.er
 
 }
-void EKU::createSafetyZone(float xpos,float ypos)
+void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
 {
     float height =2;
     float length =3;
@@ -251,9 +251,13 @@ void EKU::createSafetyZone(float xpos,float ypos)
         for(int x =0;x< 3; x++)
         {
             osg::Vec3 pos{xpos+x*1.1f*length,ypos+y*1.11f*width,0.0f};
-            safetyZones.push_back(new SafetyZone(pos,SafetyZone::PRIO2,length,width,height));
+            safetyZones.push_back(new SafetyZone(pos,prio,length,width,height));
+            finalScene->addChild( safetyZones.back()->getSafetyZoneDrawable().get());
+            //update PRIO List afterwards !
         }
     }
+    cover->getObjectsRoot()->addChild(finalScene.get());
+
 }
 void EKU::createScene()
 {   //add silo
@@ -328,14 +332,6 @@ void EKU::createScene()
         std::cout<<"Container loaded"<<std::endl;
 
     }
-
-    createSafetyZone(-6.5,-5.5);
-
-    for(const auto &x : safetyZones)
-    {
-       finalScene->addChild( x->getSafetyZoneDrawable().get());
-       priorityList.push_back(SafetyZone::PRIO2);
-    }
     cover->getObjectsRoot()->addChild(finalScene.get());
 
 }
@@ -343,12 +339,18 @@ void EKU::createScene()
 
 EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 {
+    //Create user Interation
+    myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonA, "MoveMode", vrui::coInteraction::Medium);
+    interActing = false;
+    mymtf = new osg::MatrixTransform();
 
     plugin = this;
     fprintf(stderr, "EKUplugin::EKUplugin\n");
     finalScene = new osg::Group;
     finalScene->setName("finalScene");
     createScene();
+    for(const auto& x : userInteraction)
+        sensorList.append(x);
 
 
 
@@ -485,14 +487,6 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             }
         }
     }
-    //Create user Interation
-    myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonA, "MoveMode", vrui::coInteraction::Medium);
-    interActing = false;
-    mymtf = new osg::MatrixTransform();
-   // add sensors to sensorList
-    for(const auto& x : userInteraction)
-        sensorList.append(x);
-
     int cntsafetyZones =0;
     for(const auto& x:safetyZones)
     {
@@ -515,6 +509,18 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     AddCam = new ui::Action(EKUMenu , "addCam");
     AddCam->setCallback([this](){
         doAddCam();
+    });
+
+    //Add PRIO1
+    AddPRIO1 = new ui::Action(EKUMenu , "addPRIO1");
+    AddPRIO1->setCallback([this](){
+        createSafetyZone(-50.0,0.0,SafetyZone::PRIO1);
+    });
+
+    //Add PRIO2
+    AddPRIO2 = new ui::Action(EKUMenu , "addPRIO2");
+    AddPRIO2->setCallback([this](){
+        createSafetyZone(-50.0,0.0,SafetyZone::PRIO2);
     });
 
     //Remove Truck
