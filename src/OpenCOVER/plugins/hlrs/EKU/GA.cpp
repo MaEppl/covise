@@ -174,7 +174,7 @@ std::vector<int> GA::getfinalCamPos() const
    std::vector<int>result= ga_obj.last_generation.chromosomes.at(ga_obj.last_generation.best_chromosome_index).genes.cam;
    return result ;
 }
-GA::GA(std::vector<Cam*>& cam, std::vector<SafetyZone::Priority>& priorityList):priorityList(priorityList),camlist(cam),nbrCams(nbrCameras)
+GA::GA(std::vector<Cam*>& cam, std::vector<SafetyZone::Priority>& priorityList):priorityList(priorityList),camlist(cam)
 {
     nbrpoints = priorityList.size();
     output_file.open("results.txt");
