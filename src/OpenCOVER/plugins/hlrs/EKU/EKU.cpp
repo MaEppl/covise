@@ -43,7 +43,7 @@ void Pump::preFrame()
             //Rot.get();
            // safetyZones[1]->setPosition(safetyZones[1]->getPosition()*trans);
 
-           // safetyZones[1]->setPosition(trans);
+
             //safetyZones[1]->getPosition();
             //no translation in z
             trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),startPos.getTrans().z());
@@ -57,6 +57,7 @@ void Pump::preFrame()
             trans.setRotate(startPos.getRotate());
 
             fullMat->setMatrix(trans);
+         //   safetyZones[1]->setPosition(trans);
           // std::cout<<name<<" Trans: zRot: " <<osg::RadiansToDegrees(trans.getRotate().z()) <<"Start: zRot"<<osg::RadiansToDegrees(startPos.getRotate().z())<<std::endl;
           std::cout<<name<<"actual Pos: " <<trans.getTrans().x() <<","<<trans.getTrans().y() <<","<<trans.getTrans().z() <<std::endl;
             std::cout<<name<<"continue"<<std::endl;
@@ -75,7 +76,7 @@ void Pump::preFrame()
 }
 void EKU::preFrame()
 {
-   // sensorList.update();
+    sensorList.update();
   /*  plugin ->updateObservationPointPosition();
     for(auto x :plugin->finalCams)
     {
@@ -110,7 +111,6 @@ void EKU::preFrame()
    */ for(const auto &x: allPumps)
         x->preFrame();
 
-
 }
 void EKU::calcPercentageOfCoveredSafetyZones()
 {
@@ -135,8 +135,8 @@ std::cout<<"stateset"<<    truck->getNodeMask()<<std::endl;
    // truckSurfaceBox->setName("SurfaceBox"+std::to_string(Pump::counter));
     name = "DetailedTruck+Cam+Safety"+std::to_string(Pump::counter);
     //create safety Zones
-    safetyZones.at(0) = new SafetyZone(osg::Vec3(-2.3,0,9),SafetyZone::PRIO2); //safetyZone Dimensions: 2,2,8
-    safetyZones.at(1) = new SafetyZone(osg::Vec3(2.3,0,9),SafetyZone::PRIO2);
+    safetyZones.at(0) = new SafetyZone(osg::Vec3(-2.3,0,9),SafetyZone::PRIO2,2.0f,2.0f,8.0f); //safetyZone Dimensions: 2,2,8
+    safetyZones.at(1) = new SafetyZone(osg::Vec3(2.3,0,9),SafetyZone::PRIO2,2.0f,2.0f,8.0f);
 
     //create possible Cam locations
     possibleCamLocations.push_back(new CamPosition(osg::Vec3(1.5,1.6,-0.5)));//to side , height , forward
@@ -217,7 +217,7 @@ std::cout<<"stateset"<<    truck->getNodeMask()<<std::endl;
      aSensor = new mySensor(group, name, myinteraction);
      sensorList.append(aSensor);
 
-     safetyZones.at(0)->setPosition(osg::Vec3(-2.3,0,9) * full);
+     //safetyZones.at(0)->setPosition(osg::Vec3(-2.3,0,9) * full);
 }
 Pump::~Pump()
 {
@@ -240,6 +240,20 @@ Pump::~Pump()
     }
    // safetyZones.er
 
+}
+void EKU::createSafetyZone(float xpos,float ypos)
+{
+    float height =2;
+    float length =3;
+    float width =3;
+    for(int y =0;y< 3; y++)
+    {
+        for(int x =0;x< 3; x++)
+        {
+            osg::Vec3 pos{xpos+x*1.1f*length,ypos+y*1.11f*width,0.0f};
+            safetyZones.push_back(new SafetyZone(pos,SafetyZone::PRIO2,length,width,height));
+        }
+    }
 }
 void EKU::createScene()
 {   //add silo
@@ -315,9 +329,17 @@ void EKU::createScene()
 
     }
 
+    createSafetyZone(-6.5,-5.5);
+
+    for(const auto &x : safetyZones)
+    {
+       finalScene->addChild( x->getSafetyZoneDrawable().get());
+       priorityList.push_back(SafetyZone::PRIO2);
+    }
     cover->getObjectsRoot()->addChild(finalScene.get());
 
 }
+
 
 EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 {
@@ -327,7 +349,9 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     finalScene = new osg::Group;
     finalScene->setName("finalScene");
     createScene();
-    // read file
+
+
+
 
     truck = coVRFileManager::instance()->loadFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/truck_surface.stl",NULL,finalScene);
     if (!truck.valid())
@@ -354,6 +378,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     disactivateDetailedRendering();
 
     //draw Pumps:
+    allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine,osg::Vec3(0,-15,0)));
     allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine));
     int cnt =0;
     for(int i = 0;i<5;i++)
@@ -413,6 +438,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         }
     }
 
+
     updateObservationPointPosition();
 
 
@@ -460,19 +486,19 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         }
     }
     //Create user Interation
- //   myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonA, "MoveMode", vrui::coInteraction::Medium);
-  //  interActing = false;
-  //  mymtf = new osg::MatrixTransform();
-    // add sensors to sensorList
-   // for(const auto& x : userInteraction)
-   //     sensorList.append(x);
+    myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonA, "MoveMode", vrui::coInteraction::Medium);
+    interActing = false;
+    mymtf = new osg::MatrixTransform();
+   // add sensors to sensorList
+    for(const auto& x : userInteraction)
+        sensorList.append(x);
 
     int cntsafetyZones =0;
     for(const auto& x:safetyZones)
     {
         //finalScene->addChild(x->getSafetyZoneDrawable().get());
         //add User interaction to each safety zone
-    //    userInteraction.push_back(new mySensor(x->getSafetyZoneDrawable(),cntsafetyZones, "SafetyZone", myinteraction,x,&finalCams));
+        userInteraction.push_back(new mySensor(x->getSafetyZoneDrawable(),cntsafetyZones, "SafetyZone", myinteraction,x,&finalCams));
         cntsafetyZones++;
     }
 
@@ -532,11 +558,11 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         {
             cover->getObjectsRoot()->addChild(x->getCamDrawable().get());
             //add User interaction to each final camera
-           // userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&safetyZones,&finalCams));
+            userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&safetyZones,&finalCams));
         }
         // add sensors to sensorList
-       // for(const auto& x : userInteraction)
-        //    sensorList.append(x);
+        for(const auto& x : userInteraction)
+            sensorList.append(x);
 
     });
 

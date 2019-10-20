@@ -3,7 +3,7 @@
 using namespace opencover;
 size_t SafetyZone:: count = 0;
 
-SafetyZone::SafetyZone(osg::Vec3 pos,Priority priority):pos(pos),priority(priority)
+SafetyZone::SafetyZone(osg::Vec3 pos, Priority priority, float length = 2, float width =2, float height = 8):pos(pos),priority(priority),length(length),width(width),height(height)
 {
 
     count++;
@@ -91,6 +91,6 @@ void SafetyZone::resetColor()
 void SafetyZone::updatePosInWorld()
 {
     pos = safetyZoneGeode->getBound().center() * osg::computeLocalToWorld(safetyZoneGeode->getParentalNodePaths()[0]) / 1000;
-    std::cout<<name<<pos.x()<<" "<<pos.y()<<" "<<pos.z()<<std::endl;
+   // std::cout<<"POS in World:"<<name<<pos.x()<<" "<<pos.y()<<" "<<pos.z()<<std::endl;
 
 }

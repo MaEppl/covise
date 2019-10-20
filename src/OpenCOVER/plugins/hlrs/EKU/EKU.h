@@ -120,7 +120,6 @@ public:
     void doRemoveTruck();
     void doAddCam();
     void doRemoveCamera();
-    void updateObservationPointPosition();
     std::vector<osg::Vec3>& getObservationPoints(){return observationPoints;}
     //osg::Material *mtl;
     virtual void preFrame();
@@ -147,11 +146,11 @@ private:
     std::vector<SafetyZone::Priority> priorityList;
     std::vector<osg::Vec3> observationPoints;
 
-  //  osg::MatrixTransform *mymtf;
-  //  vrui::coTrackerButtonInteraction *myinteraction;
-  // bool interActing;
-  //  coSensorList sensorList;
-  //  std::vector<mySensor*> userInteraction;
+    osg::MatrixTransform *mymtf;
+    vrui::coTrackerButtonInteraction *myinteraction;
+    bool interActing;
+    coSensorList sensorList;
+    std::vector<mySensor*> userInteraction;
 
      //Landscape
     void createScene();
@@ -165,7 +164,10 @@ private:
     osg::ref_ptr<osg::Node> truckCabine;
 
 
+    void createSafetyZone(float xpos,float ypos);
 
+    void updateObservationPointPosition();
+    void updateAllCameras();
     //Raycasting for intersection calculation is too slow with many vertices
     void disactivateDetailedRendering(){
          truck->setNodeMask(0);

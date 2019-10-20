@@ -16,8 +16,8 @@
 
 #include "GA.hpp"
 #define CAMS_PER_CAMPOINT 16
-#define NUMBER_OF_CAMS 192
-//384 423 current: 192
+#define NUMBER_OF_CAMS 224
+//384 423 current: 192 224
 
 
 
