@@ -39,27 +39,25 @@ void Pump::preFrame()
         {
             //calc the tranformation matrix when interacting is running and mouse button was pressed
             osg::Matrix trans = startPos * invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
-          //  Rot = trans.ge
-            //Rot.get();
-           // safetyZones[1]->setPosition(safetyZones[1]->getPosition()*trans);
-
-
-            //safetyZones[1]->getPosition();
             //no translation in z
             trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),startPos.getTrans().z());
             //rotation only around z
-    //        zRot.makeRotate(trans.getRotate().z(), osg::Z_AXIS);
-    //        yRot.makeRotate(startPos.getRotate().y(), osg::Y_AXIS);
-    //        xRot.makeRotate(startPos.getRotate().x(), osg::X_AXIS);
-    //       trans.setRotate(xRot*yRot*zRot);
+    //      zRot.makeRotate(trans.getRotate().z(), osg::Z_AXIS);
+    //      yRot.makeRotate(startPos.getRotate().y(), osg::Y_AXIS);
+    //      xRot.makeRotate(startPos.getRotate().x(), osg::X_AXIS);
+    //      trans.setRotate(xRot*yRot*zRot);
            // osg::Quat xRotTest;
            // xRotTest.makeRotate(osg::DegreesToRadians(90.0),osg::Z_AXIS);
             trans.setRotate(startPos.getRotate());
 
             fullMat->setMatrix(trans);
-         //   safetyZones[1]->setPosition(trans);
-          // std::cout<<name<<" Trans: zRot: " <<osg::RadiansToDegrees(trans.getRotate().z()) <<"Start: zRot"<<osg::RadiansToDegrees(startPos.getRotate().z())<<std::endl;
-          std::cout<<name<<"actual Pos: " <<trans.getTrans().x() <<","<<trans.getTrans().y() <<","<<trans.getTrans().z() <<std::endl;
+            //update possitions of childs:
+            safetyZones[0]->setPosition(trans);
+            safetyZones[1]->setPosition(trans);
+            for(const auto& x:possibleCamLocations)
+            {
+                x->setPosition(trans);
+            }
             std::cout<<name<<"continue"<<std::endl;
         }
     }
@@ -434,7 +432,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //draw Pumps:
     allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine,osg::Vec3(0,-15,0)));
     allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine));
-    int cnt =0;
+ /*   int cnt =0;
     for(int i = 0;i<5;i++)
     {
         osg::Vec3 posOld=allPumps.back()->getPos();;
@@ -453,7 +451,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
         cnt ++;
     }
-
+*/
     for(const auto & x:allPumps)
     {
         cover->getObjectsRoot()->addChild(x->getPumpDrawable().get());

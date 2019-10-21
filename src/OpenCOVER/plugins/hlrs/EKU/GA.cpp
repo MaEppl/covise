@@ -194,7 +194,7 @@ GA::GA(std::vector<Cam*>& cam, std::vector<SafetyZone *> &safetyZoneList):camlis
     ga_obj.idle_delay_us=10; // switch between threads quickly
     ga_obj.dynamic_threading=true;
     ga_obj.verbose=false;
-    ga_obj.population=1000;
+    ga_obj.population=3000;
     ga_obj.generation_max=1000;
     ga_obj.calculate_SO_total_fitness=std::bind( &GA::calculate_SO_total_fitness, this, _1);
     ga_obj.init_genes=std::bind( &GA::init_genes, this, _1,_2);

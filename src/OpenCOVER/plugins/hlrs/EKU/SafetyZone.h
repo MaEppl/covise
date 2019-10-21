@@ -42,23 +42,10 @@ public:
         return pos;}
     void setPosition( osg::Matrix matrix1)
     {
-       // pos=osg::Vec3{-2.3,0.0,9.0}*matrix1;
         pos=safetyZoneGeode->getBound().center()*matrix1;
         pos.z()=1.0;
-
-       std::cout<<name<<" SZ: "<<pos.x()<<", "<<pos.y()<<", "<<pos.z()<<std::endl;
-
-     /*    updatePosInWorld();
-        osg::Matrix matrix2;
-        matrix2.setTrans(2.3,0,9);
-        matrix2.get
-        auto test =matrix2*matrix1;
-     */  // std::cout<<"test"<<test.x()<<" "<<test.y()<<" "<<test.z()<<std::endl;
-      //  pos ={(float)test.getTrans().x(),(float)test.getTrans().y(),(float)test.getTrans().z()};
-
-//        pos ={(float)matrix1.getTrans().x()+2.3f,(float)matrix1.getTrans().y(),(float)matrix1.getTrans().z()+9.0f};
+        std::cout<<name<<" SZ: "<<pos.x()<<", "<<pos.y()<<", "<<pos.z()<<std::endl;
     }
-   // pos ={1.0,1.0,1.0};
     int getPriority(){return priority;}
 private:
     float length = 2;//8
