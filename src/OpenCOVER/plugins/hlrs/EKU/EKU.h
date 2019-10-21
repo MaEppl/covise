@@ -144,7 +144,6 @@ private:
     ui::Label *Label = nullptr;
     ui::Button *MakeCamsInvisible = nullptr;
 
-    std::vector<SafetyZone::Priority> priorityList;
     std::vector<osg::Vec3> observationPoints;
 
     osg::MatrixTransform *mymtf;
@@ -167,6 +166,8 @@ private:
 
     void createSafetyZone(float xpos,float ypos,SafetyZone::Priority prio);
     void updateObservationPointPosition();
+    void createCamsForEachCamPos();
+
     void updateAllCameras();
     //Raycasting for intersection calculation is too slow with many vertices
     void disactivateDetailedRendering(){

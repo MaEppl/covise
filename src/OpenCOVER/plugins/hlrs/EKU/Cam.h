@@ -103,9 +103,14 @@ public:
     osg::ref_ptr<osg::Geode> getCamGeode()const{return geode;}
     void updatePosInWorld();
     osg::Vec3 getPosition(){
-        updatePosInWorld();
-        std::cout<<worldPosition.x()<<" "<<worldPosition.y()<<" "<<worldPosition.z()<<std::endl;
+        //updatePosInWorld();
         return worldPosition;}
+    void setPosition( osg::Matrix matrix1)
+    {
+        worldPosition=geode->getBound().center()*matrix1;
+        worldPosition.z()=1.6;
+        std::cout<<"Camera in World: "<<name<<worldPosition.x()<<"|"<<worldPosition.y()<<"|"<<worldPosition.z()<<std::endl;
+     }
 private:
     std::string name;
     osg::Vec3 worldPosition;

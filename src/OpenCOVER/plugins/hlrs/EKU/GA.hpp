@@ -13,14 +13,14 @@
 class GA
 {
 public:
-    GA(std::vector<Cam*>& cam, std::vector<SafetyZone::Priority>& priorityList);
-    ~GA();
+    GA(std::vector<Cam*>& cam, std::vector<SafetyZone*>& safetyZoneList);
+    ~GA()=default;
     std::vector<int> getfinalCamPos() const;
 
 private:
     std::ofstream output_file;              //store result of GA
     std::vector<Cam*>& camlist;
-    std::vector<SafetyZone::Priority>& priorityList;
+    std::vector<int> priorityList;
     size_t nbrpoints;                 //number of points to observe
     const size_t nbrcams=camlist.size();    //number of cameras
 

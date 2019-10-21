@@ -199,7 +199,7 @@ std::cout<<"stateset"<<    truck->getNodeMask()<<std::endl;
     full=rotate*translate;
   //  full.setTrans(translate.getTrans());
     fullMat = new osg::MatrixTransform();
-    fullMat ->setName("full");
+    fullMat ->setName("full"+std::to_string(Pump::counter));
    // fullMat->preMult( translate * rotate);
     fullMat->setMatrix(full);
     fullMat->addChild(group1.get());
@@ -217,7 +217,14 @@ std::cout<<"stateset"<<    truck->getNodeMask()<<std::endl;
      aSensor = new mySensor(group, name, myinteraction);
      sensorList.append(aSensor);
 
-     //safetyZones.at(0)->setPosition(osg::Vec3(-2.3,0,9) * full);
+     safetyZones.at(1)->setPosition(full);
+     safetyZones.at(0)->setPosition(full);
+
+     for(const auto& x:possibleCamLocations)
+     {
+         x->setPosition(full);
+     }
+
 }
 Pump::~Pump()
 {
@@ -248,7 +255,7 @@ void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
     float width =3;
     for(int y =0;y< 3; y++)
     {
-        for(int x =0;x< 3; x++)
+        for(int x =0;x< 2; x++)
         {
             osg::Vec3 pos{xpos+x*1.1f*length,ypos+y*1.11f*width,0.0f};
             safetyZones.push_back(new SafetyZone(pos,prio,length,width,height));
@@ -301,7 +308,7 @@ void EKU::createScene()
  }
 
     //add container
-    {
+ /*   {
         std::cout<<"Load container"<<std::endl;
         container = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/ContainerBig/ContainerCargoN200418.3ds");
         container->setName("Container");
@@ -332,8 +339,53 @@ void EKU::createScene()
         std::cout<<"Container loaded"<<std::endl;
 
     }
-    cover->getObjectsRoot()->addChild(finalScene.get());
+*/    cover->getObjectsRoot()->addChild(finalScene.get());
 
+}
+
+void EKU::createCamsForEachCamPos()
+{
+    for(const auto& x: cameras)
+        x->~Cam();
+    cameras.clear();
+    std::vector<osg::Vec3> camPos;
+    for(const auto& x1 : allPumps)
+    {
+        for(const auto& x2 : x1->possibleCamLocations)
+        {
+            camPos.push_back(x2->getPosition());
+        }
+    }
+
+    {   // for each location create a cam with different alpha and beta angles
+        std::vector<osg::Vec2> camRots;
+        const int userParam =4;//stepsize = PI/userParam
+        const int n_alpha = 2*userParam;
+        const int n_beta = userParam/2;//+1;
+        double alpha =0;
+        double beta =0;
+        for(int cnt = 0; cnt<n_alpha; cnt++){
+            for(int cnt2 = 0; cnt2<n_beta; cnt2++){//stepsize ok?
+                osg::Vec2 vec(alpha*M_PI/180, beta*M_PI/180);
+                camRots.push_back(vec);
+                beta+=180/userParam;
+            }
+            beta=0;
+            alpha+=180/userParam;
+        }
+
+        const std::string myString="Cam";
+        size_t cnt=0;
+        for(const auto& c: camPos)
+        {
+            for(const auto& x:camRots)
+            {
+               cnt++;
+               cameras.push_back(new Cam(c,x,observationPoints,myString+std::to_string(cnt)));
+
+            }
+        }
+    }
 }
 
 
@@ -409,56 +461,16 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     }
 
 
-
-    //all Points to observe from file
-
-  /*  std::vector<osg::Vec3> truckPos;
-    FindNamedNode *fnnPointsPRIO1= new FindNamedNode( "pxONE",&truckPos);
-    scene->accept(*fnnPointsPRIO1 );
-    delete fnnPointsPRIO1;
-    for(const auto& x : truckPos)
-    {
-        trucks.push_back(new SafetyZone(x,SafetyZone::PRIO1));
-        priorityList.push_back(SafetyZone::PRIO1);
-    }
-    FindNamedNode *fnnPointsPRIO2= new FindNamedNode( "pxTWO",&truckPos);
-    scene->accept(*fnnPointsPRIO2 );
-    delete fnnPointsPRIO2;
-    for(const auto& x : truckPos)
-    {
-        trucks.push_back(new SafetyZone(x,SafetyZone::PRIO2));
-        priorityList.push_back(SafetyZone::PRIO2);
-    }
-*/
-    //######################################################################
     for(const auto& x1 : allPumps)
     {
         for(const auto& x2 : x1->safetyZones)
         {
             safetyZones.push_back(x2);
-            priorityList.push_back(SafetyZone::PRIO2);
         }
     }
 
 
-    updateObservationPointPosition();
-
-
-    //all possible camera locations from file
-    std::vector<osg::Vec3> camPos;
- //   FindNamedNode *fnnCam= new FindNamedNode( "cx",&camPos);
- //   scene->accept(*fnnCam );
- //   delete fnnCam;
-
-    for(const auto& x1 : allPumps)
-    {
-        for(const auto& x2 : x1->possibleCamLocations)
-        {
-            camPos.push_back(x2->getPosition());
-        }
-    }
-
-    {   // for each location create a cam with different alpha and beta angles
+/*    {   // for each location create a cam with different alpha and beta angles
         std::vector<osg::Vec2> camRots;
         const int userParam =4;//stepsize = PI/userParam
         const int n_alpha = 2*userParam;
@@ -487,6 +499,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             }
         }
     }
+*/
     int cntsafetyZones =0;
     for(const auto& x:safetyZones)
     {
@@ -514,13 +527,13 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //Add PRIO1
     AddPRIO1 = new ui::Action(EKUMenu , "addPRIO1");
     AddPRIO1->setCallback([this](){
-        createSafetyZone(-50.0,0.0,SafetyZone::PRIO1);
+        createSafetyZone(-6.0,-5.0,SafetyZone::PRIO1);
     });
 
     //Add PRIO2
     AddPRIO2 = new ui::Action(EKUMenu , "addPRIO2");
     AddPRIO2->setCallback([this](){
-        createSafetyZone(-50.0,0.0,SafetyZone::PRIO2);
+        createSafetyZone(-6.0,-5.0,SafetyZone::PRIO2);
     });
 
     //Remove Truck
@@ -543,11 +556,15 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         for(const auto& x: finalCams)
             x->~CamDrawable();
         finalCams.clear();
+        updateObservationPointPosition();
+        createCamsForEachCamPos();
+
        // std::array<int,192> finalCamIndex;
         //if (coVRMSController::instance()->isMaster())
         //{
-                ga =new GA(cameras,priorityList);
+                ga =new GA(cameras,safetyZones);
                 auto finalCamIndex = ga->getfinalCamPos();
+                delete this->ga;
 
         //}
         //coVRMSController::instance()->syncData(&finalCamIndex, finalCamIndex.size());

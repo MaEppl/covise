@@ -174,9 +174,14 @@ std::vector<int> GA::getfinalCamPos() const
    std::vector<int>result= ga_obj.last_generation.chromosomes.at(ga_obj.last_generation.best_chromosome_index).genes.cam;
    return result ;
 }
-GA::GA(std::vector<Cam*>& cam, std::vector<SafetyZone::Priority>& priorityList):priorityList(priorityList),camlist(cam)
+GA::GA(std::vector<Cam*>& cam, std::vector<SafetyZone *> &safetyZoneList):camlist(cam)
 {
-    nbrpoints = priorityList.size();
+    nbrpoints = safetyZoneList.size();
+
+    for(const auto x : safetyZoneList)
+        priorityList.push_back(x->getPriority());
+
+
     output_file.open("results.txt");
     output_file<<"step"<<"\t"<<"cost_avg"<<"\t"<<"cost_best"<<"\t"<<"solution_best"<<"\n";
 

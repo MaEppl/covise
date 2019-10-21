@@ -470,8 +470,7 @@ CamPosition::CamPosition(osg::Vec3 pos):worldPosition(pos)
 void CamPosition::updatePosInWorld()
 {
     worldPosition = geode->getBound().center() * osg::computeLocalToWorld(geode->getParentalNodePaths()[0])/1000;
-    auto test = osg::computeLocalToWorld(geode->getParentalNodePaths()[0]);
-    std::cout<<worldPosition.x()<<"|"<<worldPosition.y()<<"|"<<worldPosition.z()<<std::endl;
+    std::cout<<"Camera in World: "<<name<<worldPosition.x()<<"|"<<worldPosition.y()<<"|"<<worldPosition.z()<<std::endl;
 
 }
 void CamPosition::setStateSet(osg::StateSet *stateSet)

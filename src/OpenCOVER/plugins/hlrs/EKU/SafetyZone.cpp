@@ -91,6 +91,6 @@ void SafetyZone::resetColor()
 void SafetyZone::updatePosInWorld()
 {
     pos = safetyZoneGeode->getBound().center() * osg::computeLocalToWorld(safetyZoneGeode->getParentalNodePaths()[0]) / 1000;
-   // std::cout<<"POS in World:"<<name<<pos.x()<<" "<<pos.y()<<" "<<pos.z()<<std::endl;
+   std::cout<<"POS in World:"<<name<<pos.x()<<" "<<pos.y()<<" "<<pos.z()<<std::endl;
 
 }

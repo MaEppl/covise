@@ -35,13 +35,16 @@ public:
     void resetColor();
     void updatePosInWorld();
     osg::Vec3 getPosition(){
-        updatePosInWorld();
+      //  updatePosInWorld();
     //    std::cout<<name<<pos.x()<<" "<<pos.y()<<" "<<pos.z()<<std::endl;
+        std::cout<<name<<" SZ: "<<pos.x()<<", "<<pos.y()<<", "<<pos.z()<<std::endl;
+
         return pos;}
     void setPosition( osg::Matrix matrix1)
     {
        // pos=osg::Vec3{-2.3,0.0,9.0}*matrix1;
         pos=safetyZoneGeode->getBound().center()*matrix1;
+        pos.z()=1.0;
 
        std::cout<<name<<" SZ: "<<pos.x()<<", "<<pos.y()<<", "<<pos.z()<<std::endl;
 
@@ -56,6 +59,7 @@ public:
 //        pos ={(float)matrix1.getTrans().x()+2.3f,(float)matrix1.getTrans().y(),(float)matrix1.getTrans().z()+9.0f};
     }
    // pos ={1.0,1.0,1.0};
+    int getPriority(){return priority;}
 private:
     float length = 2;//8
     float width = 2;//2
