@@ -432,7 +432,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //draw Pumps:
     allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine,osg::Vec3(0,-15,0)));
     allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine));
- /*   int cnt =0;
+    int cnt =0;
     for(int i = 0;i<5;i++)
     {
         osg::Vec3 posOld=allPumps.back()->getPos();;
@@ -451,7 +451,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
         cnt ++;
     }
-*/
+
     for(const auto & x:allPumps)
     {
         cover->getObjectsRoot()->addChild(x->getPumpDrawable().get());
@@ -465,46 +465,6 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         {
             safetyZones.push_back(x2);
         }
-    }
-
-
-/*    {   // for each location create a cam with different alpha and beta angles
-        std::vector<osg::Vec2> camRots;
-        const int userParam =4;//stepsize = PI/userParam
-        const int n_alpha = 2*userParam;
-        const int n_beta = userParam/2;//+1;
-        double alpha =0;
-        double beta =0;
-        for(int cnt = 0; cnt<n_alpha; cnt++){
-            for(int cnt2 = 0; cnt2<n_beta; cnt2++){//stepsize ok?
-                osg::Vec2 vec(alpha*M_PI/180, beta*M_PI/180);
-                camRots.push_back(vec);
-                beta+=180/userParam;
-            }
-            beta=0;
-            alpha+=180/userParam;
-        }
-
-        const std::string myString="Cam";
-        size_t cnt=0;
-        for(const auto& c: camPos)
-        {
-            for(const auto& x:camRots)
-            {
-               cnt++;
-               cameras.push_back(new Cam(c,x,observationPoints,myString+std::to_string(cnt)));
-
-            }
-        }
-    }
-*/
-    int cntsafetyZones =0;
-    for(const auto& x:safetyZones)
-    {
-        //finalScene->addChild(x->getSafetyZoneDrawable().get());
-        //add User interaction to each safety zone
-        userInteraction.push_back(new mySensor(x->getSafetyZoneDrawable(),cntsafetyZones, "SafetyZone", myinteraction,x,&finalCams));
-        cntsafetyZones++;
     }
 
     //Create UI
@@ -575,11 +535,20 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
                }
            cnt2++;
         }
+
+        //add User interaction to each final camera
         for(const auto& x:finalCams)
         {
             cover->getObjectsRoot()->addChild(x->getCamDrawable().get());
-            //add User interaction to each final camera
             userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&safetyZones,&finalCams));
+        }
+
+        //add User interaction to each safety zone
+        int cntsafetyZones =0;
+        for(const auto& x:safetyZones)
+        {
+            userInteraction.push_back(new mySensor(x->getSafetyZoneDrawable(),cntsafetyZones, "SafetyZone", myinteraction,x,&finalCams));
+            cntsafetyZones++;
         }
         // add sensors to sensorList
         for(const auto& x : userInteraction)
@@ -596,12 +565,10 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         this->disactivateDetailedRendering();
         for(auto x :finalCams)
         {
-          //disactivateDetailedRendering();
           x->updateFOV(value);
           x->cam->calcVisMat(observationPoints);
-          //activateDetailedRendering();
         }
-        this-> activateDetailedRendering();
+      //  this-> activateDetailedRendering();
     });
 
     //Camera visibility
@@ -617,7 +584,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
           x->updateVisibility(value);
           x->cam->calcVisMat(observationPoints);
         }
-        this-> activateDetailedRendering();
+      //  this-> activateDetailedRendering();
     });
 
     //Make Cameras invisible
