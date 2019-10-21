@@ -455,18 +455,12 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     for(const auto & x:allPumps)
     {
         cover->getObjectsRoot()->addChild(x->getPumpDrawable().get());
-
-    }
-
-
-    for(const auto& x1 : allPumps)
-    {
-        for(const auto& x2 : x1->safetyZones)
+        for(const auto& x2 : x->safetyZones)
         {
             safetyZones.push_back(x2);
         }
-    }
 
+    }
     //Create UI
     EKUMenu  = new ui::Menu("EKU", this);
 
@@ -638,6 +632,9 @@ bool EKU::init()
 void EKU::doAddTruck()
 {
     allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine,allPumps.back()->getPos()+osg::Vec3(20,20,0),30));
+    safetyZones.push_back(allPumps.back()->safetyZones[0]);
+    safetyZones.push_back(allPumps.back()->safetyZones[1]);
+
     cover->getObjectsRoot()->addChild(allPumps.back()->getPumpDrawable().get());
 }
 
