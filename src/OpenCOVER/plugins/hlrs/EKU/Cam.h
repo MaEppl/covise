@@ -11,6 +11,10 @@
 #include <unistd.h>
 
 #include<cover/coVRPluginSupport.h>
+
+
+
+
 #include<osg/ShapeDrawable>
 #include<osg/Vec4>
 #include<osg/NodeCallback>
@@ -24,7 +28,6 @@
 #include<osg/ShadeModel>
 #include <osg/LightModel>
 #include<osgFX/Scribe>
-
 #include<Sensor.h>
 
 class mySensor;
@@ -97,6 +100,7 @@ public:
     osg::ref_ptr<osg::Geode> getCamGeode()const{return camGeode;}
 };
 
+
 class CamPosition
 {
 public:
@@ -115,12 +119,16 @@ public:
         worldPosition.z()=1.6;
         std::cout<<"Camera in World: "<<name<<worldPosition.x()<<"|"<<worldPosition.y()<<"|"<<worldPosition.z()<<std::endl;
      }
+
+    void preFrame();
 private:
     std::string name;
     osg::Vec3 worldPosition;
     osg::ref_ptr<osg::ShapeDrawable> shapDr;
     osg::ref_ptr<osg::Sphere> sphere;
     osg::ref_ptr<osg::Geode> geode;
+
+   // coVR3DTransRotInteractor *viewpointInteractor;
 
     void setStateSet(osg::StateSet *stateSet);
 

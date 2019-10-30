@@ -338,7 +338,7 @@ public:
 		// initialize the random number generator with time-dependent seed
 		uint64_t timeSeed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 		std::seed_seq ss{uint32_t(timeSeed & 0xffffffff), uint32_t(timeSeed>>32)};
-        rng.seed(10);//ss
+        rng.seed(ss);//ss
 		std::uniform_real_distribution<double> unif(0, 1);
 		if(N_threads==0) // number of CPU cores not detected.
 			N_threads=8;

@@ -333,6 +333,20 @@ CamPosition::CamPosition(osg::Vec3 pos):worldPosition(pos)
     setStateSet(mystateSet);
     geode->setName("Cam "+std::to_string(CamPosition::counter));
     geode->addDrawable(shapDr);
+
+  /*  osg::Matrix localMat;
+    localMat.setTrans(pos);
+    //create Interactors
+    float _interSize = cover->getSceneSize() / 25;
+    viewpointInteractor = new coVR3DTransRotInteractor(localMat, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
+    viewpointInteractor->show();
+    viewpointInteractor->enableIntersection();
+
+    */
+}
+void CamPosition::preFrame()
+{
+    //viewpointInteractor->preFrame();
 }
 void CamPosition::updatePosInWorld()
 {

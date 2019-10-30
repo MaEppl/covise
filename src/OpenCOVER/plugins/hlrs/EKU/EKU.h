@@ -42,6 +42,8 @@ class Action;
 #include <cover/ui/Label.h>
 #include <cover/ui/Action.h>
 
+#include <OpenVRUI/osg/mathUtils.h>
+#include <PluginUtil/coVR3DTransRotInteractor.h>
 #include <cover/coVRPluginSupport.h>
 #include <osg/ShapeDrawable>
 #include <osg/Material>
@@ -63,8 +65,8 @@ class Action;
 #include<FileReader.hpp>
 #include<Sensor.h>
 
-
 using namespace opencover;
+
 class Pump
 {
 public:
@@ -103,9 +105,15 @@ private:
 
     //user Interaction
     mySensor *aSensor;
-    vrui::coTrackerButtonInteraction *myinteraction;
-    bool interActing;
+    mySensor *bSensor;
+
+    vrui::coTrackerButtonInteraction *myinteractionA;
+    vrui::coTrackerButtonInteraction *myinteractionB;
+    bool interActingA;
+    bool interActingB;
     coSensorList sensorList;
+
+
 };
 
 class mySensor;
@@ -113,6 +121,10 @@ class EKU: public opencover::coVRPlugin, public opencover::ui::Owner
 {
     friend class mySensor;
 public:
+
+     SZ2 *test;
+
+    coVR3DTransRotInteractor *planeInteractor;
     EKU();
     ~EKU();
     bool init();
@@ -131,9 +143,14 @@ public:
     std::vector<CamDrawable*> finalCams;
     std::vector<Pump*> allPumps;
 
+    SZ* newSZ;
     GA *ga;
     static EKU *plugin;
     osg::ref_ptr<osg::Group> finalScene;
+    void restrictMovement(coCoord startPos, osg::Matrix &mat, bool noRot, bool noTrans);
+    osg::BoundingSphere getBoundingSphere(osg::Node *objRoot);
+
+
 
 private:
     //UI
@@ -151,6 +168,7 @@ private:
     bool interActing;
     coSensorList sensorList;
     std::vector<mySensor*> userInteraction;
+
 
      //Landscape
     void createScene();
@@ -184,6 +202,11 @@ private:
 
 
     void removeCamDrawable(CamDrawable *cam);
+
+
+    osg::ref_ptr<osg::Group> camPointVisualization;
+    void showAllCamsAtOnePoint();
+
 
   //  FileReaderWriter *readerWriter;
   //  FindNamedNode fnn;//NOTE: make to pointer

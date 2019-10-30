@@ -13,43 +13,55 @@
 using namespace opencover;
 
 EKU *EKU::plugin = NULL;
+void EKU::restrictMovement(coCoord startPos,osg::Matrix &mat, bool noRot, bool noTrans)
+{
+    coCoord coord;
+    coord = mat;
+    // z position always same as start position
+    coord.xyz[2] =startPos.xyz[2];
+    // no rotation around x and y
+    coord.hpr[0] = startPos.hpr[0];
+    coord.hpr[1] = startPos.hpr[1];
 
+    if (noTrans)
+    {
+          coord.xyz[0] =startPos.xyz[0];
+          coord.xyz[1] =startPos.xyz[1];
+    }
+
+    if (noRot)
+    {
+        coord.hpr[2] = startPos.hpr[2];
+    }
+    coord.makeMat(mat);
+}
 void Pump::preFrame()
 {
     sensorList.update();
     //Test if button is pressed
     int state = cover->getPointerButton()->getState();
-    if (myinteraction->isRunning()) //when interacting the Sphere will be moved
+   // std::cout<<"state "<<state<<std::endl;
+   // std::cout<<"is Runnung?"<<myinteractionA->isRunning()<<std::endl;
+    if (myinteractionA->isRunning()) //when interacting the Sphere will be moved
     {
-
         static osg::Matrix invStartHand;
-        static osg::Matrix startPos,startPos1;
-        static osg::Quat xRot,yRot, zRot;
-        if (!interActing)
+        static osg::Matrix startPos;
+        static coCoord startPosEuler;
+        if (!interActingA)
         {
             //remember invStartHand-Matrix, when interaction started and mouse button was pressed
             invStartHand.invert(cover->getPointerMat() * cover->getInvBaseMat());
             startPos = fullMat->getMatrix(); //remember position of sphere, when interaction started
-            interActing = true; //register interaction
-            std::cout<<"Start Pos: " <<startPos.getTrans().x() <<","<<startPos.getTrans().y() <<","<<startPos.getTrans().z() <<std::endl;
-            std::cout<<"Start Pos: " <<startPos1.getTrans().x() <<","<<startPos1.getTrans().y() <<","<<startPos1.getTrans().z() <<std::endl;
+            startPosEuler = startPos;
+            interActingA = true; //register interaction
+          //  std::cout<<"Start Pos: " <<startPos.getTrans().x() <<","<<startPos.getTrans().y() <<","<<startPos.getTrans().z() <<std::endl;
             std::cout<<name<<"start"<<std::endl;
         }
         else if((cover->frameTime() - aSensor->getStartTime())> 0.3)
         {
             //calc the tranformation matrix when interacting is running and mouse button was pressed
             osg::Matrix trans = startPos * invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
-            //no translation in z
-            trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),startPos.getTrans().z());
-            //rotation only around z
-    //      zRot.makeRotate(trans.getRotate().z(), osg::Z_AXIS);
-    //      yRot.makeRotate(startPos.getRotate().y(), osg::Y_AXIS);
-    //      xRot.makeRotate(startPos.getRotate().x(), osg::X_AXIS);
-    //      trans.setRotate(xRot*yRot*zRot);
-           // osg::Quat xRotTest;
-           // xRotTest.makeRotate(osg::DegreesToRadians(90.0),osg::Z_AXIS);
-            trans.setRotate(startPos.getRotate());
-
+            EKU::plugin->restrictMovement(startPosEuler,trans,true,false);
             fullMat->setMatrix(trans);
             //update possitions of childs:
             safetyZones[0]->setPosition(trans);
@@ -58,57 +70,72 @@ void Pump::preFrame()
             {
                 x->setPosition(trans);
             }
-            std::cout<<name<<"continue"<<std::endl;
+     //       std::cout<<name<<"continue"<<std::endl;
         }
     }
-    if (myinteraction->wasStopped() && state == false)
+    if (myinteractionA->wasStopped() && state == false)
     {
-        interActing = false; //unregister interaction
-  /*       EKU::plugin ->updateObservationPointPosition();
-        for(auto x :EKU::plugin->finalCams)
-        {
-          x->cam->calcVisMat((EKU::plugin)->getObservationPoints());
-        }
- */     std::cout<<name<<"stop"<<std::endl;
+        interActingA = false; //unregister interaction
+       // myinteractionA->cancelPendingActivation();
+  //     vrui::coInteractionManager::the()->unregisterInteraction(myinteractionA);
+       std::cout<<name<<"stop"<<std::endl;
+  //     vrui::coInteractionManager::the()->registerInteraction(myinteractionB);
+
+
     }
-}
-void EKU::preFrame()
-{
-    sensorList.update();
-  /*  plugin ->updateObservationPointPosition();
-    for(auto x :plugin->finalCams)
-    {
-      x->cam->calcVisMat(*observationPoints);
-    }
-    *///Test if button is pressed
-  //  int state = cover->getPointerButton()->getState();
-  /*  if (myinteraction->isRunning()) //when interacting the Sphere will be moved
+/*    if (myinteractionB->isRunning()) //when interacting the Sphere will be moved
     {
         static osg::Matrix invStartHand;
         static osg::Matrix startPos;
-        if (!interActing)
+        static coCoord startPosEuler;
+        if (!interActingB)
         {
             //remember invStartHand-Matrix, when interaction started and mouse button was pressed
             invStartHand.invert(cover->getPointerMat() * cover->getInvBaseMat());
-            startPos = mymtf->getMatrix(); //remember position of sphere, when interaction started
-            interActing = true; //register interaction
-
+            startPos = fullMat->getMatrix(); //remember position of sphere, when interaction started
+            startPosEuler = startPos;
+            interActingB = true; //register interaction
+      //      std::cout<<"Start Pos: " <<startPos.getTrans().x() <<","<<startPos.getTrans().y() <<","<<startPos.getTrans().z() <<std::endl;
+            std::cout<<name<<"startB"<<std::endl;
         }
         else
         {
             //calc the tranformation matrix when interacting is running and mouse button was pressed
             osg::Matrix trans = startPos * invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
-
-            mymtf->setMatrix(trans);
+            EKU::plugin->restrictMovement(startPosEuler,trans,false,true);
+            fullMat->setMatrix(trans);
+            //update possitions of childs:
+   //         safetyZones[0]->setPosition(trans);
+   //         safetyZones[1]->setPosition(trans);
+            for(const auto& x:possibleCamLocations)
+            {
+   //             x->setPosition(trans);
+            }
+            std::cout<<name<<"continueB"<<std::endl;
         }
+
     }
-    if (myinteraction->wasStopped() && state == false)
+    if (myinteractionB->wasStopped() && state == false)
     {
-        interActing = false; //unregister interaction
+        interActingB = false; //unregister interaction
+        //vrui::coInteractionManager::the()->unregisterInteraction(myinteractionB);
+        std::cout<<name<<"stopB"<<std::endl;
+
+
+
+
     }
-   */ for(const auto &x: allPumps)
+
+*/
+}
+void EKU::preFrame()
+{
+    sensorList.update();
+    for(const auto &x: allPumps)
         x->preFrame();
 
+ //   newSZ->preFrame();
+ //   test->preFrame();
 }
 void EKU::calcPercentageOfCoveredSafetyZones()
 {
@@ -126,7 +153,7 @@ Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =n
     group->setName("DetailedTruck+Cam+Safety"+std::to_string(Pump::counter));
    // group->setStateSet(UINT_MAX);
   // truck = new osg::Node;
-std::cout<<"stateset"<<    truck->getNodeMask()<<std::endl;
+    std::cout<<"stateset"<<    truck->getNodeMask()<<std::endl;
 
  //   truck->setName("Truck"+std::to_string(Pump::counter));
   //  truckSurfaceBox = new osg::Node;
@@ -202,7 +229,7 @@ std::cout<<"stateset"<<    truck->getNodeMask()<<std::endl;
     fullMat->setMatrix(full);
     fullMat->addChild(group1.get());
 
-    // Group
+    // GroupF
    // group = new osg::Group;
    // group->setName("Truck"+std::to_string(Pump::counter));
     //group->addChild(transMat.get());
@@ -210,10 +237,18 @@ std::cout<<"stateset"<<    truck->getNodeMask()<<std::endl;
 
      //  group->addChild(fullMat.get());
      //User Interaction
-     myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonA, "MoveMode", vrui::coInteraction::Highest);
-     interActing = false;
-     aSensor = new mySensor(group, name, myinteraction);
+     myinteractionA = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonA, "MoveMode", vrui::coInteraction::Highest);
+     myinteractionB = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonC, "RotateMode", vrui::coInteraction::Menu);
+
+     interActingA = false;
+     //ngB = false;
+
+     aSensor = new mySensor(group, name, myinteractionA);
+    // bSensor = new mySensor(group, "name", myinteractionB);
+
      sensorList.append(aSensor);
+    // sensorList.append(bSensor);
+
 
      safetyZones.at(1)->setPosition(full);
      safetyZones.at(0)->setPosition(full);
@@ -264,6 +299,7 @@ void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
     cover->getObjectsRoot()->addChild(finalScene.get());
 
 }
+
 void EKU::createScene()
 {   //add silo
     {
@@ -275,7 +311,11 @@ void EKU::createScene()
         move->setPosition( osg::Vec3( -35.0f, 0.0f, 3.f) );
         move->addChild(silo1);
         finalScene->addChild(move);
-
+     /*   osg::BoundingSphere bounding = getBoundingSphere(move);
+        osg::BoundingBox box
+        bounding.
+        finalScene->addChild(&bounding);
+*/
         osg::PositionAttitudeTransform* move1 = new osg::PositionAttitudeTransform();
         move1->setPosition( osg::Vec3( -35.0f, 5.0f, 3.f) );
         move1->addChild(silo1);
@@ -386,9 +426,18 @@ void EKU::createCamsForEachCamPos()
     }
 }
 
+void EKU::showAllCamsAtOnePoint()
+{
 
+}
 EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 {
+    test = new SZ2(osg::Vec3(-100,-100,0));
+   // Wireframe *test = new Wireframe();
+    //cover->getObjectsRoot()->addChild(test->getZoneGeode().get());
+
+
+    newSZ= new SZ("test",1,osg::Vec3(0,0,0),osg::Vec3(0,0,0),1.0,1.0);
     //Create user Interation
     myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonA, "MoveMode", vrui::coInteraction::Medium);
     interActing = false;
@@ -432,7 +481,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //draw Pumps:
     allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine,osg::Vec3(0,-15,0)));
     allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine));
-    int cnt =0;
+   /* int cnt =0;
     for(int i = 0;i<5;i++)
     {
         osg::Vec3 posOld=allPumps.back()->getPos();;
@@ -451,7 +500,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
         cnt ++;
     }
-
+*/
     for(const auto & x:allPumps)
     {
         cover->getObjectsRoot()->addChild(x->getPumpDrawable().get());
@@ -530,7 +579,19 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
            cnt2++;
         }
 
-        //add User interaction to each final camera
+/*         //this is for GA with std::vector<std::array>
+         size_t cnt2=0;
+         for(const auto& x:finalCamIndex)
+         {
+            for(const auto& y : x)
+            {
+                if(y==1){
+                finalCams.push_back(new CamDrawable(cameras.at(cnt2)));
+                }
+                cnt2++;
+            }
+         }
+*/         //add User interaction to each final camera
         for(const auto& x:finalCams)
         {
             cover->getObjectsRoot()->addChild(x->getCamDrawable().get());
