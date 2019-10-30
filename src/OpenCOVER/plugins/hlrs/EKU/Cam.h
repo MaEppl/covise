@@ -23,6 +23,7 @@
 #include<osgText/Text>
 #include<osg/ShadeModel>
 #include <osg/LightModel>
+#include<osgFX/Scribe>
 
 #include<Sensor.h>
 
@@ -41,6 +42,7 @@ public:
     Cam(const osg::Vec3 pos, const osg::Vec2 rot, const std::vector<osg::Vec3> &observationPoints, const std::string name);
     Cam(const osg::Vec3 pos, const osg::Vec2 rot,const std::string name);
     ~Cam();
+    std::vector<double> getVisMat(){return visMat;}
 
 
     const osg::Vec2 rot; // [0]=alpha =zRot, [1]=beta =yRot
@@ -68,11 +70,13 @@ class CamDrawable
 {
 private:
     osg::ref_ptr<osg::Vec3Array> verts;
+
     osg::ref_ptr<osg::Vec4Array> colors;
     osg::ref_ptr<osg::Group> group;
     osg::ref_ptr<osg::Geode> camGeode;
     osg::ref_ptr<osg::MatrixTransform> transMat;
     osg::ref_ptr<osg::MatrixTransform> rotMat;
+
     osg::ref_ptr<osgText::Text> text;
 public:
     static size_t count;

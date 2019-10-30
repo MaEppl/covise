@@ -13,8 +13,8 @@ using namespace opencover;
 
 double Cam::imgHeightPixel = 1080;
 double Cam::imgWidthPixel = 1920;
-double Cam::fov = 70;
-double Cam::depthView = 55;
+double Cam::fov = 60;
+double Cam::depthView = 40;
 double Cam::focalLengthPixel = Cam::imgWidthPixel*0.5/(std::tan(Cam::fov*0.5*M_PI/180));
 double Cam::imgWidth = 2*depthView*std::tan(Cam::fov/2*osg::PI/180);
 double Cam::imgHeight = Cam::imgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
@@ -176,12 +176,11 @@ osg::Geode* CamDrawable::plotCam()
     geom->setDataVariance(osg::Object::DataVariance::DYNAMIC) ;
     geom->setUseDisplayList(false);
     geom->setUseVertexBufferObjects(true);
-   // stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
-   // stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA ,GL_ONE_MINUS_SRC_ALPHA), osg::StateAttribute::ON);
+    //stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+    //stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA ,GL_ONE_MINUS_SRC_ALPHA), osg::StateAttribute::ON);
     // Associate the Geometry with the Geode.
     geode->addDrawable(geom);
     geode->getStateSet()->setMode( GL_BLEND, osg::StateAttribute::ON );
-    //geode->getStateSet()->setMode(GL_SMOOTH,osg::ShadeModel::SMOOTH);
     geode->getStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
     // Declare an array of vertices to create a simple pyramid.
     verts = new osg::Vec3Array;
@@ -189,19 +188,6 @@ osg::Geode* CamDrawable::plotCam()
     verts->push_back( osg::Vec3(Cam::depthView, -Cam::imgWidth/2,-Cam::imgHeight/2 ) ); // 1 lower front base
     verts->push_back( osg::Vec3(Cam::depthView,  Cam::imgWidth/2,-Cam::imgHeight/2 ) ); // 3 lower  back  base
     verts->push_back( osg::Vec3(Cam::depthView,  Cam::imgWidth/2, Cam::imgHeight/2 ) ); // 2 upper back  base
-
-   /* //base 1
-    verts->push_back( osg::Vec3(3*Cam::depthView/4, 3*-Cam::imgWidth/8,3* Cam::imgHeight/8 ) ); // 0 upper  front base
-    verts->push_back( osg::Vec3(3*Cam::depthView/4, 3*-Cam::imgWidth/8,3*-Cam::imgHeight/8 ) ); // 1 lower front base
-    verts->push_back( osg::Vec3(3*Cam::depthView/4, 3* Cam::imgWidth/8,3*-Cam::imgHeight/8 ) ); // 3 lower  back  base
-    verts->push_back( osg::Vec3(3*Cam::depthView/4, 3* Cam::imgWidth/8,3* Cam::imgHeight/8 ) ); // 2 upper back  base
-
-    //base 2
-    verts->push_back( osg::Vec3(Cam::depthView/4, -Cam::imgWidth/8, Cam::imgHeight/8 ) ); // 0 upper  front base
-    verts->push_back( osg::Vec3(Cam::depthView/4, -Cam::imgWidth/8,-Cam::imgHeight/8 ) ); // 1 lower front base
-    verts->push_back( osg::Vec3(Cam::depthView/4,  Cam::imgWidth/8,-Cam::imgHeight/8 ) ); // 3 lower  back  base
-    verts->push_back( osg::Vec3(Cam::depthView/4,  Cam::imgWidth/8, Cam::imgHeight/8 ) ); // 2 upper back  base
-*/
     verts->push_back( osg::Vec3( 0,  0,  0) ); // 4 peak
 
 
@@ -209,7 +195,7 @@ osg::Geode* CamDrawable::plotCam()
     geom->setVertexArray(verts);
 
     // Next, create primitive sets and add them to the Geometry.
-    // Each primitive set represents one face of the pyramid.
+    // Each primitive set represents a face or a Line of the Pyramid
     // 0 base
     osg::DrawElementsUInt* face =
        new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
@@ -219,136 +205,31 @@ osg::Geode* CamDrawable::plotCam()
     face->push_back(0);
     geom->addPrimitiveSet(face);
 
-#if 0
-    //base1
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-    face->push_back(0);
-    face->push_back(3);
-    face->push_back(7);
-    face->push_back(4);
-    geom->addPrimitiveSet(face);
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-    face->push_back(3);
-    face->push_back(2);
-    face->push_back(6);
-    face->push_back(7);
-    geom->addPrimitiveSet(face);
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-    face->push_back(2);
-    face->push_back(1);
-    face->push_back(5);
-    face->push_back(6);
-    geom->addPrimitiveSet(face);
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-    face->push_back(1);
-    face->push_back(0);
-    face->push_back(4);
-    face->push_back(5);
-    geom->addPrimitiveSet(face);
+    osg::DrawElementsUInt* line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(4);
+    line->push_back(3);
+    geom->addPrimitiveSet(line);
 
-    //base2
-/*    face = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-    face->push_back(5);
-    face->push_back(6);
-    face->push_back(7);
-    face->push_back(4);
-    geom->addPrimitiveSet(face);//###################################
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(4);
+    line->push_back(2);
+    geom->addPrimitiveSet(line);
 
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-    face->push_back(4);
-    face->push_back(7);
-    face->push_back(11);
-    face->push_back(8);
-    geom->addPrimitiveSet(face);
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-    face->push_back(7);
-    face->push_back(6);
-    face->push_back(10);
-    face->push_back(11);
-    geom->addPrimitiveSet(face);
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-    face->push_back(6);
-    face->push_back(5);
-    face->push_back(9);
-    face->push_back(10);
-    geom->addPrimitiveSet(face);
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-    face->push_back(5);
-    face->push_back(4);
-    face->push_back(8);
-    face->push_back(9);
-    geom->addPrimitiveSet(face);
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(4);
+    line->push_back(1);
+    geom->addPrimitiveSet(line);
 
-    //base2
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-    face->push_back(8);
-    face->push_back(7);
-    face->push_back(10);
-    face->push_back(9);
-    geom->addPrimitiveSet(face);//#####################################
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(4);
+    line->push_back(0);
+    geom->addPrimitiveSet(line);
 
-    // 1 left face
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
-    face->push_back(8);//4
-    face->push_back(11);//5
-    face->push_back(12);//8
-    geom->addPrimitiveSet(face);
-    // 2 right face
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
-    face->push_back(11);//5
-    face->push_back(10);//6
-    face->push_back(12);//8
-    geom->addPrimitiveSet(face);
-    // 3 front face
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
-    face->push_back(10);//7
-    face->push_back(9);//6
-    face->push_back(12);//8
-    geom->addPrimitiveSet(face);
-    // 4 back face
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
-    face->push_back(9);//7
-    face->push_back(8);//4
-    face->push_back(12);//8
-    geom->addPrimitiveSet(face);
-    */
-#endif
-    // 1 left face
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
-    face->push_back(3);
-    face->push_back(0);
-    face->push_back(4);
-    geom->addPrimitiveSet(face);
-    // 2 right face
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
-    face->push_back(1);
-    face->push_back(2);
-    face->push_back(4);
-    geom->addPrimitiveSet(face);
-    // 3 front face
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
-    face->push_back(0);
-    face->push_back(1);
-    face->push_back(4);
-    geom->addPrimitiveSet(face);
-    // 4 back face
-    face = new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
-    face->push_back(2);
-    face->push_back(3);
-    face->push_back(4);
-    geom->addPrimitiveSet(face);
-    //Create normals
     osg::Vec3Array* normals = new osg::Vec3Array();
     normals->push_back(osg::Vec3(-1.f ,-1.f, 0.f)); //left front
     normals->push_back(osg::Vec3(1.f ,-1.f, 0.f)); //right front
     normals->push_back(osg::Vec3(1.f ,1.f, 0.f));//right back
     normals->push_back(osg::Vec3(-1.f ,1.f, 0.f));//left back
-
- /*   normals->push_back(osg::Vec3(-1.f ,-1.f, 0.f)); //left front
-    normals->push_back(osg::Vec3(1.f ,-1.f, 0.f)); //right front
-    normals->push_back(osg::Vec3(1.f ,1.f, 0.f));//right back
-    normals->push_back(osg::Vec3(-1.f ,1.f, 0.f));//left back
-*/
     normals->push_back(osg::Vec3(0.f ,0.f, 1.f));//peak
     geom->setNormalArray(normals);
    // geom->setNormalBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
@@ -367,34 +248,20 @@ osg::Geode* CamDrawable::plotCam()
     stateset->setNestRenderBins(false);
 
     // Create a separate color for each face.
-   // osg::Vec4Array* colors = new osg::Vec4Array;
     colors = new osg::Vec4Array; //magenta 1 1 0; cyan 0 1 1; black 0 0 0
-   /* colors->push_back( osg::Vec4(0.0f, 0.0f, 0.0f, 0.5f) ); // yellow  - base
-    colors->push_back( osg::Vec4(0.0f, 0.0f, 0.0f, 0.5f) ); // cyan    - left
-    colors->push_back( osg::Vec4(0.0f, 0.0f, 0.0f, 0.5f) ); // cyan    - right
-    colors->push_back( osg::Vec4(0.0f, 0.0f, 0.0f, 0.5f) ); // magenta - front
-   */ colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // magenta - back
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // magenta - back
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // magenta - back
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // magenta - back
-    /*colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // magenta - back
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // magenta - back
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // magenta - back
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // magenta - back
-
-   */ colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // yellow  - base
-
-/*   colors->push_back( osg::Vec4(0.0f, 0.0f, 1.0f, 0.5f) ); // yellow  - base1
-    colors->push_back( osg::Vec4(1.0f, 0.0f, 1.0f, 0.5f) ); // cyan    - left
-    colors->push_back( osg::Vec4(1.0f, 0.0f, 1.0f, 0.5f) ); // cyan    - right
-    colors->push_back( osg::Vec4(1.0f, 0.0f, 1.0f, 0.5f) ); // magenta - front
-    colors->push_back( osg::Vec4(1.0f, 1.0f, 1.0f, 0.5f) ); // magenta - back
-  */  // The next step is to associate the array of colors with the geometry.
+    colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 0.5f) ); // magenta - back
+    colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
+    colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
+    colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
+    colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // yellow  - base
     // Assign the color indices created above to the geometry and set the
     // binding mode to _PER_PRIMITIVE_SET.
     geom->setColorArray(colors);
-    //geom->setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET;
-    geom->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
+    geom->setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
+    //geom->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
+    //LineWidth
+    LineWidth *lw = new LineWidth(2.0);
+    stateset->setAttribute(lw);
     // return the geode as the root of this geometry.
     return geode;
 }
