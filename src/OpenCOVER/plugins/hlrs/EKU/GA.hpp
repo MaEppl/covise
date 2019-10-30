@@ -8,6 +8,7 @@
 #pragma once
 #include <openGA.hpp>
 #include <Cam.h>
+#include<SafetyZone.h>
 #define CAMS_PER_POINT 16
 #define CAMS 64
 #define CAM_POINTS 4

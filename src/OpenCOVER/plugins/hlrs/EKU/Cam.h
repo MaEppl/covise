@@ -11,7 +11,9 @@
 #include <unistd.h>
 
 #include<cover/coVRPluginSupport.h>
+#include <PluginUtil/coVR3DTransRotInteractor.h>
 
+#include <climits>
 
 
 
@@ -28,9 +30,10 @@
 #include<osg/ShadeModel>
 #include <osg/LightModel>
 #include<osgFX/Scribe>
-#include<Sensor.h>
 
-class mySensor;
+using namespace opencover;
+
+
 class Cam
 {   
 public:
@@ -128,7 +131,7 @@ private:
     osg::ref_ptr<osg::Sphere> sphere;
     osg::ref_ptr<osg::Geode> geode;
 
-   // coVR3DTransRotInteractor *viewpointInteractor;
+    coVR3DTransRotInteractor *viewpointInteractor;
 
     void setStateSet(osg::StateSet *stateSet);
 
