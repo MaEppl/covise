@@ -230,8 +230,6 @@ Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =n
    group1->setName("bothTruckDrawables"+std::to_string(Pump::counter));
    for(const auto& x : safetyZones)
         group1->addChild(x->getSafetyZoneDrawable().get());
-    for(const auto& x : possibleCamLocations)
-        group1->addChild(x->getCamGeode().get());
 
     group1->addChild(group.get());
     //rotMat->addChild(group1.get());
@@ -247,45 +245,34 @@ Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =n
 
     osg::Matrix full;
     full=rotate*translate;
-  //  full.setTrans(translate.getTrans());
     fullMat = new osg::MatrixTransform();
     fullMat ->setName("full"+std::to_string(Pump::counter));
-   // fullMat->preMult( translate * rotate);
     fullMat->setMatrix(full);
     fullMat->addChild(group1.get());
 
-    // GroupF
-   // group = new osg::Group;
-   // group->setName("Truck"+std::to_string(Pump::counter));
-    //group->addChild(transMat.get());
-
-
-     //  group->addChild(fullMat.get());
      //User Interaction
      myinteractionA = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonA, "MoveMode", vrui::coInteraction::Highest);
      myinteractionB = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonC, "RotateMode", vrui::coInteraction::Menu);
 
      interActingA = false;
-     //ngB = false;
 
      aSensor = new mySensor(group, name, myinteractionA);
-    // bSensor = new mySensor(group, "name", myinteractionB);
 
      sensorList.append(aSensor);
-    // sensorList.append(bSensor);
 
 
-   // safetyZones.at(1)->setPosition(full);
-   //  safetyZones.at(0)->setPosition(full);
      safetyZones.at(0)->setMat(localSafetyZone1* full);
      safetyZones.at(1)->setMat(localSafetyZone2* full);
 
+     upperGroup= new osg::MatrixTransform();
+     upperGroup->setName("Truck"+std::to_string(Pump::counter));
+     upperGroup->addChild(fullMat.get());
+     for(const auto& x : possibleCamLocations)
+          upperGroup->addChild(x->getCamGeode().get());
 
      possibleCamLocations.at(0)->setPosition(localInteractor1*full);
      possibleCamLocations.at(1)->setPosition(localInteractor2*full);
 
-   //  possibleCamLocations.at(0)->setInitialStart(localInteractor1*full);
-   //  possibleCamLocations.at(1)->setInitialStart(localInteractor2*full);
 
 
 
@@ -625,7 +612,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 */         //add User interaction to each final camera
         for(const auto& x:finalCams)
         {
-            cover->getObjectsRoot()->addChild(x->getCamDrawable().get());
+            cover->getObjectsRoot()->addChild(x->getCamGeode().get());
             userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&safetyZones,&finalCams));
         }
 

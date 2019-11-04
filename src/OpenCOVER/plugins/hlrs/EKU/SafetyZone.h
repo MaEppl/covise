@@ -39,7 +39,6 @@ public:
     void preFrame();
     void updateColor();
     void resetColor();
-    void updatePosInWorld();
     osg::Vec3 getPosition(){return mat.getTrans();}
     int getPriority(){return priority;}
     void setMat(osg::Matrix m)
@@ -55,7 +54,6 @@ private:
     const int priority;
     std::string name;
     osg::Matrix mat;
-    osg::Vec3 pos;
     osg::ref_ptr<osg::Geode> safetyZoneGeode;
     osg::ref_ptr<osgText::Text> text;
     osg::ref_ptr<osg::TessellationHints> hint;

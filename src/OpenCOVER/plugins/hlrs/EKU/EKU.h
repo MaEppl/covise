@@ -81,7 +81,7 @@ public:
 
     osg::Vec3 getPos()const{return position;}
     int getRot()const{return rotZ;}
-    osg::ref_ptr<osg::Group> getPumpDrawable()const{return fullMat;}
+    osg::ref_ptr<osg::Group> getPumpDrawable()const{return upperGroup;}
 
     //User Interaction
     void preFrame();
@@ -102,6 +102,8 @@ private:
 
     osg::ref_ptr<osg::Group> group;
     osg::ref_ptr<osg::Group> group1;
+    osg::ref_ptr<osg::Group> upperGroup;
+
 
     //user Interaction
     mySensor *aSensor;

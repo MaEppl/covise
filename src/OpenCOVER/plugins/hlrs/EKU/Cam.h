@@ -71,19 +71,15 @@ private:
 
 
 };
-
+class CamPosition;
 class CamDrawable
 {
 private:
     osg::ref_ptr<osg::Vec3Array> verts;
-
     osg::ref_ptr<osg::Vec4Array> colors;
-    osg::ref_ptr<osg::Group> group;
     osg::ref_ptr<osg::Geode> camGeode;
-    osg::ref_ptr<osg::MatrixTransform> transMat;
-    osg::ref_ptr<osg::MatrixTransform> rotMat;
 
-    osg::ref_ptr<osgText::Text> text;
+
 public:
     static size_t count;
     Cam* cam=nullptr;
@@ -92,14 +88,12 @@ public:
     void updateVisibility(float value);
     void updateColor();
     void resetColor();
-    void activate(){group->setNodeMask(UINT_MAX);}
-    void disactivate(){group->setNodeMask(0);}
-    //CamDrawable(const osg::Vec3 pos, const osg::Vec2 rot,const std::string name);
+    void activate(){camGeode->setNodeMask(UINT_MAX);}
+    void disactivate(){camGeode->setNodeMask(0);}
     CamDrawable(Cam* cam);
-    //CamDrawable(Cam cam);
+    CamDrawable();
     ~CamDrawable();
 
-    osg::ref_ptr<osg::Group> getCamDrawable()const{return group;}
     osg::ref_ptr<osg::Geode> getCamGeode()const{return camGeode;}
 };
 
@@ -107,41 +101,38 @@ public:
 class CamPosition
 {
 public:
-    CamPosition(osg::Matrix m);
-    ~CamPosition(){}
     static size_t counter;
 
-    osg::ref_ptr<osg::Geode> getCamGeode()const{return geode;}
-    void updatePosInWorld();
+    CamPosition(osg::Matrix m);
+    ~CamPosition(){}
+
+    osg::ref_ptr<osg::MatrixTransform> getCamGeode()const{return localDCS;}
+
     osg::Vec3 getPosition(){
-        return worldPosition;}
+        return localDCS.get()->getMatrix().getTrans();}
+
+    osg::Matrix getMatrix(){return viewpointInteractor->getMatrix();}
+
     void setPosition( osg::Matrix matrix1)
     {
         viewpointInteractor->updateTransform(matrix1);
+        localDCS->setMatrix(matrix1);
         osg::Vec3 poslocal= viewpointInteractor->getMatrix().getTrans();
-       // worldPosition=geode->getBound().center()*matrix1;
-       // worldPosition.z()=1.6;
-       // std::cout<<"Camera in World: "<<name<<worldPosition.x()<<"|"<<worldPosition.y()<<"|"<<worldPosition.z()<<std::endl;
         std::cout<<"Camera in World: "<<name<<poslocal.x()<<"|"<<poslocal.y()<<"|"<<poslocal.z()<<std::endl;
-
     }
-    osg::Matrix getMatrix(){return viewpointInteractor->getMatrix();}
 
-    coVR3DTransRotInteractor* getInteractor(){return viewpointInteractor;}
     void preFrame();
-    //void setInitialStart(osg::Matrix start){initialStart=start;
-                                          // viewpointInteractor->updateTransform(initialStart);}
-    //osg::Matrix getIntitialStart(){return initialStart;}
+
 private:
     std::string name;
-    //osg::Matrix initialStart;
-    osg::Vec3 worldPosition;
-    osg::ref_ptr<osg::ShapeDrawable> shapDr;
-    osg::ref_ptr<osg::Sphere> sphere;
-    osg::ref_ptr<osg::Geode> geode;
+
+    CamDrawable* camDraw;
 
     coVR3DTransRotInteractor *viewpointInteractor;
+    osg::ref_ptr<osg::MatrixTransform> localDCS;
 
-    void setStateSet(osg::StateSet *stateSet);
+
+
+
 
 };

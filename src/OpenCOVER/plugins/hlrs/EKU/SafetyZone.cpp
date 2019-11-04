@@ -77,8 +77,7 @@ SafetyZone::SafetyZone(osg::Matrix m, Priority priority, float length = 2, float
 
     count++;
     fprintf(stderr, "new SafetyZone\n");
-    pos=m.getTrans();
-    zone = new osg::Box(pos,length,width,height);
+    zone = new osg::Box(m.getTrans(),length,width,height);
     safetyZoneDrawable = new osg::ShapeDrawable(zone,hint.get());
     name = "Zone "+std::to_string(SafetyZone::count);
 
@@ -158,12 +157,7 @@ void SafetyZone::resetColor()
     else if(priority == PRIO2)
          safetyZoneDrawable->setColor(osg::Vec4(1.0, 0.0, 1.0, 0.5));
 }
-void SafetyZone::updatePosInWorld()
-{
-    pos = safetyZoneGeode->getBound().center() * osg::computeLocalToWorld(safetyZoneGeode->getParentalNodePaths()[0]) / 1000;
-   std::cout<<"POS in World:"<<name<<pos.x()<<" "<<pos.y()<<" "<<pos.z()<<std::endl;
 
-}
 
 using namespace osg;
 double SZ::imgHeightPixel = 1080;

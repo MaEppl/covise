@@ -114,53 +114,28 @@ CamDrawable::CamDrawable(Cam* cam):cam(cam)
 {
     count++;
     fprintf(stderr, "new CamDrawable from Point\n");
-    group = new osg::Group;
-    group->setName("Cam"+std::to_string(CamDrawable::count));
-
-    text = new osgText::Text;
-   // text->setName("Text");
-   // text->setText("Cam"+std::to_string(CamDrawable::count));
-    //text->setColor()
-  //  text->setCharacterSize(17);
 
     camGeode = plotCam();
-
-    //Translation
-    transMat= new osg::MatrixTransform();
-    transMat->setName("Translation");
-    //group->addChild(transMat);
-    osg::Matrix m;
-    m.setTrans(cam->pos.x(),cam->pos.y(),cam->pos.z());
-    transMat->setMatrix(m);
-
-    //Rotation
-    rotMat = new osg::MatrixTransform();
-    rotMat ->setName("Rotation");
-    //group->addChild(rotMat);
-    osg::Matrix r;
-    osg::Quat yRot, zRot;
-    zRot.makeRotate((float)cam->rot.x(), osg::Z_AXIS);
-    yRot.makeRotate((float)cam->rot.y(), osg::Y_AXIS);
-    osg::Quat fullRot = yRot*zRot; //NOTE: Be careful, changed order of Matrix Multiplication here
-    r.setRotate(fullRot);
-    rotMat->setMatrix(r);
-    //OpenGL first rotate than translate
-    //camGeode->addChild(text.get()); //in older OSG versions osg::Geode doesn't have function addChild
-    rotMat->addChild(camGeode.get());
-    transMat->addChild(rotMat.get());
-    group->addChild(transMat.get());
+    camGeode->setName("CamDrawable"+std::to_string(CamDrawable::count));
 
 }
 
+CamDrawable::CamDrawable()
+{
+    count++;
+    fprintf(stderr, "new CamDrawable from Point\n");
+
+    camGeode = plotCam();
+    camGeode->setName("CamDrawable"+std::to_string(CamDrawable::count));
+
+}
 
 
 CamDrawable::~CamDrawable()
 {
     std::cout<<"CamDrawable Destructor called"<<std::endl;
     count--;
-  //  delete cam;
-    cover->getObjectsRoot()->removeChild(group.get());
-//    cover->getObjectsRoot()->removeChild(transMat.get());
+    cover->getObjectsRoot()->removeChild(camGeode.get());
 
 
 }
@@ -184,10 +159,10 @@ osg::Geode* CamDrawable::plotCam()
     geode->getStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
     // Declare an array of vertices to create a simple pyramid.
     verts = new osg::Vec3Array;
-    verts->push_back( osg::Vec3(Cam::depthView, -Cam::imgWidth/2, Cam::imgHeight/2 ) ); // 0 upper  front base
-    verts->push_back( osg::Vec3(Cam::depthView, -Cam::imgWidth/2,-Cam::imgHeight/2 ) ); // 1 lower front base
-    verts->push_back( osg::Vec3(Cam::depthView,  Cam::imgWidth/2,-Cam::imgHeight/2 ) ); // 3 lower  back  base
-    verts->push_back( osg::Vec3(Cam::depthView,  Cam::imgWidth/2, Cam::imgHeight/2 ) ); // 2 upper back  base
+    verts->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 ) ); // 0 upper  front base
+    verts->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2 ) ); // 1 lower front base
+    verts->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2 ) ); // 3 lower  back  base
+    verts->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 ) ); // 2 upper back  base
     verts->push_back( osg::Vec3( 0,  0,  0) ); // 4 peak
 
 
@@ -320,19 +295,17 @@ void CamDrawable::resetColor()
 }
 
 size_t CamPosition::counter =0;
-CamPosition::CamPosition(osg::Matrix m):worldPosition(m.getTrans())
+CamPosition::CamPosition(osg::Matrix m)
 {
     counter ++;
-    //Creating an osg::Sphere
-  //  mySphere = new osg::Sphere(position, 3.);
-    sphere = new osg::Sphere(worldPosition,0.15);
-    shapDr = new osg::ShapeDrawable(sphere);
-    shapDr->setColor(osg::Vec4(0., 1., 0., 1.0f));
-    geode = new osg::Geode();
-    osg::StateSet *mystateSet = geode->getOrCreateStateSet();
-    setStateSet(mystateSet);
-    geode->setName("Cam "+std::to_string(CamPosition::counter));
-    geode->addDrawable(shapDr);
+
+    camDraw = new CamDrawable();
+
+
+    localDCS = new osg::MatrixTransform();
+    localDCS->setName("CamInteractorMatrix");
+    localDCS->setMatrix(m);
+
 
     //create Interactors
     float _interSize = cover->getSceneSize() / 25;
@@ -340,7 +313,9 @@ CamPosition::CamPosition(osg::Matrix m):worldPosition(m.getTrans())
     viewpointInteractor->show();
     viewpointInteractor->enableIntersection();
 
+    localDCS->addChild(camDraw->getCamGeode());
 
+    
 }
 void CamPosition::preFrame()
 {
@@ -348,26 +323,9 @@ void CamPosition::preFrame()
     if(viewpointInteractor->isRunning())
     {
         osg::Matrix local = viewpointInteractor->getMatrix();
+        localDCS->setMatrix(local);
         coCoord localEuler = local;
         std::cout<<"Rotation(around global axes): "<<"z: "<<localEuler.hpr[0]<<"x: "<<localEuler.hpr[1]<<"y "<<localEuler.hpr[2]<<std::endl;
     }
 }
-void CamPosition::updatePosInWorld()
-{
-    worldPosition = geode->getBound().center() * osg::computeLocalToWorld(geode->getParentalNodePaths()[0])/1000;
-    std::cout<<"Camera in World: "<<name<<worldPosition.x()<<"|"<<worldPosition.y()<<"|"<<worldPosition.z()<<std::endl;
 
-}
-void CamPosition::setStateSet(osg::StateSet *stateSet)
-{
-    osg::Material *material = new osg::Material();
-    material->setColorMode(osg::Material::DIFFUSE);
-    material->setDiffuse(osg::Material::FRONT_AND_BACK, osg::Vec4(1.0f, 0.0f, 0.0f, 0.5f));
-    osg::LightModel *defaultLm;
-    defaultLm = new osg::LightModel();
-    defaultLm->setLocalViewer(true);
-    defaultLm->setTwoSided(true);
-    defaultLm->setColorControl(osg::LightModel::SINGLE_COLOR);
-    stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
-    stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
-}
