@@ -29,8 +29,8 @@ public:
         PRIO1 = 2, //must be observed with at least 2 cameras
     };
 
-    SafetyZone(osg::Vec3 pos, Priority priority, float length, float width, float height);
-   // SafetyZone(const SafetyZone&, Priority priority) { ++count; }
+  //  SafetyZone(osg::Vec3 pos, Priority priority, float length, float width, float height);
+   SafetyZone(osg::Matrix m, Priority priority, float length, float width, float height);
     ~SafetyZone();
     virtual bool destroy();
     static size_t count;
@@ -40,25 +40,21 @@ public:
     void updateColor();
     void resetColor();
     void updatePosInWorld();
-    osg::Vec3 getPosition(){
-      //  updatePosInWorld();
-    //    std::cout<<name<<pos.x()<<" "<<pos.y()<<" "<<pos.z()<<std::endl;
-        std::cout<<name<<" SZ: "<<pos.x()<<", "<<pos.y()<<", "<<pos.z()<<std::endl;
-
-        return pos;}
-    void setPosition( osg::Matrix matrix1)
-    {
-        pos=safetyZoneGeode->getBound().center()*matrix1;
-        //pos.z()=1.0;
-        std::cout<<name<<" SZ: "<<pos.x()<<", "<<pos.y()<<", "<<pos.z()<<std::endl;
-    }
+    osg::Vec3 getPosition(){return mat.getTrans();}
     int getPriority(){return priority;}
+    void setMat(osg::Matrix m)
+    {
+    mat=m;
+    std::cout<<name<<" SZ: "<<m.getTrans().x()<<", "<<m.getTrans().y()<<", "<<m.getTrans().z()<<std::endl;
+    }
+    osg::Matrix getMatrix(){return mat;}
 private:
     float length = 2;//8
     float width = 2;//2
     float height = 8;//2sss
     const int priority;
     std::string name;
+    osg::Matrix mat;
     osg::Vec3 pos;
     osg::ref_ptr<osg::Geode> safetyZoneGeode;
     osg::ref_ptr<osgText::Text> text;

@@ -320,7 +320,7 @@ void CamDrawable::resetColor()
 }
 
 size_t CamPosition::counter =0;
-CamPosition::CamPosition(osg::Vec3 pos):worldPosition(pos)
+CamPosition::CamPosition(osg::Matrix m):worldPosition(m.getTrans())
 {
     counter ++;
     //Creating an osg::Sphere
@@ -334,19 +334,23 @@ CamPosition::CamPosition(osg::Vec3 pos):worldPosition(pos)
     geode->setName("Cam "+std::to_string(CamPosition::counter));
     geode->addDrawable(shapDr);
 
-  /*  osg::Matrix localMat;
-    localMat.setTrans(pos);
     //create Interactors
     float _interSize = cover->getSceneSize() / 25;
-    viewpointInteractor = new coVR3DTransRotInteractor(localMat, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
+    viewpointInteractor = new coVR3DTransRotInteractor(m, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
     viewpointInteractor->show();
     viewpointInteractor->enableIntersection();
 
-    */
+
 }
 void CamPosition::preFrame()
 {
-    //viewpointInteractor->preFrame();
+    viewpointInteractor->preFrame();
+    if(viewpointInteractor->isRunning())
+    {
+        osg::Matrix local = viewpointInteractor->getMatrix();
+        coCoord localEuler = local;
+        std::cout<<"Rotation(around global axes): "<<"z: "<<localEuler.hpr[0]<<"x: "<<localEuler.hpr[1]<<"y "<<localEuler.hpr[2]<<std::endl;
+    }
 }
 void CamPosition::updatePosInWorld()
 {

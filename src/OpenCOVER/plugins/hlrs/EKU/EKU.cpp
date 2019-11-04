@@ -13,64 +13,77 @@
 using namespace opencover;
 
 EKU *EKU::plugin = NULL;
-void EKU::restrictMovement(coCoord startPos,osg::Matrix &mat, bool noRot, bool noTrans)
+void EKU::restrictMovement(osg::Matrix &mat)
 {
     coCoord coord;
     coord = mat;
-    // z position always same as start position
-    coord.xyz[2] =startPos.xyz[2];
-    // no rotation around x and y
-    coord.hpr[0] = startPos.hpr[0];
-    coord.hpr[1] = startPos.hpr[1];
-
-    if (noTrans)
-    {
-          coord.xyz[0] =startPos.xyz[0];
-          coord.xyz[1] =startPos.xyz[1];
-    }
-
-    if (noRot)
-    {
-        coord.hpr[2] = startPos.hpr[2];
-    }
+    //only rotation around z !
+    coord.hpr[1] = 0;
+    coord.hpr[2] = 0;
     coord.makeMat(mat);
 }
 void Pump::preFrame()
 {
+    for(const auto& x: possibleCamLocations)
+        x->preFrame();
     sensorList.update();
     //Test if button is pressed
     int state = cover->getPointerButton()->getState();
-   // std::cout<<"state "<<state<<std::endl;
-   // std::cout<<"is Runnung?"<<myinteractionA->isRunning()<<std::endl;
     if (myinteractionA->isRunning()) //when interacting the Sphere will be moved
     {
         static osg::Matrix invStartHand;
-        static osg::Matrix startPos;
-        static coCoord startPosEuler;
+        static osg::Matrix startPos,startPoscamPosinterActor1,startPoscamPosinterActor2,startPosSZ1,startPosSZ2;
         if (!interActingA)
         {
             //remember invStartHand-Matrix, when interaction started and mouse button was pressed
             invStartHand.invert(cover->getPointerMat() * cover->getInvBaseMat());
-            startPos = fullMat->getMatrix(); //remember position of sphere, when interaction started
-            startPosEuler = startPos;
+            startPos = fullMat->getMatrix(); //remember position of truck, when interaction started
+            startPoscamPosinterActor1 = possibleCamLocations[0]->getMatrix(); //remember position of cam, when interaction started
+            startPoscamPosinterActor2 = possibleCamLocations[1]->getMatrix();
+            startPosSZ1=safetyZones.at(0)->getMatrix();
+            startPosSZ2=safetyZones.at(1)->getMatrix();
+
+
             interActingA = true; //register interaction
-          //  std::cout<<"Start Pos: " <<startPos.getTrans().x() <<","<<startPos.getTrans().y() <<","<<startPos.getTrans().z() <<std::endl;
             std::cout<<name<<"start"<<std::endl;
         }
         else if((cover->frameTime() - aSensor->getStartTime())> 0.3)
         {
             //calc the tranformation matrix when interacting is running and mouse button was pressed
-            osg::Matrix trans = startPos * invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
-            EKU::plugin->restrictMovement(startPosEuler,trans,true,false);
-            fullMat->setMatrix(trans);
+            osg::Matrix trans =invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
+            //trans.setTrans(osg::Vec3(0,0,0));//For rotation
+            EKU::plugin->restrictMovement(trans);
+            trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),0);//set z trans to zero
+            trans.orthoNormalize(trans);//remove scale
+            osg::Matrix newTrans =  startPos * osg::Matrix::translate(trans.getTrans());//newTrans is translation only
+            osg::Matrix transcamPosinterActor1 = startPoscamPosinterActor1 *  osg::Matrix::translate(trans.getTrans());
+            osg::Matrix transcamPosinterActor2 = startPoscamPosinterActor2 * osg::Matrix::translate(trans.getTrans());
+            osg::Matrix transSZ1 = startPosSZ1 * osg::Matrix::translate(trans.getTrans());
+            osg::Matrix transSZ2 = startPosSZ2 * osg::Matrix::translate(trans.getTrans());
+
+           /* For Rotation:
+            osg::Matrix newRot = startPos *trans;//newRot is rotation only
+            osg::Matrix rotcamPosinterActor1 = startPoscamPosinterActor1 * trans;
+            osg::Matrix rotcamPosinterActor2 = startPoscamPosinterActor2 * trans;
+            osg::Matrix rotSZ1 = startPosSZ1 * trans;
+            osg::Matrix rotSZ2 = startPosSZ2 * trans;
+
+            fullMat->setMatrix(newRot);
             //update possitions of childs:
-            safetyZones[0]->setPosition(trans);
-            safetyZones[1]->setPosition(trans);
-            for(const auto& x:possibleCamLocations)
-            {
-                x->setPosition(trans);
-            }
-     //       std::cout<<name<<"continue"<<std::endl;
+            possibleCamLocations[0]->setPosition(rotcamPosinterActor1);
+            possibleCamLocations[1]->setPosition(rotcamPosinterActor2);
+            safetyZones[0]->setMat(rotSZ1);
+            safetyZones[1]->setMat(rotSZ2);
+*/
+            // For Translation:
+            fullMat->setMatrix(newTrans);
+            //update possitions of childs:
+            safetyZones[0]->setMat(transSZ1);
+            safetyZones[1]->setMat(transSZ2);
+            possibleCamLocations[0]->setPosition(transcamPosinterActor1);
+            possibleCamLocations[1]->setPosition(transcamPosinterActor2);
+
+
         }
     }
     if (myinteractionA->wasStopped() && state == false)
@@ -134,8 +147,7 @@ void EKU::preFrame()
     for(const auto &x: allPumps)
         x->preFrame();
 
- //   newSZ->preFrame();
- //   test->preFrame();
+    newSZ->preFrame();
 }
 void EKU::calcPercentageOfCoveredSafetyZones()
 {
@@ -160,12 +172,25 @@ Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =n
    // truckSurfaceBox->setName("SurfaceBox"+std::to_string(Pump::counter));
     name = "DetailedTruck+Cam+Safety"+std::to_string(Pump::counter);
     //create safety Zones
-    safetyZones.at(0) = new SafetyZone(osg::Vec3(-2.3,0,9),SafetyZone::PRIO2,2.0f,2.0f,8.0f); //safetyZone Dimensions: 2,2,8
-    safetyZones.at(1) = new SafetyZone(osg::Vec3(2.3,0,9),SafetyZone::PRIO2,2.0f,2.0f,8.0f);
+    osg::Matrix localSafetyZone1,localSafetyZone2;
+    localSafetyZone1.setTrans(osg::Vec3(-2.3,0.1,9));
+    localSafetyZone2.setTrans(osg::Vec3(2.3,0.1,9));
 
-    //create possible Cam locations
-    possibleCamLocations.push_back(new CamPosition(osg::Vec3(1.5,1.6,-0.5)));//to side , height , forward
-    possibleCamLocations.push_back(new CamPosition(osg::Vec3(-1.6,1.6,-0.5)));
+    safetyZones.at(0) = new SafetyZone(localSafetyZone1,SafetyZone::PRIO2,2.0f,2.0f,8.0f); //safetyZone Dimensions: 2,2,8
+    safetyZones.at(1) = new SafetyZone(localSafetyZone2,SafetyZone::PRIO2,2.0f,2.0f,8.0f);
+    //safetyZones.at(0) = new SafetyZone(osg::Vec3(-2.3,0,9),SafetyZone::PRIO2,2.0f,2.0f,8.0f); //safetyZone Dimensions: 2,2,8
+    //safetyZones.at(1) = new SafetyZone(osg::Vec3(2.3,0,9),SafetyZone::PRIO2,2.0f,2.0f,8.0f);
+
+    //create possible Cam locations ####Old values of Points:Vec3(1.5,1.6,-0.5) Vec3(-1.6,1.6,-0.5)
+    osg::Matrix localInteractor1,localInteractor2;
+    osg::Quat rotInteractor;
+    rotInteractor.makeRotate(osg::DegreesToRadians(-90.0),osg::X_AXIS);
+    localInteractor1.setTrans(osg::Vec3(1.6,1.6,-0.5));
+    localInteractor1.setRotate(rotInteractor);
+    possibleCamLocations.push_back(new CamPosition(localInteractor1));//to side , height , forward
+    localInteractor2.setTrans(osg::Vec3(-1.6,1.6,-0.5));
+    localInteractor2.setRotate(rotInteractor);
+    possibleCamLocations.push_back(new CamPosition(localInteractor2));
 
     //Rotation
     osg::Matrix rotate;
@@ -250,13 +275,19 @@ Pump::Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =n
     // sensorList.append(bSensor);
 
 
-     safetyZones.at(1)->setPosition(full);
-     safetyZones.at(0)->setPosition(full);
+   // safetyZones.at(1)->setPosition(full);
+   //  safetyZones.at(0)->setPosition(full);
+     safetyZones.at(0)->setMat(localSafetyZone1* full);
+     safetyZones.at(1)->setMat(localSafetyZone2* full);
 
-     for(const auto& x:possibleCamLocations)
-     {
-         x->setPosition(full);
-     }
+
+     possibleCamLocations.at(0)->setPosition(localInteractor1*full);
+     possibleCamLocations.at(1)->setPosition(localInteractor2*full);
+
+   //  possibleCamLocations.at(0)->setInitialStart(localInteractor1*full);
+   //  possibleCamLocations.at(1)->setInitialStart(localInteractor2*full);
+
+
 
 }
 Pump::~Pump()
@@ -281,7 +312,7 @@ Pump::~Pump()
    // safetyZones.er
 
 }
-void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
+/*void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
 {
     float height =2;
     float length =3;
@@ -299,7 +330,7 @@ void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
     cover->getObjectsRoot()->addChild(finalScene.get());
 
 }
-
+*/
 void EKU::createScene()
 {   //add silo
     {
@@ -432,7 +463,7 @@ void EKU::showAllCamsAtOnePoint()
 }
 EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 {
-    test = new SZ2(osg::Vec3(-100,-100,0));
+
    // Wireframe *test = new Wireframe();
     //cover->getObjectsRoot()->addChild(test->getZoneGeode().get());
 
@@ -480,7 +511,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     //draw Pumps:
     allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine,osg::Vec3(0,-15,0)));
-    allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine));
+   // allPumps.push_back(new Pump(truck,truckSurfaceBox,truckCabine));
    /* int cnt =0;
     for(int i = 0;i<5;i++)
     {
@@ -528,13 +559,13 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //Add PRIO1
     AddPRIO1 = new ui::Action(EKUMenu , "addPRIO1");
     AddPRIO1->setCallback([this](){
-        createSafetyZone(-6.0,-5.0,SafetyZone::PRIO1);
+        //createSafetyZone(-6.0,-5.0,SafetyZone::PRIO1);
     });
 
     //Add PRIO2
     AddPRIO2 = new ui::Action(EKUMenu , "addPRIO2");
     AddPRIO2->setCallback([this](){
-        createSafetyZone(-6.0,-5.0,SafetyZone::PRIO2);
+        //createSafetyZone(-6.0,-5.0,SafetyZone::PRIO2);
     });
 
     //Remove Truck

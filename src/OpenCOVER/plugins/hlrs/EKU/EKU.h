@@ -147,11 +147,8 @@ public:
     GA *ga;
     static EKU *plugin;
     osg::ref_ptr<osg::Group> finalScene;
-    void restrictMovement(coCoord startPos, osg::Matrix &mat, bool noRot, bool noTrans);
+    void restrictMovement(osg::Matrix &mat);
     osg::BoundingSphere getBoundingSphere(osg::Node *objRoot);
-
-
-
 private:
     //UI
     ui::Menu *EKUMenu  = nullptr;
