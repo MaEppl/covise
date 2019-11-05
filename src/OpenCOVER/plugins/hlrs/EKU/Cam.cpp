@@ -298,6 +298,7 @@ size_t CamPosition::counter =0;
 CamPosition::CamPosition(osg::Matrix m)
 {
     counter ++;
+    searchSpaceState = false;
 
     camDraw = new CamDrawable();
 
@@ -315,6 +316,9 @@ CamPosition::CamPosition(osg::Matrix m)
 
     localDCS->addChild(camDraw->getCamGeode());
 
+    searchSpaceGroup = new osg::Group;
+    searchSpaceGroup->setName("SearchSpace");
+    localDCS->addChild(searchSpaceGroup.get());
     
 }
 void CamPosition::preFrame()
@@ -323,9 +327,112 @@ void CamPosition::preFrame()
     if(viewpointInteractor->isRunning())
     {
         osg::Matrix local = viewpointInteractor->getMatrix();
-        localDCS->setMatrix(local);
         coCoord localEuler = local;
-        std::cout<<"Rotation(around global axes): "<<"z: "<<localEuler.hpr[0]<<"x: "<<localEuler.hpr[1]<<"y "<<localEuler.hpr[2]<<std::endl;
+        //restrict rotation around y
+    //    localEuler.hpr[2]=0.0;
+        //cameras are always looking downwards -> no neg rotation around x
+    /*    if(localEuler.hpr[1] < 0.0)
+            localEuler.hpr[1] = 0.0;
+    */    localEuler.makeMat(local);
+        localDCS->setMatrix(local);
+
+        std::cout<<"Rotation(around global axes): "<<"z:"<<localEuler.hpr[0]<< " x:"<<localEuler.hpr[1]<<" y:"<<localEuler.hpr[2]<<std::endl;
+
     }
 }
+void CamPosition::createCamsInSearchSpace()
+{
+    searchSpaceState = true;
+    //around z axis
+    int zMax = 40;
+    int stepSizeZ = 10; //in Degree
+
+    int xMax = 20;
+    int stepSizeX = 10; //in Degree
+
+    osg::Matrix m = localDCS.get()->getMatrix();
+    coCoord coord=m;
+    coCoord newCoordPlus,newCoordMinus;
+
+    std::cout<<"StartPos: "<<"z:"<<coord.hpr[0]<< " x:"<<coord.hpr[1]<<" y:"<<coord.hpr[2]<<std::endl;
+
+    osg::Matrix m_new;
+
+    int count =0;
+
+    for(int cnt = 0; cnt<zMax/stepSizeZ; cnt++)
+    {
+
+        if(count == 0)
+        {
+            newCoordPlus.hpr[0]=0;
+            newCoordMinus.hpr[0]-= stepSizeZ;
+
+
+        }else
+        {
+            newCoordPlus.hpr[0] += stepSizeZ;
+            newCoordMinus.hpr[0] -= stepSizeZ;
+        }
+
+        newCoordPlus.hpr[1]=newCoordMinus.hpr[1]=0;
+        count ++;
+        int countX =0;
+        for(int cnt2 = 0; cnt2<xMax/stepSizeX; cnt2++)
+        {
+            if(countX==0)
+                 newCoordPlus.hpr[1]=0;
+            else
+                newCoordPlus.hpr[1] += stepSizeX;
+
+            newCoordPlus.makeMat(m_new);
+            searchSpace.push_back(new osg::MatrixTransform );
+            searchSpaceGroup->addChild(searchSpace.back().get());
+            searchSpace.back()->setMatrix(m_new);
+            searchSpace.back()->setName("+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1]));
+            searchSpace.back()->addChild(camDraw->getCamGeode().get());
+            std::cout<<"Rotation+++++++++++++: "<<"z:"<<newCoordPlus.hpr[0]<< " x:"<<newCoordPlus.hpr[1]<<" y:"<<newCoordPlus.hpr[2]<<std::endl;
+           // std::cout<<"Tramslation############: "<<"z:"<<coord.xyz[0]<< " x:"<<coord.xyz[1]<<" y:"<<coord.xyz[2]<<std::endl;
+
+
+            if(countX==0)
+                 newCoordMinus.hpr[1]=0;
+            else
+                newCoordMinus.hpr[1] += stepSizeX;
+
+            // rot around z in - direction
+
+            newCoordMinus.makeMat(m_new);
+            searchSpace.push_back(new osg::MatrixTransform );
+            searchSpaceGroup->addChild(searchSpace.back().get());
+            searchSpace.back()->setMatrix(m_new);
+            searchSpace.back()->setName("-MATRIX Z:" + std::to_string( newCoordMinus.hpr[0])+ " X:" +std::to_string( newCoordMinus.hpr[1]));
+            searchSpace.back()->addChild(camDraw->getCamGeode().get());
+            std::cout<<"Rotation-------------: "<<"z:"<<newCoordMinus.hpr[0]<< " x:"<<newCoordMinus.hpr[1]<<" y:"<<newCoordMinus.hpr[2]<<std::endl;
+            //  std::cout<<"Tramslation############: "<<"z:"<<coord.xyz[0]<< " x:"<<coord.xyz[1]<<" y:"<<coord.xyz[2]<<std::endl;
+
+
+            countX++;
+
+        }
+    }
+}
+
+void CamPosition::setSearchSpaceState(bool state)
+{
+    //for(auto &x : searchSpace)
+      //  searchSpaceGroup->removeChild(x);
+
+    if(searchSpaceState == false)
+        createCamsInSearchSpace();
+
+    if(state)
+        searchSpaceGroup->setNodeMask(UINT_MAX);
+    else
+        searchSpaceGroup->setNodeMask(0);
+
+
+
+}
+
 

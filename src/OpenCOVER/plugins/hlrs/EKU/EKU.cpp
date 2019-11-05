@@ -682,6 +682,23 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         }
     });
 
+    //Show search space
+    MakeCamsInvisible = new ui::Button(EKUMenu , "ShowSearchSpace");
+    MakeCamsInvisible->setText("ShowSearchSpace");
+    MakeCamsInvisible->setState(false);
+    MakeCamsInvisible->setCallback([this](bool state){
+
+       for(const auto &x :allPumps)
+       {
+           for(const auto& x1: x->possibleCamLocations)
+           {
+            x1->setSearchSpaceState(state);
+            x1->setSearchSpaceState(state);
+           }
+       }
+
+    });
+
     for(const auto& x:finalCams)
     {
       //  finalScene->addChild(x->getCamDrawable().get());

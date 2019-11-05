@@ -102,7 +102,7 @@ class CamPosition
 {
 public:
     static size_t counter;
-
+    bool searchSpaceState;
     CamPosition(osg::Matrix m);
     ~CamPosition(){}
 
@@ -122,6 +122,8 @@ public:
     }
 
     void preFrame();
+    void createCamsInSearchSpace();
+    void setSearchSpaceState(bool state);
 
 private:
     std::string name;
@@ -130,6 +132,8 @@ private:
 
     coVR3DTransRotInteractor *viewpointInteractor;
     osg::ref_ptr<osg::MatrixTransform> localDCS;
+    osg::ref_ptr<osg::Group> searchSpaceGroup;
+    std::vector<osg::ref_ptr<osg::MatrixTransform>> searchSpace;
 
 
 
