@@ -12,6 +12,7 @@
 
 #include<cover/coVRPluginSupport.h>
 #include <PluginUtil/coVR3DTransRotInteractor.h>
+#include <OpenVRUI/osg/mathUtils.h>
 
 #include <climits>
 
@@ -33,7 +34,6 @@
 
 using namespace opencover;
 
-
 class Cam
 {   
 public:
@@ -47,6 +47,7 @@ public:
 
     Cam(const osg::Vec3 pos, const osg::Vec2 rot, const std::vector<osg::Vec3> &observationPoints, const std::string name);
     Cam(const osg::Vec3 pos, const osg::Vec2 rot,const std::string name);
+    Cam(coCoord m,const std::string name);
     ~Cam();
     std::vector<double> getVisMat(){return visMat;}
 
@@ -103,6 +104,7 @@ class CamPosition
 public:
     static size_t counter;
     bool searchSpaceState;
+    bool isFinalCamPos;
     CamPosition(osg::Matrix m);
     ~CamPosition(){}
 
@@ -119,11 +121,15 @@ public:
         localDCS->setMatrix(matrix1);
         osg::Vec3 poslocal= viewpointInteractor->getMatrix().getTrans();
         std::cout<<"Camera in World: "<<name<<poslocal.x()<<"|"<<poslocal.y()<<"|"<<poslocal.z()<<std::endl;
+        updateCamMatrixes();
     }
 
     void preFrame();
     void createCamsInSearchSpace();
     void setSearchSpaceState(bool state);
+    void updateCamMatrixes();
+
+    std::vector<Cam*> allCameras;
 
 private:
     std::string name;
@@ -134,6 +140,7 @@ private:
     osg::ref_ptr<osg::MatrixTransform> localDCS;
     osg::ref_ptr<osg::Group> searchSpaceGroup;
     std::vector<osg::ref_ptr<osg::MatrixTransform>> searchSpace;
+
 
 
 

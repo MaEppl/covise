@@ -11,6 +11,11 @@
 #include <EKU.h>
 using namespace opencover;
 
+void printCoCoord(coCoord m)
+{
+    std::cout<<"translation: "<<"x:"<<m.xyz[0]<< " y:"<<m.xyz[1]<<" z:"<<m.xyz[2]<<std::endl;
+    std::cout<<"rotation: "<<"z:"<<m.hpr[0]<< " x:"<<m.hpr[1]<<" y:"<<m.hpr[2]<<std::endl;
+}
 double Cam::imgHeightPixel = 1080;
 double Cam::imgWidthPixel = 1920;
 double Cam::fov = 60;
@@ -22,9 +27,7 @@ double Cam::imgHeight = Cam::imgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
 
 Cam::Cam(const osg::Vec3 pos, const osg::Vec2 rot, const std::vector<osg::Vec3> &observationPoints,const std::string name):pos(pos),rot(rot),name(name)
 {
-
     calcVisMat(observationPoints);
-
 }
 
 Cam::Cam(const osg::Vec3 pos, const osg::Vec2 rot, const std::string name):pos(pos),rot(rot),name(name)
@@ -36,15 +39,20 @@ Cam::~Cam()
 {
 
 }
+Cam::Cam(coCoord matrix,std::string name):pos(matrix.xyz),rot(matrix.hpr[0],matrix.hpr[1]),name(name)
+{
 
+    //calcVisMat(observationPoints);
+
+}
 
 void Cam::calcVisMat(const std::vector<osg::Vec3> &observationPoints)
 {
      visMat.clear();
 
-    osg::Matrix T = osg::Matrix::translate(-pos);
-    osg::Matrix zRot = osg::Matrix::rotate(-rot.x(), osg::Z_AXIS);
-    osg::Matrix yRot = osg::Matrix::rotate(-rot.y(), osg::Y_AXIS);
+    osg::Matrix T = osg::Matrix::translate(pos);
+    osg::Matrix zRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.x()), osg::Z_AXIS);
+    osg::Matrix yRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.y()), osg::X_AXIS);
     // BUGFIX: still problem at borders?
 
     size_t cnt =1;
@@ -53,10 +61,11 @@ void Cam::calcVisMat(const std::vector<osg::Vec3> &observationPoints)
     {
 
 
-        auto newPoint = p*T*zRot*yRot;
-        if((newPoint.x()<=Cam::depthView ) && (newPoint.x()>=0) &&
-           (std::abs(newPoint.y()) <= Cam::imgWidth/2 * newPoint.x()/Cam::depthView) &&
-           (std::abs(newPoint.z())<=Cam::imgHeight/2 * newPoint.x()/Cam::depthView))
+        osg::Vec3 newPoint = p*T*zRot*yRot;
+       // std::cout<<"newPoint"<<newPoint.x()<<","<<newPoint.y()<<","<<newPoint.z()<<std::endl;
+        if((newPoint.y()<=Cam::depthView ) && (newPoint.y()>=0) &&
+           (std::abs(newPoint.x()) <= Cam::imgWidth/2 * newPoint.y()/Cam::depthView) &&
+           (std::abs(newPoint.z())<=Cam::imgHeight/2 * newPoint.y()/Cam::depthView))
         {
             if(calcIntersection(p)==false)
                 visMat.push_back(1);//*calcRangeDistortionFactor(newPoint));//*calcRangeDistortionFactor(newPoint));
@@ -299,6 +308,7 @@ CamPosition::CamPosition(osg::Matrix m)
 {
     counter ++;
     searchSpaceState = false;
+    isFinalCamPos = false;
 
     camDraw = new CamDrawable();
 
@@ -319,11 +329,18 @@ CamPosition::CamPosition(osg::Matrix m)
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
     localDCS->addChild(searchSpaceGroup.get());
+
+    createCamsInSearchSpace();
+    searchSpaceGroup->setNodeMask(0);
+    updateCamMatrixes();
+
     
 }
 void CamPosition::preFrame()
 {
     viewpointInteractor->preFrame();
+    if(viewpointInteractor->wasStarted())
+        std::cout<<"START"<<std::endl;
     if(viewpointInteractor->isRunning())
     {
         osg::Matrix local = viewpointInteractor->getMatrix();
@@ -331,21 +348,24 @@ void CamPosition::preFrame()
         //restrict rotation around y
     //    localEuler.hpr[2]=0.0;
         //cameras are always looking downwards -> no neg rotation around x
-    /*    if(localEuler.hpr[1] < 0.0)
-            localEuler.hpr[1] = 0.0;
-    */    localEuler.makeMat(local);
+     //   if(localEuler.hpr[1] < 0.0)
+     //       localEuler.hpr[1] = 0.0;
+        localEuler.makeMat(local);
         localDCS->setMatrix(local);
 
         std::cout<<"Rotation(around global axes): "<<"z:"<<localEuler.hpr[0]<< " x:"<<localEuler.hpr[1]<<" y:"<<localEuler.hpr[2]<<std::endl;
 
     }
+    if(viewpointInteractor->wasStopped())
+    {
+        updateCamMatrixes();
+    }
 }
 void CamPosition::createCamsInSearchSpace()
 {
-    searchSpaceState = true;
     //around z axis
-    int zMax = 40;
-    int stepSizeZ = 10; //in Degree
+    int zMax = 50;
+    int stepSizeZ = 20; //in Degree
 
     int xMax = 20;
     int stepSizeX = 10; //in Degree
@@ -358,9 +378,16 @@ void CamPosition::createCamsInSearchSpace()
 
     osg::Matrix m_new;
 
+ /*   newCoordPlus.makeMat(m_new);
+    searchSpace.push_back(new osg::MatrixTransform );
+    searchSpaceGroup->addChild(searchSpace.back().get());
+    searchSpace.back()->setMatrix(m_new);
+   // searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1]));
+    searchSpace.back()->addChild(camDraw->getCamGeode().get());
+*/
     int count =0;
-
-    for(int cnt = 0; cnt<zMax/stepSizeZ; cnt++)
+    int nbrOfCameras =0;
+    for(int cnt = 0 ; cnt<zMax/stepSizeZ; cnt++)//############## ===cnt = 0!!!!!!!!!!!muss hier hin
     {
 
         if(count == 0)
@@ -385,14 +412,15 @@ void CamPosition::createCamsInSearchSpace()
             else
                 newCoordPlus.hpr[1] += stepSizeX;
 
+            nbrOfCameras++;
             newCoordPlus.makeMat(m_new);
             searchSpace.push_back(new osg::MatrixTransform );
             searchSpaceGroup->addChild(searchSpace.back().get());
             searchSpace.back()->setMatrix(m_new);
-            searchSpace.back()->setName("+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1]));
+            searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1]));
             searchSpace.back()->addChild(camDraw->getCamGeode().get());
-            std::cout<<"Rotation+++++++++++++: "<<"z:"<<newCoordPlus.hpr[0]<< " x:"<<newCoordPlus.hpr[1]<<" y:"<<newCoordPlus.hpr[2]<<std::endl;
-           // std::cout<<"Tramslation############: "<<"z:"<<coord.xyz[0]<< " x:"<<coord.xyz[1]<<" y:"<<coord.xyz[2]<<std::endl;
+            std::cout<<" + Search space Matrix"<<std::endl;
+            printCoCoord(newCoordPlus);
 
 
             if(countX==0)
@@ -400,16 +428,15 @@ void CamPosition::createCamsInSearchSpace()
             else
                 newCoordMinus.hpr[1] += stepSizeX;
 
-            // rot around z in - direction
-
+            nbrOfCameras++;
             newCoordMinus.makeMat(m_new);
             searchSpace.push_back(new osg::MatrixTransform );
             searchSpaceGroup->addChild(searchSpace.back().get());
             searchSpace.back()->setMatrix(m_new);
-            searchSpace.back()->setName("-MATRIX Z:" + std::to_string( newCoordMinus.hpr[0])+ " X:" +std::to_string( newCoordMinus.hpr[1]));
+            searchSpace.back()->setName(std::to_string(nbrOfCameras)+"-MATRIX Z:" + std::to_string( newCoordMinus.hpr[0])+ " X:" +std::to_string( newCoordMinus.hpr[1]));
             searchSpace.back()->addChild(camDraw->getCamGeode().get());
-            std::cout<<"Rotation-------------: "<<"z:"<<newCoordMinus.hpr[0]<< " x:"<<newCoordMinus.hpr[1]<<" y:"<<newCoordMinus.hpr[2]<<std::endl;
-            //  std::cout<<"Tramslation############: "<<"z:"<<coord.xyz[0]<< " x:"<<coord.xyz[1]<<" y:"<<coord.xyz[2]<<std::endl;
+            std::cout<<" - Search space Matrix"<<std::endl;
+            printCoCoord(newCoordMinus);
 
 
             countX++;
@@ -417,14 +444,48 @@ void CamPosition::createCamsInSearchSpace()
         }
     }
 }
+void CamPosition::updateCamMatrixes()
+{
+    if(!allCameras.empty())
+    {
+        for (auto x = allCameras.begin(); x != allCameras.end(); x++)
+        {
+            delete *x;
+        }
+
+        allCameras.clear();
+    }
+    int count = 0;
+    for(const auto& x :searchSpace)
+    {
+        count++;
+        std::string name = std::to_string(count);
+        osg::Quat q = localDCS.get()->getMatrix().getRotate() * x->getMatrix().getRotate();
+        osg::Matrix tmp;
+        tmp.setRotate(q);
+        tmp.setTrans(localDCS.get()->getMatrix().getTrans());
+        std::cout<<"#########################################################"<<std::endl;
+
+        std::cout<<"localDCS"<<std::endl;
+        coCoord test = localDCS->getMatrix();
+        printCoCoord(test);
+        std::cout<<"Verschobene"<<std::endl;
+        printCoCoord( x->getMatrix());
+
+        coCoord euler = tmp;
+        std::cout<<"update Cam Matrix"<<std::endl;
+        printCoCoord(euler);
+        allCameras.push_back(new Cam(euler,name));
+
+    }
+    std::cout<<"All cam positions are updated!"<<std::endl;
+}
 
 void CamPosition::setSearchSpaceState(bool state)
 {
-    //for(auto &x : searchSpace)
-      //  searchSpaceGroup->removeChild(x);
 
-    if(searchSpaceState == false)
-        createCamsInSearchSpace();
+   // if(searchSpaceState == false)
+        //createCamsInSearchSpace();
 
     if(state)
         searchSpaceGroup->setNodeMask(UINT_MAX);
