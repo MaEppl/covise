@@ -50,9 +50,9 @@ void Cam::calcVisMat(const std::vector<osg::Vec3> &observationPoints)
 {
      visMat.clear();
 
-    osg::Matrix T = osg::Matrix::translate(pos);
-    osg::Matrix zRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.x()), osg::Z_AXIS);
-    osg::Matrix yRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.y()), osg::X_AXIS);
+    osg::Matrix T = osg::Matrix::translate(-pos);
+    osg::Matrix zRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.x()+180), osg::Z_AXIS);
+    osg::Matrix yRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.y()), osg::Y_AXIS);
     // BUGFIX: still problem at borders?
 
     size_t cnt =1;
