@@ -64,7 +64,7 @@ public:
 protected:
     const std::string name;
 private:
-
+    //osg::Box *mySphere; // for visualization
     // Calculates if Obstacles are in line of sigth betwenn camera and observation Point
     bool calcIntersection(const osg::Vec3d& end);
     // sensor will gather the most relevant data only at a particular distance with gradually fading efficiency on either side of it

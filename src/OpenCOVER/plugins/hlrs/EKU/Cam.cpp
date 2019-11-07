@@ -41,7 +41,9 @@ Cam::~Cam()
 }
 Cam::Cam(coCoord matrix,std::string name):pos(matrix.xyz),rot(matrix.hpr[0],matrix.hpr[1]),name(name)
 {
-
+    std::cout<<"new Cam"<<std::endl;
+    testMatrix = matrix;
+    printCoCoord(testMatrix);
     //calcVisMat(observationPoints);
 
 }
@@ -51,8 +53,8 @@ void Cam::calcVisMat(const std::vector<osg::Vec3> &observationPoints)
      visMat.clear();
 
     osg::Matrix T = osg::Matrix::translate(-pos);
-    osg::Matrix zRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.x()+180), osg::Z_AXIS);
-    osg::Matrix yRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.y()), osg::Y_AXIS);
+    osg::Matrix zRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.x()), osg::Z_AXIS);
+    osg::Matrix yRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.y()), osg::X_AXIS);
     // BUGFIX: still problem at borders?
 
     size_t cnt =1;
@@ -62,10 +64,24 @@ void Cam::calcVisMat(const std::vector<osg::Vec3> &observationPoints)
 
 
         osg::Vec3 newPoint = p*T*zRot*yRot;
-       // std::cout<<"newPoint"<<newPoint.x()<<","<<newPoint.y()<<","<<newPoint.z()<<std::endl;
+ /*     // For Visualization of transfered Point
+        mySphere = new osg::Box(newPoint,2,2,2);
+        osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
+        mySphereDrawable->setColor(osg::Vec4(1., 1., 0., 1.0f));
+        //red color
+        mySphereDrawable->setColor(osg::Vec4(1., 0., 0., 1.0f));
+        osg::Geode *myGeode = new osg::Geode();
+        myGeode->addDrawable(mySphereDrawable);
+        myGeode->setName("SafetyZone");
+        cover->getObjectsRoot()->addChild(myGeode);
+     //   std::cout<<"D: "<<newPoint.y()<<" <= "<<Cam::depthView<<" && "<<newPoint.y()<<" >= "<<0<<std::endl;
+     //   std::cout<<"x: "<<std::abs(newPoint.x()) <<" <= "<<Cam::imgWidth/2 * newPoint.y()/Cam::depthView<<std::endl;
+     //   std::cout<<"H: "<<std::abs(newPoint.z())<<" <= "<<Cam::imgHeight/2 * newPoint.y()/Cam::depthView<<std::endl;
+*/
+        newPoint.set(newPoint.x(),newPoint.y()*-1,newPoint.z());
         if((newPoint.y()<=Cam::depthView ) && (newPoint.y()>=0) &&
            (std::abs(newPoint.x()) <= Cam::imgWidth/2 * newPoint.y()/Cam::depthView) &&
-           (std::abs(newPoint.z())<=Cam::imgHeight/2 * newPoint.y()/Cam::depthView))
+           (std::abs(newPoint.z()) <=Cam::imgHeight/2 * newPoint.y()/Cam::depthView))
         {
             if(calcIntersection(p)==false)
                 visMat.push_back(1);//*calcRangeDistortionFactor(newPoint));//*calcRangeDistortionFactor(newPoint));
@@ -74,6 +90,8 @@ void Cam::calcVisMat(const std::vector<osg::Vec3> &observationPoints)
         }
         else
             visMat.push_back(0);
+
+
 
 
         std::cout <<"P"<<cnt<<": "<<visMat.back()<<" ";
@@ -359,6 +377,10 @@ void CamPosition::preFrame()
     if(viewpointInteractor->wasStopped())
     {
         updateCamMatrixes();
+        osg::Matrix local = viewpointInteractor->getMatrix();
+        coCoord tmp =local;
+        //printCoCoord(tmp);
+
     }
 }
 void CamPosition::createCamsInSearchSpace()
@@ -374,7 +396,7 @@ void CamPosition::createCamsInSearchSpace()
     coCoord coord=m;
     coCoord newCoordPlus,newCoordMinus;
 
-    std::cout<<"StartPos: "<<"z:"<<coord.hpr[0]<< " x:"<<coord.hpr[1]<<" y:"<<coord.hpr[2]<<std::endl;
+    //std::cout<<"StartPos: "<<"z:"<<coord.hpr[0]<< " x:"<<coord.hpr[1]<<" y:"<<coord.hpr[2]<<std::endl;
 
     osg::Matrix m_new;
 
@@ -464,18 +486,18 @@ void CamPosition::updateCamMatrixes()
         osg::Matrix tmp;
         tmp.setRotate(q);
         tmp.setTrans(localDCS.get()->getMatrix().getTrans());
-        std::cout<<"#########################################################"<<std::endl;
+       // std::cout<<"#########################################################"<<std::endl;
 
-        std::cout<<"localDCS"<<std::endl;
+      //  std::cout<<"localDCS"<<std::endl;
         coCoord test = localDCS->getMatrix();
-        printCoCoord(test);
-        std::cout<<"Verschobene"<<std::endl;
-        printCoCoord( x->getMatrix());
+      //  printCoCoord(test);
+      //  std::cout<<"Verschobene"<<std::endl;
+      //  printCoCoord( x->getMatrix());
 
         coCoord euler = tmp;
-        std::cout<<"update Cam Matrix"<<std::endl;
-        printCoCoord(euler);
-        allCameras.push_back(new Cam(euler,name));
+     //   std::cout<<"update Cam Matrix"<<std::endl;
+     //   printCoCoord(euler);
+       allCameras.push_back(new Cam(euler,name));
 
     }
     std::cout<<"All cam positions are updated!"<<std::endl;
