@@ -19,7 +19,7 @@ void printCoCoord(coCoord m)
 double Cam::imgHeightPixel = 1080;
 double Cam::imgWidthPixel = 1920;
 double Cam::fov = 60;
-double Cam::depthView = 40;
+double Cam::depthView = 30;
 double Cam::focalLengthPixel = Cam::imgWidthPixel*0.5/(std::tan(Cam::fov*0.5*M_PI/180));
 double Cam::imgWidth = 2*depthView*std::tan(Cam::fov/2*osg::PI/180);
 double Cam::imgHeight = Cam::imgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
@@ -42,8 +42,6 @@ Cam::~Cam()
 Cam::Cam(coCoord matrix,std::string name):pos(matrix.xyz),rot(matrix.hpr[0],matrix.hpr[1]),name(name)
 {
     std::cout<<"new Cam"<<std::endl;
-    testMatrix = matrix;
-    printCoCoord(testMatrix);
     //calcVisMat(observationPoints);
 
 }
@@ -64,8 +62,8 @@ void Cam::calcVisMat(const std::vector<osg::Vec3> &observationPoints)
 
 
         osg::Vec3 newPoint = p*T*zRot*yRot;
- /*     // For Visualization of transfered Point
-        mySphere = new osg::Box(newPoint,2,2,2);
+      // For Visualization of transfered Point
+      /*  mySphere = new osg::Box(newPoint,2,2,2);
         osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
         mySphereDrawable->setColor(osg::Vec4(1., 1., 0., 1.0f));
         //red color
@@ -74,10 +72,10 @@ void Cam::calcVisMat(const std::vector<osg::Vec3> &observationPoints)
         myGeode->addDrawable(mySphereDrawable);
         myGeode->setName("SafetyZone");
         cover->getObjectsRoot()->addChild(myGeode);
-     //   std::cout<<"D: "<<newPoint.y()<<" <= "<<Cam::depthView<<" && "<<newPoint.y()<<" >= "<<0<<std::endl;
-     //   std::cout<<"x: "<<std::abs(newPoint.x()) <<" <= "<<Cam::imgWidth/2 * newPoint.y()/Cam::depthView<<std::endl;
-     //   std::cout<<"H: "<<std::abs(newPoint.z())<<" <= "<<Cam::imgHeight/2 * newPoint.y()/Cam::depthView<<std::endl;
-*/
+        std::cout<<"D: "<<newPoint.y()<<" <= "<<Cam::depthView<<" && "<<newPoint.y()<<" >= "<<0<<std::endl;
+        std::cout<<"x: "<<std::abs(newPoint.x()) <<" <= "<<Cam::imgWidth/2 * newPoint.y()/Cam::depthView<<std::endl;
+        std::cout<<"H: "<<std::abs(newPoint.z())<<" <= "<<Cam::imgHeight/2 * newPoint.y()/Cam::depthView<<std::endl;
+        */
         newPoint.set(newPoint.x(),newPoint.y()*-1,newPoint.z());
         if((newPoint.y()<=Cam::depthView ) && (newPoint.y()>=0) &&
            (std::abs(newPoint.x()) <= Cam::imgWidth/2 * newPoint.y()/Cam::depthView) &&
@@ -160,11 +158,8 @@ CamDrawable::CamDrawable()
 
 CamDrawable::~CamDrawable()
 {
-    std::cout<<"CamDrawable Destructor called"<<std::endl;
+    std::cout<<"deleted CamDrawable"<<std::endl;
     count--;
-    cover->getObjectsRoot()->removeChild(camGeode.get());
-
-
 }
 
 osg::Geode* CamDrawable::plotCam()
@@ -327,12 +322,12 @@ CamPosition::CamPosition(osg::Matrix m)
     counter ++;
     searchSpaceState = false;
     isFinalCamPos = false;
+    name = "CamPosition"+std::to_string(counter);
 
-    camDraw = new CamDrawable();
-
+    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable());
 
     localDCS = new osg::MatrixTransform();
-    localDCS->setName("CamInteractorMatrix");
+    localDCS->setName(name);
     localDCS->setMatrix(m);
 
 
@@ -351,8 +346,55 @@ CamPosition::CamPosition(osg::Matrix m)
     createCamsInSearchSpace();
     searchSpaceGroup->setNodeMask(0);
     updateCamMatrixes();
+    cover->getObjectsRoot()->addChild(localDCS.get());
+
 
     
+}
+CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
+{
+    std::cout<<"The next CamPosition is created from a Truck"<<std::endl;
+    counter ++;
+    searchSpaceState = false;
+    isFinalCamPos = false;
+    name = "CamPosition"+std::to_string(counter);
+    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable());
+
+
+
+    localDCS = new osg::MatrixTransform();
+    localDCS->setName(name);
+    localDCS->setMatrix(m);
+
+
+    //create Interactors
+    float _interSize = cover->getSceneSize() / 25;
+    viewpointInteractor = new coVR3DTransRotInteractor(m, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
+    viewpointInteractor->show();
+    viewpointInteractor->enableIntersection();
+
+    localDCS->addChild(camDraw->getCamGeode().get());
+
+    searchSpaceGroup = new osg::Group;
+    searchSpaceGroup->setName("SearchSpace");
+    localDCS->addChild(searchSpaceGroup.get());
+
+    createCamsInSearchSpace();
+    searchSpaceGroup->setNodeMask(0);
+    updateCamMatrixes();
+}
+CamPosition::~CamPosition()
+{
+    if(myPump !=nullptr)
+    {
+       myPump=nullptr;
+    }
+    delete viewpointInteractor;
+    cover->getObjectsRoot()->removeChild(localDCS.get());
+
+    std::cout<<"deleted Camposition: "<<name<<std::endl;
+
+
 }
 void CamPosition::preFrame()
 {
@@ -400,7 +442,8 @@ void CamPosition::createCamsInSearchSpace()
 
     osg::Matrix m_new;
 
- /*   newCoordPlus.makeMat(m_new);
+  //For debugging
+/*   newCoordPlus.makeMat(m_new);
     searchSpace.push_back(new osg::MatrixTransform );
     searchSpaceGroup->addChild(searchSpace.back().get());
     searchSpace.back()->setMatrix(m_new);

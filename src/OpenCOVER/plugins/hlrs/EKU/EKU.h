@@ -72,16 +72,23 @@ class Pump
 public:
     static size_t counter;
 
-    Pump(osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> PumptruckSurface, osg::ref_ptr<osg::Node> cabine, osg::Vec3 pos, int rotZ);
+    Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::shared_ptr<SafetyZone>> &allSZ,osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> PumptruckSurface, osg::ref_ptr<osg::Node> cabine, osg::Vec3 pos, int rotZ);
     ~Pump();
 
-    std::vector<CamPosition*> possibleCamLocations;
-    std::vector<CamDrawable*> placedCameras;
-    std::array<SafetyZone*,2> safetyZones;
+    //std::vector<CamPosition*> possibleCamLocations;
+    //std::vector<CamDrawable*> placedCameras;
+    //std::array<SafetyZone*,2> safetyZones;
 
     osg::Vec3 getPos()const{return position;}
     int getRot()const{return rotZ;}
     osg::ref_ptr<osg::Group> getPumpDrawable()const{return upperGroup;}
+
+    std::weak_ptr<SafetyZone> szLeft;
+    std::weak_ptr<SafetyZone> szRight;
+    std::weak_ptr<CamPosition> camLeft;
+    std::weak_ptr<CamPosition> camRight;
+
+
 
     //User Interaction
     void preFrame();
@@ -104,15 +111,16 @@ private:
     osg::ref_ptr<osg::Group> group1;
     osg::ref_ptr<osg::Group> upperGroup;
 
+    std::vector<std::shared_ptr<CamPosition>> &allCams;
+    std::vector<std::shared_ptr<SafetyZone>> &allSZ;
+
+
 
     //user Interaction
     mySensor *aSensor;
-    mySensor *bSensor;
 
     vrui::coTrackerButtonInteraction *myinteractionA;
-    vrui::coTrackerButtonInteraction *myinteractionB;
     bool interActingA;
-    bool interActingB;
     coSensorList sensorList;
 
 
@@ -124,43 +132,40 @@ class EKU: public opencover::coVRPlugin, public opencover::ui::Owner
     friend class mySensor;
 public:
 
-     SZ2 *test;
-
-    coVR3DTransRotInteractor *planeInteractor;
     EKU();
     ~EKU();
     bool init();
     void doAddTruck();
-    void doRemoveTruck();
+    void doRemoveTruck(std::unique_ptr<Pump> &t);
     void doAddCam();
-    void doRemoveCamera();
+    void doRemoveCam(std::shared_ptr<CamPosition> &c);
 
-    std::vector<osg::Vec3>& getObservationPoints(){return observationPoints;}
-    //osg::Material *mtl;
     virtual void preFrame();
 
-    std::vector<SafetyZone*> safetyZones;
+    std::vector<std::shared_ptr<SafetyZone>> safetyZones;
+    std::vector<std::shared_ptr<CamPosition>> allCamPositions;
+    std::vector<std::unique_ptr<Pump>> allPumps;
 
-    std::vector<Cam*> cameras;
+
+
+    //std::vector<Cam*> cameras;
     std::vector<CamDrawable*> finalCams;
-    std::vector<Pump*> allPumps;
+
 
     SZ* newSZ;
     GA *ga;
     static EKU *plugin;
     osg::ref_ptr<osg::Group> finalScene;
     void restrictMovement(osg::Matrix &mat);
-    osg::BoundingSphere getBoundingSphere(osg::Node *objRoot);
 private:
     //UI
     ui::Menu *EKUMenu  = nullptr;
-    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr;
+    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*RmvCam = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr,*CalcVisMat = nullptr;
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
     ui::Group *Frame = nullptr;
     ui::Label *Label = nullptr;
     ui::Button *MakeCamsInvisible = nullptr, *ShowSearchSpace = nullptr;
 
-    std::vector<osg::Vec3> observationPoints;
 
     osg::MatrixTransform *mymtf;
     vrui::coTrackerButtonInteraction *myinteraction;
@@ -182,10 +187,7 @@ private:
 
 
     void createSafetyZone(float xpos,float ypos,SafetyZone::Priority prio);
-    void updateObservationPointPosition();
-    void createCamsForEachCamPos();
 
-    void updateAllCameras();
     //Raycasting for intersection calculation is too slow with many vertices
     void disactivateDetailedRendering(){
          truck->setNodeMask(0);
@@ -198,17 +200,8 @@ private:
 
     void calcPercentageOfCoveredSafetyZones();
 
+    CamPosition *testCam;
 
-
-    void removeCamDrawable(CamDrawable *cam);
-
-
-    osg::ref_ptr<osg::Group> camPointVisualization;
-    void showAllCamsAtOnePoint();
-
-
-  //  FileReaderWriter *readerWriter;
-  //  FindNamedNode fnn;//NOTE: make to pointer
 
 };
 

@@ -83,7 +83,7 @@ private:
 
 public:
     static size_t count;
-    Cam* cam=nullptr;
+    Cam* cam=nullptr; //brauch ich das hier noch???? -->wenn auch als unique ptr?
     osg::Geode* plotCam();
     void updateFOV(float value);
     void updateVisibility(float value);
@@ -98,15 +98,17 @@ public:
     osg::ref_ptr<osg::Geode> getCamGeode()const{return camGeode;}
 };
 
-
+class Pump;
 class CamPosition
 {
 public:
     static size_t counter;
     bool searchSpaceState;
     bool isFinalCamPos;
+    CamPosition(osg::Matrix m,Pump *pump);
     CamPosition(osg::Matrix m);
-    ~CamPosition(){}
+
+    ~CamPosition();
 
     osg::ref_ptr<osg::MatrixTransform> getCamGeode()const{return localDCS;}
 
@@ -114,7 +116,7 @@ public:
         return localDCS.get()->getMatrix().getTrans();}
 
     osg::Matrix getMatrix(){return viewpointInteractor->getMatrix();}
-
+    std::string getName(){return name;}
     void setPosition( osg::Matrix matrix1)
     {
         viewpointInteractor->updateTransform(matrix1);
@@ -133,8 +135,9 @@ public:
 
 private:
     std::string name;
+    std::unique_ptr<CamDrawable> camDraw;
+    Pump* myPump = nullptr;
 
-    CamDrawable* camDraw;
 
     coVR3DTransRotInteractor *viewpointInteractor;
     osg::ref_ptr<osg::MatrixTransform> localDCS;
