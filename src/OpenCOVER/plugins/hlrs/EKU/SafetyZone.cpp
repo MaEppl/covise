@@ -133,7 +133,8 @@ void SafetyZone::setStateSet(osg::StateSet *stateSet)
 }
 SafetyZone::~SafetyZone()
 {
-    fprintf(stderr, "Removed SafetyZone\n");
+    safetyZoneGeode->getParent(0)->removeChild(safetyZoneGeode.get());
+    std::cout<<"Removed Safety Zone"<<std::endl;
 }
 
 bool::SafetyZone::destroy()
@@ -141,7 +142,7 @@ bool::SafetyZone::destroy()
     //is this function necessary or do it in Destructor?
     //free memory space???
     //call desctuctor???
-    cover->getObjectsRoot()->removeChild(safetyZoneGeode.get());
+    safetyZoneGeode->getParent(0)->removeChild(safetyZoneGeode);
     return true;
 }
 

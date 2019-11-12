@@ -47,6 +47,7 @@ public:
     std::cout<<name<<" SZ: "<<m.getTrans().x()<<", "<<m.getTrans().y()<<", "<<m.getTrans().z()<<std::endl;
     }
     osg::Matrix getMatrix(){return mat;}
+    std::string &getName(){return name;}
 private:
     float length = 2;//8
     float width = 2;//2

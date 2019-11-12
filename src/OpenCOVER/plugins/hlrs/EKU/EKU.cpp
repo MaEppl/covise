@@ -540,13 +540,13 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //Add PRIO1
     AddPRIO1 = new ui::Action(EKUMenu , "addPRIO1");
     AddPRIO1->setCallback([this](){
-        //createSafetyZone(-6.0,-5.0,SafetyZone::PRIO1);
+        doAddPRIO1();
     });
 
     //Add PRIO2
     AddPRIO2 = new ui::Action(EKUMenu , "addPRIO2");
     AddPRIO2->setCallback([this](){
-        //createSafetyZone(-6.0,-5.0,SafetyZone::PRIO2);
+        doAddPRIO2();
     });
 
     //Remove Truck
@@ -560,6 +560,12 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     RmvCam->setCallback([this](){
             doRemoveCam(allCamPositions.back());
     });
+    //Remove Safety Zone
+    RmvSafetyZone = new ui::Action(EKUMenu , "removeSafetyZone");
+    RmvSafetyZone->setCallback([this](){
+            doRemovePRIOZone(safetyZones.back());
+    });
+
 
 
 
@@ -773,7 +779,15 @@ void EKU::doRemoveTruck(std::unique_ptr<Pump> &truck)
         {   string id = truck->camRight.lock()->getName();
             allCamPositions.erase(std::remove_if(allCamPositions.begin(),allCamPositions.end(),[&id](std::shared_ptr<CamPosition>const& it){return it->getName() == id;}));
         }
-        //TODO: delete SafetyZones from list:
+        // delete SafetyZones from list:
+        if(!truck->szLeft.expired())
+        {    string id = truck->szLeft.lock()->getName();
+             safetyZones.erase(std::remove_if(safetyZones.begin(),safetyZones.end(),[&id](std::shared_ptr<SafetyZone>const& it){return it->getName() == id;}));
+        }
+        if(!truck->szRight.expired())
+        {   string id = truck->szRight.lock()->getName();
+            safetyZones.erase(std::remove_if(safetyZones.begin(),safetyZones.end(),[&id](std::shared_ptr<SafetyZone>const& it){return it->getName() == id;}));
+        }
 
         //delete Pump
         allPumps.erase(std::remove_if(allPumps.begin(),allPumps.end(),[&truck](std::unique_ptr<Pump>const& it){return truck == it;}));
@@ -810,10 +824,48 @@ void EKU::doRemoveCam(std::shared_ptr<CamPosition> &camera)
     }
     else
         std::cout<<"No cameras available"<<std::endl;
+}
+
+void EKU::doAddPRIO1()
+{
+    osg::Matrix localSafetyZone;
+    localSafetyZone.setTrans(osg::Vec3(0.0,10.0,0.0));
+    std::shared_ptr<SafetyZone> sz =std::make_shared<SafetyZone>(localSafetyZone,SafetyZone::PRIO1,4.0f,4.0f,2.0f);
+    safetyZones.push_back(std::move(sz));
+    cover->getObjectsRoot()->addChild(safetyZones.back()->getSafetyZoneDrawable().get());
+
+    std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
 
 
 }
+void EKU::doAddPRIO2()
+{
+    osg::Matrix localSafetyZone;
+    localSafetyZone.setTrans(osg::Vec3(0.0,0.0,0.0));
+    std::shared_ptr<SafetyZone> sz =std::make_shared<SafetyZone>(localSafetyZone,SafetyZone::PRIO2,4.0f,4.0f,2.0f);
+    safetyZones.push_back(std::move(sz));
+    cover->getObjectsRoot()->addChild(safetyZones.back()->getSafetyZoneDrawable().get());
 
+    std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
+
+
+}
+void EKU::doRemovePRIOZone(std::shared_ptr<SafetyZone>& s)
+{
+    if(!safetyZones.empty())
+    {
+        std::cout<<"nbr of SZ before"<<safetyZones.size()<<std::endl;
+
+        safetyZones.erase(std::remove_if(safetyZones.begin(),safetyZones.end(),[&s](std::shared_ptr<SafetyZone>const& it){return s == it;}));
+
+        std::cout<<"nbr of SZ after"<<safetyZones.size()<<std::endl;
+    }
+    else
+        std::cout<<"No SZ available"<<std::endl;
+
+    std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
+
+}
 
 
 COVERPLUGIN(EKU)
