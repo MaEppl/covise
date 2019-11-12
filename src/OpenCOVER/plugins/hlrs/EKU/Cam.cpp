@@ -385,12 +385,9 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
 }
 CamPosition::~CamPosition()
 {
-    if(myPump !=nullptr)
-    {
-       myPump=nullptr;
-    }
-    delete viewpointInteractor;
-    cover->getObjectsRoot()->removeChild(localDCS.get());
+
+    localDCS->getParent(0)->removeChild(localDCS);
+     delete viewpointInteractor;
 
     std::cout<<"deleted Camposition: "<<name<<std::endl;
 

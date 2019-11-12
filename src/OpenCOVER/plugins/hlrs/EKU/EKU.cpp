@@ -156,6 +156,7 @@ void Pump::preFrame()
 
 */
 }
+
 void EKU::preFrame()
 {
     sensorList.update();
@@ -300,19 +301,15 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
      upperGroup->setName("Truck"+std::to_string(Pump::counter));
      upperGroup->addChild(fullMat.get());
     // for(const auto& x : possibleCamLocations)
-     upperGroup->addChild(camLeft.lock()->getCamGeode().get());
-     upperGroup->addChild(camRight.lock()->getCamGeode().get());
-
-     camLeft.lock()->setPosition(localInteractor1*full);
-     camRight.lock()->setPosition(localInteractor2*full);
+    upperGroup->addChild(camLeft.lock()->getCamGeode().get());
+    upperGroup->addChild(camRight.lock()->getCamGeode().get());
+    camLeft.lock()->setPosition(localInteractor1*full);
+    camRight.lock()->setPosition(localInteractor2*full);
 
     // possibleCamLocations.at(0)->setPosition(localInteractor1*full);
     // possibleCamLocations.at(1)->setPosition(localInteractor2*full);
 
      cover->getObjectsRoot()->addChild(upperGroup.get());
-
-
-
 }
 Pump::~Pump()
 {
@@ -320,7 +317,7 @@ Pump::~Pump()
         sensorList.remove();
     delete aSensor;
     std::cout<<"deleted Pump: "<<name<<std::endl;
-    cover->getObjectsRoot()->removeChild(upperGroup.get());
+    upperGroup->getParent(0)->removeChild(upperGroup);
 }
 /*void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
 {
