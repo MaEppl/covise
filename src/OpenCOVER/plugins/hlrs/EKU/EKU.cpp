@@ -503,7 +503,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //draw Pumps:
     std::unique_ptr<Pump> newPump(new Pump(allCamPositions,safetyZones,truck,truckSurfaceBox,truckCabine));
     allPumps.push_back(std::move(newPump));
-/*
+
     int cnt =0;
     for(int i = 0;i<5;i++)
     {
@@ -526,7 +526,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
         cnt ++;
     }
- */
+
 
 
     //Create UI
@@ -690,7 +690,6 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         }
       //  this-> activateDetailedRendering();
     });
-
     //Make Cameras invisible
     MakeCamsInvisible = new ui::Button(EKUMenu , "CamerasVisible");
     MakeCamsInvisible->setText("CamerasVisible");
@@ -698,17 +697,17 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     MakeCamsInvisible->setCallback([this](bool state){
         if(!state)
         {
-            for(auto x :finalCams)
+            for(const auto &x :allCamPositions)
             {
-              x->disactivate();
+              x->camDraw->disactivate();
             }
            // MakeCamsInvisible->setState(false);
         }
         else
         {
-            for(auto x :finalCams)
+            for(const auto &x :allCamPositions)
             {
-              x->activate();
+              x->camDraw->activate();
             }
         }
     });

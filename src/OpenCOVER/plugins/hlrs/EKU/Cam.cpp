@@ -444,6 +444,7 @@ void CamPosition::preFrame()
     {
         if(viewpointInteractor->wasStarted())
         {
+            camDraw->activate();
             size_t cnt=0;
             for(const auto &x : camDraw->cam->visMat)
             {
@@ -454,6 +455,7 @@ void CamPosition::preFrame()
         }
         if(viewpointInteractor->wasStopped())
         {
+            camDraw->disactivate();
             size_t cnt=0;
             for(const auto &x : camDraw->cam->visMat)
             {
