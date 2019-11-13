@@ -25,28 +25,22 @@ double Cam::imgWidth = 2*depthView*std::tan(Cam::fov/2*osg::PI/180);
 double Cam::imgHeight = Cam::imgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
 
 
-Cam::Cam(const osg::Vec3 pos, const osg::Vec2 rot, const std::vector<osg::Vec3> &observationPoints,const std::string name):pos(pos),rot(rot),name(name)
+Cam::Cam(coCoord matrix,std::string name):pos(matrix.xyz),rot(matrix.hpr[0],matrix.hpr[1]),name(name)
 {
-    calcVisMat(observationPoints);
+    std::cout<<"new Cam"<<std::endl;
 }
-
-Cam::Cam(const osg::Vec3 pos, const osg::Vec2 rot, const std::string name):pos(pos),rot(rot),name(name)
-{
-
-}
-
 Cam::~Cam()
 {
 
 }
-Cam::Cam(coCoord matrix,std::string name):pos(matrix.xyz),rot(matrix.hpr[0],matrix.hpr[1]),name(name)
+void Cam::setPosition(coCoord& m)
 {
-    std::cout<<"new Cam"<<std::endl;
-    //calcVisMat(observationPoints);
-
+    pos = m.xyz;
+    rot.set(m.hpr[0],m.hpr[1]);
 }
 
-void Cam::calcVisMat(const std::vector<osg::Vec3> &observationPoints)
+
+void Cam::calcVisMat()
 {
      visMat.clear();
 
@@ -57,44 +51,43 @@ void Cam::calcVisMat(const std::vector<osg::Vec3> &observationPoints)
 
     size_t cnt =1;
     std::cout<<name<<": ";
-    for(const auto& p : observationPoints)
+    for(const auto& p : EKU::safetyZones)
     {
-
-
-        osg::Vec3 newPoint = p*T*zRot*yRot;
-      // For Visualization of transfered Point
-      /*  mySphere = new osg::Box(newPoint,2,2,2);
-        osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
-        mySphereDrawable->setColor(osg::Vec4(1., 1., 0., 1.0f));
-        //red color
-        mySphereDrawable->setColor(osg::Vec4(1., 0., 0., 1.0f));
-        osg::Geode *myGeode = new osg::Geode();
-        myGeode->addDrawable(mySphereDrawable);
-        myGeode->setName("SafetyZone");
-        cover->getObjectsRoot()->addChild(myGeode);
-        std::cout<<"D: "<<newPoint.y()<<" <= "<<Cam::depthView<<" && "<<newPoint.y()<<" >= "<<0<<std::endl;
-        std::cout<<"x: "<<std::abs(newPoint.x()) <<" <= "<<Cam::imgWidth/2 * newPoint.y()/Cam::depthView<<std::endl;
-        std::cout<<"H: "<<std::abs(newPoint.z())<<" <= "<<Cam::imgHeight/2 * newPoint.y()/Cam::depthView<<std::endl;
-        */
-        newPoint.set(newPoint.x(),newPoint.y()*-1,newPoint.z());
-        if((newPoint.y()<=Cam::depthView ) && (newPoint.y()>=0) &&
-           (std::abs(newPoint.x()) <= Cam::imgWidth/2 * newPoint.y()/Cam::depthView) &&
-           (std::abs(newPoint.z()) <=Cam::imgHeight/2 * newPoint.y()/Cam::depthView))
-        {
-            if(calcIntersection(p)==false)
-                visMat.push_back(1);//*calcRangeDistortionFactor(newPoint));//*calcRangeDistortionFactor(newPoint));
+            osg::Vec3 newPoint = p->getPosition()*T*zRot*yRot;
+          // For Visualization of transfered Point
+          /*  mySphere = new osg::Box(newPoint,2,2,2);
+            osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
+            mySphereDrawable->setColor(osg::Vec4(1., 1., 0., 1.0f));
+            //red color
+            mySphereDrawable->setColor(osg::Vec4(1., 0., 0., 1.0f));
+            osg::Geode *myGeode = new osg::Geode();
+            myGeode->addDrawable(mySphereDrawable);
+            myGeode->setName("SafetyZone");
+            cover->getObjectsRoot()->addChild(myGeode);
+            std::cout<<"D: "<<newPoint.y()<<" <= "<<Cam::depthView<<" && "<<newPoint.y()<<" >= "<<0<<std::endl;
+            std::cout<<"x: "<<std::abs(newPoint.x()) <<" <= "<<Cam::imgWidth/2 * newPoint.y()/Cam::depthView<<std::endl;
+            std::cout<<"H: "<<std::abs(newPoint.z())<<" <= "<<Cam::imgHeight/2 * newPoint.y()/Cam::depthView<<std::endl;
+            */
+            newPoint.set(newPoint.x(),newPoint.y()*-1,newPoint.z());
+            if((newPoint.y()<=Cam::depthView ) && (newPoint.y()>=0) &&
+               (std::abs(newPoint.x()) <= Cam::imgWidth/2 * newPoint.y()/Cam::depthView) &&
+               (std::abs(newPoint.z()) <=Cam::imgHeight/2 * newPoint.y()/Cam::depthView))
+            {
+                if(calcIntersection(p->getPosition())==false)
+                    visMat.push_back(1);//*calcRangeDistortionFactor(newPoint));//*calcRangeDistortionFactor(newPoint));
+                else
+                    visMat.push_back(0);
+            }
             else
                 visMat.push_back(0);
-        }
-        else
-            visMat.push_back(0);
 
 
 
 
-        std::cout <<"P"<<cnt<<": "<<visMat.back()<<" ";
-        cnt++;
+            std::cout <<"P"<<cnt<<": "<<visMat.back()<<" ";
+            cnt++;
     }
+
     std::cout<<" "<<std::endl;
 }
 bool Cam::calcIntersection(const osg::Vec3d& end)
@@ -135,26 +128,45 @@ double Cam::calcRangeDistortionFactor(const osg::Vec3d &point)
 
 size_t CamDrawable::count=0;
 
-CamDrawable::CamDrawable(Cam* cam):cam(cam)
+CamDrawable::CamDrawable(coCoord &m)
 {
     count++;
     fprintf(stderr, "new CamDrawable from Point\n");
-
+    cam = std::unique_ptr<Cam>(new Cam(m,"Original from CamDrawable"));
+    //create pyramide
     camGeode = plotCam();
     camGeode->setName("CamDrawable"+std::to_string(CamDrawable::count));
+    //create interactor
+  /*  mySphere = new osg::Sphere(verts.get()->at(0), 1.);
+    osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
+    mySphereDrawable->setColor(osg::Vec4(1., 0., 0., 1.0f));
+    interactorGeode = new osg::Geode();
+    interactorGeode->setName("Interactor");
+    interactorGeode->addDrawable(mySphereDrawable);
+    osg::StateSet *mystateSet = interactorGeode->getOrCreateStateSet();
+    setStateSet(mystateSet);
+    aSensor = new mySensor(interactorGeode, "showSZ", myinteraction, mySphereDrawable);
+    sensorList.append(aSensor);
+    */
 
 }
-
-CamDrawable::CamDrawable()
+void CamDrawable::setStateSet(osg::StateSet *stateSet)
 {
-    count++;
-    fprintf(stderr, "new CamDrawable from Point\n");
-
-    camGeode = plotCam();
-    camGeode->setName("CamDrawable"+std::to_string(CamDrawable::count));
-
+    osg::Material *material = new osg::Material();
+    material->setColorMode(osg::Material::DIFFUSE);
+    material->setDiffuse(osg::Material::FRONT_AND_BACK, osg::Vec4(1.0f, 0.0f, 0.0f, 0.5f));
+    osg::LightModel *defaultLm;
+    defaultLm = new osg::LightModel();
+    defaultLm->setLocalViewer(true);
+    defaultLm->setTwoSided(true);
+    defaultLm->setColorControl(osg::LightModel::SINGLE_COLOR);
+    stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
+    stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
 }
-
+void CamDrawable::preFrame()
+{
+    sensorList.update();
+}
 
 CamDrawable::~CamDrawable()
 {
@@ -324,7 +336,8 @@ CamPosition::CamPosition(osg::Matrix m)
     isFinalCamPos = false;
     name = "CamPosition"+std::to_string(counter);
 
-    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable());
+    coCoord mEuler= m;
+    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable(mEuler));
 
     localDCS = new osg::MatrixTransform();
     localDCS->setName(name);
@@ -358,7 +371,9 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
     searchSpaceState = false;
     isFinalCamPos = false;
     name = "CamPosition"+std::to_string(counter);
-    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable());
+
+    coCoord mEuler= m;
+    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable(mEuler));
 
 
 
@@ -374,6 +389,8 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
     viewpointInteractor->enableIntersection();
 
     localDCS->addChild(camDraw->getCamGeode().get());
+    localDCS->addChild(camDraw->getInteractorGeode().get());
+
 
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
@@ -396,31 +413,61 @@ CamPosition::~CamPosition()
 void CamPosition::preFrame()
 {
     viewpointInteractor->preFrame();
-    if(viewpointInteractor->wasStarted())
-        std::cout<<"START"<<std::endl;
-    if(viewpointInteractor->isRunning())
+    //change positions of cameras
+    if(EKU::modifyScene==true)
     {
-        osg::Matrix local = viewpointInteractor->getMatrix();
-        coCoord localEuler = local;
-        //restrict rotation around y
-    //    localEuler.hpr[2]=0.0;
-        //cameras are always looking downwards -> no neg rotation around x
-     //   if(localEuler.hpr[1] < 0.0)
-     //       localEuler.hpr[1] = 0.0;
-        localEuler.makeMat(local);
-        localDCS->setMatrix(local);
+        if(viewpointInteractor->wasStarted())
+            std::cout<<"START"<<std::endl;
+        if(viewpointInteractor->isRunning())
+        {
+            osg::Matrix local = viewpointInteractor->getMatrix();
+            coCoord localEuler = local;
+            //restrict rotation around y
+        //    localEuler.hpr[2]=0.0;
+            //cameras are always looking downwards -> no neg rotation around x
+         //   if(localEuler.hpr[1] < 0.0)
+         //       localEuler.hpr[1] = 0.0;
+            localEuler.makeMat(local);
+            localDCS->setMatrix(local);
 
-        std::cout<<"Rotation(around global axes): "<<"z:"<<localEuler.hpr[0]<< " x:"<<localEuler.hpr[1]<<" y:"<<localEuler.hpr[2]<<std::endl;
+            std::cout<<"Rotation(around global axes): "<<"z:"<<localEuler.hpr[0]<< " x:"<<localEuler.hpr[1]<<" y:"<<localEuler.hpr[2]<<std::endl;
+        }
+        if(viewpointInteractor->wasStopped())
+        {
+            updateCamMatrixes();
+            osg::Matrix local = viewpointInteractor->getMatrix();
+            coCoord tmp =local;
+            //printCoCoord(tmp);
+
+        }
 
     }
-    if(viewpointInteractor->wasStopped())
+    // use interactor to show all visible SZ
+    else
     {
-        updateCamMatrixes();
-        osg::Matrix local = viewpointInteractor->getMatrix();
-        coCoord tmp =local;
-        //printCoCoord(tmp);
+        if(viewpointInteractor->wasStarted())
+        {
+            size_t cnt=0;
+            for(const auto &x : camDraw->cam->visMat)
+            {
+                if(x==1)
+                    EKU::safetyZones.at(cnt)->updateColor();
+                cnt++;
+            }
+        }
+        if(viewpointInteractor->wasStopped())
+        {
+            size_t cnt=0;
+            for(const auto &x : camDraw->cam->visMat)
+            {
+                if(x==1)
+                    EKU::safetyZones.at(cnt)->resetColor();
+                cnt++;
+            }
 
+        }
     }
+    //camDraw->preFrame();
 }
 void CamPosition::createCamsInSearchSpace()
 {
@@ -540,6 +587,9 @@ void CamPosition::updateCamMatrixes()
        allCameras.push_back(new Cam(euler,name));
 
     }
+    //update pos of camDraw
+    coCoord euler =localDCS->getMatrix();
+    camDraw->cam->setPosition(euler);
     std::cout<<"All cam positions are updated!"<<std::endl;
 }
 

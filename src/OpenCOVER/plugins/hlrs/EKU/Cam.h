@@ -12,6 +12,10 @@
 
 #include<cover/coVRPluginSupport.h>
 #include <PluginUtil/coVR3DTransRotInteractor.h>
+#include <OpenVRUI/coTrackerButtonInteraction.h>
+#include <PluginUtil/coSensor.h>
+
+
 #include <OpenVRUI/osg/mathUtils.h>
 
 #include <climits>
@@ -32,6 +36,8 @@
 #include <osg/LightModel>
 #include<osgFX/Scribe>
 
+#include<Sensor.h>
+
 using namespace opencover;
 
 class Cam
@@ -45,22 +51,19 @@ public:
     static double depthView;
     static double focalLengthPixel;
 
-    Cam(const osg::Vec3 pos, const osg::Vec2 rot, const std::vector<osg::Vec3> &observationPoints, const std::string name);
-    Cam(const osg::Vec3 pos, const osg::Vec2 rot,const std::string name);
     Cam(coCoord m,const std::string name);
     ~Cam();
     std::vector<double> getVisMat(){return visMat;}
 
 
-    const osg::Vec2 rot; // [0]=alpha =zRot, [1]=beta =yRot
-    const osg::Vec3 pos;
-
-    //const osg::Vec3Array* obsPoints =nullptr; // NOTE: remove later
+    osg::Vec2 rot; // [0]=alpha =zRot, [1]=beta =yRot
+    osg::Vec3 pos;
 
     //check if points are visible for this camera
-    void calcVisMat(const std::vector<osg::Vec3> &observationPoints);
+    void calcVisMat();
     std::vector<double> visMat;
     std::string getName()const{return name;}
+    void setPosition(coCoord& m);
 protected:
     const std::string name;
 private:
@@ -72,6 +75,7 @@ private:
 
 
 };
+class mySensor;
 class CamPosition;
 class CamDrawable
 {
@@ -79,23 +83,35 @@ private:
     osg::ref_ptr<osg::Vec3Array> verts;
     osg::ref_ptr<osg::Vec4Array> colors;
     osg::ref_ptr<osg::Geode> camGeode;
+   // osg::ref_ptr<osg::Geode> interactorGeode;
+
+
+  /* for an additional Sensor
+    osg::Sphere *mySphere;
+    mySensor *aSensor;
+    vrui::coTrackerButtonInteraction *myinteraction;
+    coSensorList sensorList;
+    */
+    void setStateSet(osg::StateSet *stateSet);
 
 
 public:
     static size_t count;
-    Cam* cam=nullptr; //brauch ich das hier noch???? -->wenn auch als unique ptr?
+    std::unique_ptr<Cam> cam; //brauch ich das hier noch???? -->wenn auch als unique ptr?
     osg::Geode* plotCam();
+    CamDrawable(coCoord& m);
+    ~CamDrawable();
+
+    osg::ref_ptr<osg::Geode> getCamGeode()const{return camGeode;}
+    osg::ref_ptr<osg::Geode> getInteractorGeode()const{return interactorGeode;}
+
+    void preFrame();
     void updateFOV(float value);
     void updateVisibility(float value);
     void updateColor();
     void resetColor();
     void activate(){camGeode->setNodeMask(UINT_MAX);}
     void disactivate(){camGeode->setNodeMask(0);}
-    CamDrawable(Cam* cam);
-    CamDrawable();
-    ~CamDrawable();
-
-    osg::ref_ptr<osg::Geode> getCamGeode()const{return camGeode;}
 };
 
 class Pump;
@@ -132,10 +148,10 @@ public:
     void updateCamMatrixes();
 
     std::vector<Cam*> allCameras;
+    std::unique_ptr<CamDrawable> camDraw;
 
 private:
     std::string name;
-    std::unique_ptr<CamDrawable> camDraw;
     Pump* myPump = nullptr;
 
 

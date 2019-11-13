@@ -12,6 +12,11 @@
 #include<osgFX/Outline>
 
 using namespace opencover;
+bool EKU::modifyScene=true;
+std::vector<std::shared_ptr<SafetyZone>> EKU::safetyZones;
+std::vector<std::shared_ptr<CamPosition>> EKU::allCamPositions;
+std::vector<std::unique_ptr<Pump>> EKU::allPumps;
+
 
 EKU *EKU::plugin = NULL;
 void EKU::restrictMovement(osg::Matrix &mat)
@@ -31,85 +36,87 @@ void Pump::preFrame()
         camLeft.lock()->preFrame();
     if(!camRight.expired())
         camRight.lock()->preFrame();
-
-    sensorList.update();
-    //Test if button is pressed
-    int state = cover->getPointerButton()->getState();
-    if (myinteractionA->isRunning()) //when interacting the Sphere will be moved
+    if(EKU::modifyScene == true)
     {
-        static osg::Matrix invStartHand;
-        static osg::Matrix startPos,startPoscamPosinterActor1,startPoscamPosinterActor2,startPosSZ1,startPosSZ2;
-        if (!interActingA)
+        sensorList.update();
+        //Test if button is pressed
+        int state = cover->getPointerButton()->getState();
+        if (myinteractionA->isRunning()) //when interacting the Sphere will be moved
         {
-            //remember invStartHand-Matrix, when interaction started and mouse button was pressed
-            invStartHand.invert(cover->getPointerMat() * cover->getInvBaseMat());
-            startPos = fullMat->getMatrix(); //remember position of truck, when interaction started
-            if(!camLeft.expired())
-                startPoscamPosinterActor1 = camLeft.lock()->getMatrix();//remember position of cam, when interaction started
-            if(!camRight.expired())
-                startPoscamPosinterActor2 = camRight.lock()->getMatrix();
-            if(!szLeft.expired())
-                startPosSZ1=szLeft.lock()->getMatrix();
-            if(!szRight.expired())
-                startPosSZ2=szRight.lock()->getMatrix();
+            static osg::Matrix invStartHand;
+            static osg::Matrix startPos,startPoscamPosinterActor1,startPoscamPosinterActor2,startPosSZ1,startPosSZ2;
+            if (!interActingA)
+            {
+                //remember invStartHand-Matrix, when interaction started and mouse button was pressed
+                invStartHand.invert(cover->getPointerMat() * cover->getInvBaseMat());
+                startPos = fullMat->getMatrix(); //remember position of truck, when interaction started
+                if(!camLeft.expired())
+                    startPoscamPosinterActor1 = camLeft.lock()->getMatrix();//remember position of cam, when interaction started
+                if(!camRight.expired())
+                    startPoscamPosinterActor2 = camRight.lock()->getMatrix();
+                if(!szLeft.expired())
+                    startPosSZ1=szLeft.lock()->getMatrix();
+                if(!szRight.expired())
+                    startPosSZ2=szRight.lock()->getMatrix();
 
 
-            interActingA = true; //register interaction
-            std::cout<<name<<"start"<<std::endl;
+                interActingA = true; //register interaction
+                std::cout<<name<<"start"<<std::endl;
+            }
+            else if((cover->frameTime() - aSensor->getStartTime())> 0.3)
+            {
+                //calc the tranformation matrix when interacting is running and mouse button was pressed
+                osg::Matrix trans =invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
+                //trans.setTrans(osg::Vec3(0,0,0));//For rotation
+                EKU::plugin->restrictMovement(trans);
+                trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),0);//set z trans to zero
+                trans.orthoNormalize(trans);//remove scale
+                osg::Matrix newTrans =  startPos * osg::Matrix::translate(trans.getTrans());//newTrans is translation only
+                osg::Matrix transcamPosinterActor1 = startPoscamPosinterActor1 *  osg::Matrix::translate(trans.getTrans());
+                osg::Matrix transcamPosinterActor2 = startPoscamPosinterActor2 * osg::Matrix::translate(trans.getTrans());
+                osg::Matrix transSZ1 = startPosSZ1 * osg::Matrix::translate(trans.getTrans());
+                osg::Matrix transSZ2 = startPosSZ2 * osg::Matrix::translate(trans.getTrans());
+
+               /* For Rotation:
+                osg::Matrix newRot = startPos *trans;//newRot is rotation only
+                osg::Matrix rotcamPosinterActor1 = startPoscamPosinterActor1 * trans;
+                osg::Matrix rotcamPosinterActor2 = startPoscamPosinterActor2 * trans;
+                osg::Matrix rotSZ1 = startPosSZ1 * trans;
+                osg::Matrix rotSZ2 = startPosSZ2 * trans;
+
+                fullMat->setMatrix(newRot);
+                //update possitions of childs:
+                possibleCamLocations[0]->setPosition(rotcamPosinterActor1);
+                possibleCamLocations[1]->setPosition(rotcamPosinterActor2);
+                safetyZones[0]->setMat(rotSZ1);
+                safetyZones[1]->setMat(rotSZ2);
+    */
+                // For Translation:
+                fullMat->setMatrix(newTrans);
+                //update possitions of childs:
+                if(!szLeft.expired())
+                    szLeft.lock()->setMat(transSZ1);
+                if(!szRight.expired())
+                    szRight.lock()->setMat(transSZ2);
+                if(!camLeft.expired())
+                    camLeft.lock()->setPosition(transcamPosinterActor1);
+                if(!camRight.expired())
+                    camRight.lock()->setPosition(transcamPosinterActor2);
+
+
+            }
         }
-        else if((cover->frameTime() - aSensor->getStartTime())> 0.3)
+        if (myinteractionA->wasStopped() && state == false)
         {
-            //calc the tranformation matrix when interacting is running and mouse button was pressed
-            osg::Matrix trans =invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
-            //trans.setTrans(osg::Vec3(0,0,0));//For rotation
-            EKU::plugin->restrictMovement(trans);
-            trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),0);//set z trans to zero
-            trans.orthoNormalize(trans);//remove scale
-            osg::Matrix newTrans =  startPos * osg::Matrix::translate(trans.getTrans());//newTrans is translation only
-            osg::Matrix transcamPosinterActor1 = startPoscamPosinterActor1 *  osg::Matrix::translate(trans.getTrans());
-            osg::Matrix transcamPosinterActor2 = startPoscamPosinterActor2 * osg::Matrix::translate(trans.getTrans());
-            osg::Matrix transSZ1 = startPosSZ1 * osg::Matrix::translate(trans.getTrans());
-            osg::Matrix transSZ2 = startPosSZ2 * osg::Matrix::translate(trans.getTrans());
 
-           /* For Rotation:
-            osg::Matrix newRot = startPos *trans;//newRot is rotation only
-            osg::Matrix rotcamPosinterActor1 = startPoscamPosinterActor1 * trans;
-            osg::Matrix rotcamPosinterActor2 = startPoscamPosinterActor2 * trans;
-            osg::Matrix rotSZ1 = startPosSZ1 * trans;
-            osg::Matrix rotSZ2 = startPosSZ2 * trans;
-
-            fullMat->setMatrix(newRot);
-            //update possitions of childs:
-            possibleCamLocations[0]->setPosition(rotcamPosinterActor1);
-            possibleCamLocations[1]->setPosition(rotcamPosinterActor2);
-            safetyZones[0]->setMat(rotSZ1);
-            safetyZones[1]->setMat(rotSZ2);
-*/
-            // For Translation:
-            fullMat->setMatrix(newTrans);
-            //update possitions of childs:
-            if(!szLeft.expired())
-                szLeft.lock()->setMat(transSZ1);
-            if(!szRight.expired())
-                szRight.lock()->setMat(transSZ2);
-            if(!camLeft.expired())
-                camLeft.lock()->setPosition(transcamPosinterActor1);
-            if(!camRight.expired())
-                camRight.lock()->setPosition(transcamPosinterActor2);
+            interActingA = false; //unregister interaction
+           // myinteractionA->cancelPendingActivation();
+      //     vrui::coInteractionManager::the()->unregisterInteraction(myinteractionA);
+           std::cout<<name<<"stop"<<std::endl;
+      //     vrui::coInteractionManager::the()->registerInteraction(myinteractionB);
 
 
         }
-    }
-    if (myinteractionA->wasStopped() && state == false)
-    {
-
-        interActingA = false; //unregister interaction
-       // myinteractionA->cancelPendingActivation();
-  //     vrui::coInteractionManager::the()->unregisterInteraction(myinteractionA);
-       std::cout<<name<<"stop"<<std::endl;
-  //     vrui::coInteractionManager::the()->registerInteraction(myinteractionB);
-
-
     }
 /*    if (myinteractionB->isRunning()) //when interacting the Sphere will be moved
     {
@@ -574,8 +581,11 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             pointsToObserve.push_back(x->getPosition());
 
         for(const auto& x : allCamPositions)
+        {
+            x->camDraw->cam->calcVisMat();
             for(const auto& x1: x->allCameras)
-                x1->calcVisMat(pointsToObserve);
+                x1->calcVisMat();
+        }
     });
 
     //Optimize orientation
@@ -713,6 +723,29 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
        {
             x->setSearchSpaceState(state);
             x->setSearchSpaceState(state);
+       }
+    });
+
+    //Modify scene
+    ModifyScene = new ui::Button(EKUMenu , "ModifyScene");
+    ModifyScene->setText("ModifyScene");
+    ModifyScene->setState(true);
+    ModifyScene->setCallback([this](bool state){
+
+       modifyScene = state;
+       if(modifyScene == false)
+       {
+           std::vector<osg::Vec3> pointsToObserve;
+           pointsToObserve.reserve(safetyZones.size());
+           for(const auto& x : safetyZones)
+               pointsToObserve.push_back(x->getPosition());
+
+           for(const auto& x : allCamPositions)
+           {
+               x->camDraw->cam->calcVisMat();
+               for(const auto& x1: x->allCameras)
+                   x1->calcVisMat();
+           }
        }
     });
 

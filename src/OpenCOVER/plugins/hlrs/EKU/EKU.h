@@ -131,7 +131,7 @@ class EKU: public opencover::coVRPlugin, public opencover::ui::Owner
 {
     friend class mySensor;
 public:
-
+    static bool modifyScene;
     EKU();
     ~EKU();
     bool init();
@@ -146,9 +146,9 @@ public:
 
     virtual void preFrame();
 
-    std::vector<std::shared_ptr<SafetyZone>> safetyZones;
-    std::vector<std::shared_ptr<CamPosition>> allCamPositions;
-    std::vector<std::unique_ptr<Pump>> allPumps;
+    static std::vector<std::shared_ptr<SafetyZone>> safetyZones;
+    static std::vector<std::shared_ptr<CamPosition>> allCamPositions;
+    static std::vector<std::unique_ptr<Pump>> allPumps;
 
 
 
@@ -168,7 +168,7 @@ private:
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
     ui::Group *Frame = nullptr;
     ui::Label *Label = nullptr;
-    ui::Button *MakeCamsInvisible = nullptr, *ShowSearchSpace = nullptr;
+    ui::Button *MakeCamsInvisible = nullptr, *ShowSearchSpace = nullptr,*ModifyScene = nullptr;
 
 
     osg::MatrixTransform *mymtf;
