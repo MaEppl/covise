@@ -165,7 +165,6 @@ void CamDrawable::setStateSet(osg::StateSet *stateSet)
 }
 void CamDrawable::preFrame()
 {
-    sensorList.update();
 }
 
 CamDrawable::~CamDrawable()
@@ -389,8 +388,6 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
     viewpointInteractor->enableIntersection();
 
     localDCS->addChild(camDraw->getCamGeode().get());
-    localDCS->addChild(camDraw->getInteractorGeode().get());
-
 
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
@@ -555,38 +552,41 @@ void CamPosition::createCamsInSearchSpace()
 }
 void CamPosition::updateCamMatrixes()
 {
-    if(!allCameras.empty())
+
+    if(allCameras.empty())
     {
-        for (auto x = allCameras.begin(); x != allCameras.end(); x++)
+        int count = 0;
+        for(const auto& x :searchSpace)
         {
-            delete *x;
+            count++;
+            std::string name = std::to_string(count);
+            osg::Quat q = localDCS.get()->getMatrix().getRotate() * x->getMatrix().getRotate();
+            osg::Matrix tmp;
+            tmp.setRotate(q);
+            tmp.setTrans(localDCS.get()->getMatrix().getTrans());
+            coCoord euler = tmp;
+            std::unique_ptr<Cam> camera(new Cam(euler,name));
+            allCameras.push_back(std::move(camera));
         }
-
-        allCameras.clear();
     }
-    int count = 0;
-    for(const auto& x :searchSpace)
+    else
     {
-        count++;
-        std::string name = std::to_string(count);
-        osg::Quat q = localDCS.get()->getMatrix().getRotate() * x->getMatrix().getRotate();
-        osg::Matrix tmp;
-        tmp.setRotate(q);
-        tmp.setTrans(localDCS.get()->getMatrix().getTrans());
-       // std::cout<<"#########################################################"<<std::endl;
+        int cnt =0; //important!!
+        for(const auto& x :searchSpace)
+        {
+            osg::Quat q = localDCS.get()->getMatrix().getRotate() * x->getMatrix().getRotate();
+            osg::Matrix tmp;
+            tmp.setRotate(q);
+            tmp.setTrans(localDCS.get()->getMatrix().getTrans());
+            coCoord euler = tmp;
+            allCameras.at(cnt)->setPosition(euler);
+            cnt++;
 
-      //  std::cout<<"localDCS"<<std::endl;
-        coCoord test = localDCS->getMatrix();
-      //  printCoCoord(test);
-      //  std::cout<<"Verschobene"<<std::endl;
-      //  printCoCoord( x->getMatrix());
-
-        coCoord euler = tmp;
-     //   std::cout<<"update Cam Matrix"<<std::endl;
-     //   printCoCoord(euler);
-       allCameras.push_back(new Cam(euler,name));
-
+        }
     }
+
+
+
     //update pos of camDraw
     coCoord euler =localDCS->getMatrix();
     camDraw->cam->setPosition(euler);

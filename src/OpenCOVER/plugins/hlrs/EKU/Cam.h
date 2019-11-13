@@ -97,13 +97,12 @@ private:
 
 public:
     static size_t count;
-    std::unique_ptr<Cam> cam; //brauch ich das hier noch???? -->wenn auch als unique ptr?
+    std::unique_ptr<Cam> cam;
     osg::Geode* plotCam();
     CamDrawable(coCoord& m);
     ~CamDrawable();
 
     osg::ref_ptr<osg::Geode> getCamGeode()const{return camGeode;}
-    osg::ref_ptr<osg::Geode> getInteractorGeode()const{return interactorGeode;}
 
     void preFrame();
     void updateFOV(float value);
@@ -147,7 +146,7 @@ public:
     void setSearchSpaceState(bool state);
     void updateCamMatrixes();
 
-    std::vector<Cam*> allCameras;
+    std::vector<std::unique_ptr<Cam>> allCameras;
     std::unique_ptr<CamDrawable> camDraw;
 
 private:
