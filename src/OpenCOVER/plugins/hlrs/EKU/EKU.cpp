@@ -565,21 +565,19 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     RmvSafetyZone->setCallback([this](){
             doRemovePRIOZone(safetyZones.back());
     });
+    //Calc VisMat
+    calcVisMat = new ui::Action(EKUMenu , "calcVisMat");
+    calcVisMat->setCallback([this](){
+        std::vector<osg::Vec3> pointsToObserve;
+        pointsToObserve.reserve(safetyZones.size());
+        for(const auto& x : safetyZones)
+            pointsToObserve.push_back(x->getPosition());
 
-
-
-
-    //CalcVisMat
- /*   CalcVisMat = new ui::Action(EKUMenu , "CalcVisMat");
-    CalcVisMat->setCallback([this](){
-        for(const auto& x : allPumps)
-        {
-            for(const auto& x1 : x->possibleCamLocations )
-                //x1->allCameras
-
-        }
+        for(const auto& x : allCamPositions)
+            for(const auto& x1: x->allCameras)
+                x1->calcVisMat(pointsToObserve);
     });
-*/
+
     //Optimize orientation
     OptOrient = new ui::Action(EKUMenu , "OpOrient");
     OptOrient->setCallback([this](){
