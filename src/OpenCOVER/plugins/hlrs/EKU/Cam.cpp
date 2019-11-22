@@ -42,8 +42,8 @@ void Cam::setPosition(coCoord& m)
 
 void Cam::calcVisMat()
 {
-     visMat.clear();
-
+    visMat.clear();
+    visMat.reserve(EKU::safetyZones.size());
     osg::Matrix T = osg::Matrix::translate(-pos);
     osg::Matrix zRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.x()), osg::Z_AXIS);
     osg::Matrix yRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.y()), osg::X_AXIS);
@@ -53,7 +53,12 @@ void Cam::calcVisMat()
     std::cout<<name<<": ";
     for(const auto& p : EKU::safetyZones)
     {
-            osg::Vec3 newPoint = p->getPosition()*T*zRot*yRot;
+        std::vector<double> visMatForThisSafetyZone;
+        visMatForThisSafetyZone.reserve(p->getWorldPosOfAllObservationPoints().size());
+
+        for(const auto& p1 :p->getWorldPosOfAllObservationPoints())
+        {
+            osg::Vec3 newPoint = p1*T*zRot*yRot;
           // For Visualization of transfered Point
           /*  mySphere = new osg::Box(newPoint,2,2,2);
             osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
@@ -73,20 +78,20 @@ void Cam::calcVisMat()
                (std::abs(newPoint.x()) <= Cam::imgWidth/2 * newPoint.y()/Cam::depthView) &&
                (std::abs(newPoint.z()) <=Cam::imgHeight/2 * newPoint.y()/Cam::depthView))
             {
-                if(calcIntersection(p->getPosition())==false)
-                    visMat.push_back(1);//*calcRangeDistortionFactor(newPoint));//*calcRangeDistortionFactor(newPoint));
+                if(calcIntersection(p1)==false)
+                    visMatForThisSafetyZone.push_back(1);//*calcRangeDistortionFactor(newPoint));//*calcRangeDistortionFactor(newPoint));
                 else
-                    visMat.push_back(0);
+                    visMatForThisSafetyZone.push_back(0);
             }
             else
-                visMat.push_back(0);
+                visMatForThisSafetyZone.push_back(0);
 
-
-
-
-            std::cout <<"P"<<cnt<<": "<<visMat.back()<<" ";
+            std::cout <<"P"<<cnt<<": "<<visMatForThisSafetyZone.back()<<" ";
             cnt++;
+        }
+        visMat.push_back(visMatForThisSafetyZone);
     }
+
 
     std::cout<<" "<<std::endl;
 }
@@ -105,7 +110,7 @@ bool Cam::calcIntersection(const osg::Vec3d& end)
         std::string name = hitr->nodePath.back()->getName();
 
         // Nodes with cx and px are safety areas or possible camera positions, these are no real obstacles
-        if((name.find("Cam") != std::string::npos) || (name.find("SafetyZone") != std::string::npos) || (name.find("Pyramid") != std::string::npos))
+        if(((name.find("Point") != std::string::npos) ||name.find("Wireframe") != std::string::npos) ||(name.find("Cam") != std::string::npos) || (name.find("SafetyZone") != std::string::npos) || (name.find("Pyramid") != std::string::npos))
             ++numberOfNonRelevantObstacles;
         std::cout<<hitr->nodePath.back()->getName()<<" & ";
     }
@@ -332,7 +337,6 @@ CamPosition::CamPosition(osg::Matrix m)
 {
     counter ++;
     searchSpaceState = false;
-    isFinalCamPos = false;
     name = "CamPosition"+std::to_string(counter);
 
     coCoord mEuler= m;
@@ -366,9 +370,9 @@ CamPosition::CamPosition(osg::Matrix m)
 CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
 {
     std::cout<<"The next CamPosition is created from a Truck"<<std::endl;
+    status =true;
     counter ++;
     searchSpaceState = false;
-    isFinalCamPos = false;
     name = "CamPosition"+std::to_string(counter);
 
     coCoord mEuler= m;
@@ -396,6 +400,20 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
     createCamsInSearchSpace();
     searchSpaceGroup->setNodeMask(0);
     updateCamMatrixes();
+}
+void CamPosition::activate()
+{
+    status = true;
+    viewpointInteractor->show();
+    viewpointInteractor->enableIntersection();
+    camDraw->activate();
+}
+void CamPosition::disactivate()
+{
+    status = false;
+    viewpointInteractor->disableIntersection();
+    viewpointInteractor->hide();
+    camDraw->disactivate();
 }
 CamPosition::~CamPosition()
 {
@@ -446,10 +464,11 @@ void CamPosition::preFrame()
         {
             camDraw->activate();
             size_t cnt=0;
+            double visible =1;
             for(const auto &x : camDraw->cam->visMat)
             {
-                if(x==1)
-                    EKU::safetyZones.at(cnt)->updateColor();
+                if(std::find(x.begin(), x.end(), visible) != x.end())
+                    EKU::safetyZones.at(cnt)->updateColor(x);
                 cnt++;
             }
         }
@@ -457,10 +476,12 @@ void CamPosition::preFrame()
         {
             camDraw->disactivate();
             size_t cnt=0;
+            double visible =1;
             for(const auto &x : camDraw->cam->visMat)
             {
-                if(x==1)
-                    EKU::safetyZones.at(cnt)->resetColor();
+                if(std::find(x.begin(), x.end(), visible) != x.end())
+                   EKU::safetyZones.at(cnt)->resetColor(x);
+
                 cnt++;
             }
 
@@ -567,7 +588,8 @@ void CamPosition::updateCamMatrixes()
             tmp.setRotate(q);
             tmp.setTrans(localDCS.get()->getMatrix().getTrans());
             coCoord euler = tmp;
-            std::unique_ptr<Cam> camera(new Cam(euler,name));
+            std::shared_ptr<Cam> camera = std::make_shared<Cam>(euler,name);
+            //std::unique_ptr<Cam> camera(new Cam(euler,name));
             allCameras.push_back(std::move(camera));
         }
     }

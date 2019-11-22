@@ -143,6 +143,7 @@ public:
     void doAddPRIO2();
     void doRemovePRIOZone(std::shared_ptr<SafetyZone> &s);
     void doCalcVisMat();
+    void findNotVisiblePoints();
 
     virtual void preFrame();
 

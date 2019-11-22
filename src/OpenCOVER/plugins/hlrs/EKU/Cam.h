@@ -53,7 +53,7 @@ public:
 
     Cam(coCoord m,const std::string name);
     ~Cam();
-    std::vector<double> getVisMat(){return visMat;}
+    std::vector<std::vector<double>> getVisMat(){return visMat;}
 
 
     osg::Vec2 rot; // [0]=alpha =zRot, [1]=beta =yRot
@@ -61,7 +61,7 @@ public:
 
     //check if points are visible for this camera
     void calcVisMat();
-    std::vector<double> visMat;
+    std::vector<std::vector<double>> visMat; //
     std::string getName()const{return name;}
     void setPosition(coCoord& m);
 protected:
@@ -119,7 +119,6 @@ class CamPosition
 public:
     static size_t counter;
     bool searchSpaceState;
-    bool isFinalCamPos;
     CamPosition(osg::Matrix m,Pump *pump);
     CamPosition(osg::Matrix m);
 
@@ -146,10 +145,12 @@ public:
     void setSearchSpaceState(bool state);
     void updateCamMatrixes();
 
-    std::vector<std::unique_ptr<Cam>> allCameras;
+    std::vector<std::shared_ptr<Cam>> allCameras;
     std::unique_ptr<CamDrawable> camDraw;
-
+    void activate();
+    void disactivate();
 private:
+    bool status;
     std::string name;
     Pump* myPump = nullptr;
 
@@ -158,7 +159,6 @@ private:
     osg::ref_ptr<osg::MatrixTransform> localDCS;
     osg::ref_ptr<osg::Group> searchSpaceGroup;
     std::vector<osg::ref_ptr<osg::MatrixTransform>> searchSpace;
-
 
 
 

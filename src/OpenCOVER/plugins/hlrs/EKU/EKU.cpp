@@ -95,9 +95,9 @@ void Pump::preFrame()
                 fullMat->setMatrix(newTrans);
                 //update possitions of childs:
                 if(!szLeft.expired())
-                    szLeft.lock()->setMat(transSZ1);
+                    szLeft.lock()->setPosition(transSZ1);
                 if(!szRight.expired())
-                    szRight.lock()->setMat(transSZ2);
+                    szRight.lock()->setPosition(transSZ2);
                 if(!camLeft.expired())
                     camLeft.lock()->setPosition(transcamPosinterActor1);
                 if(!camRight.expired())
@@ -171,6 +171,10 @@ void EKU::preFrame()
         x->preFrame();
     for(const auto &x: allCamPositions)
         x->preFrame();
+    for(const auto &x: safetyZones)
+        x->preFrame();
+
+   // newSZ->preFrame();
 
 }
 void EKU::calcPercentageOfCoveredSafetyZones()
@@ -197,13 +201,18 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
     name = "DetailedTruck+Cam+Safety"+std::to_string(Pump::counter);
     //create safety Zones
     osg::Matrix localSafetyZone1,localSafetyZone2;
-    localSafetyZone1.setTrans(osg::Vec3(-2.3,0.1,9));
-    localSafetyZone2.setTrans(osg::Vec3(2.3,0.1,9));
+    osg::Quat rotInteractor;
+    rotInteractor.makeRotate(osg::DegreesToRadians(-90.0),osg::X_AXIS);
+    localSafetyZone1.setTrans(osg::Vec3(-2.2,0.2,8));
+    localSafetyZone1.setRotate(rotInteractor);
+    localSafetyZone2.setTrans(osg::Vec3(2.2,0.2,8));
+    localSafetyZone2.setRotate(rotInteractor);
+
 
    // safetyZones.at(0) = new SafetyZone(localSafetyZone1,SafetyZone::PRIO2,2.0f,2.0f,8.0f); //safetyZone Dimensions: 2,2,8
    // safetyZones.at(1) = new SafetyZone(localSafetyZone2,SafetyZone::PRIO2,2.0f,2.0f,8.0f);
-    std::shared_ptr<SafetyZone> sz1 =std::make_shared<SafetyZone>(localSafetyZone1,SafetyZone::PRIO2,2.0f,2.0f,8.0f);
-    std::shared_ptr<SafetyZone> sz2 =std::make_shared<SafetyZone>(localSafetyZone2,SafetyZone::PRIO2,2.0f,2.0f,8.0f);
+    std::shared_ptr<SafetyZone> sz1 =std::make_shared<SafetyZone>(localSafetyZone1,SafetyZone::PRIO1,1.0f,11.0f,2.0f);
+    std::shared_ptr<SafetyZone> sz2 =std::make_shared<SafetyZone>(localSafetyZone2,SafetyZone::PRIO1,1.0f,11.0f,2.0f);
     szLeft = sz1;
     szRight = sz2;
     allSZ.push_back(std::move(sz1));
@@ -212,8 +221,6 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
 
     //create possible Cam locations ####Old values of Points:Vec3(1.5,1.6,-0.5) Vec3(-1.6,1.6,-0.5)
     osg::Matrix localInteractor1,localInteractor2;
-    osg::Quat rotInteractor;
-    rotInteractor.makeRotate(osg::DegreesToRadians(-90.0),osg::X_AXIS);
     localInteractor1.setTrans(osg::Vec3(1.6,1.6,-0.5));
     localInteractor1.setRotate(rotInteractor);
     std::shared_ptr<CamPosition> c1 =std::make_shared<CamPosition>(localInteractor1,this);
@@ -227,7 +234,6 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
     allCams.push_back(std::move(c2));
 
 
-   // possibleCamLocations.push_back(new CamPosition(localInteractor2));
 
     //Rotation
     osg::Matrix rotate;
@@ -266,8 +272,7 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
    group1 = new osg::Group;
    group1->setName("bothTruckDrawables"+std::to_string(Pump::counter));
 
-   group1->addChild(szLeft.lock()->getSafetyZoneDrawable().get());
-   group1->addChild(szRight.lock()->getSafetyZoneDrawable().get());
+
 
 
     group1->addChild(group.get());
@@ -298,8 +303,7 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
 
      sensorList.append(aSensor);
 
-     szLeft.lock()->setMat(localSafetyZone1* full);
-     szRight.lock()->setMat(localSafetyZone2* full);
+
 
      //safetyZones.at(0)->setMat(localSafetyZone1* full);
     //safetyZones.at(1)->setMat(localSafetyZone2* full);
@@ -310,8 +314,12 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
     // for(const auto& x : possibleCamLocations)
     upperGroup->addChild(camLeft.lock()->getCamGeode().get());
     upperGroup->addChild(camRight.lock()->getCamGeode().get());
+    upperGroup->addChild(szLeft.lock()->getSZ());
+    upperGroup->addChild(szRight.lock()->getSZ());
     camLeft.lock()->setPosition(localInteractor1*full);
     camRight.lock()->setPosition(localInteractor2*full);
+    szLeft.lock()->setPosition(localSafetyZone1* full);
+    szRight.lock()->setPosition(localSafetyZone2* full);
 
     // possibleCamLocations.at(0)->setPosition(localInteractor1*full);
     // possibleCamLocations.at(1)->setPosition(localInteractor2*full);
@@ -326,7 +334,7 @@ Pump::~Pump()
     std::cout<<"deleted Pump: "<<name<<std::endl;
     upperGroup->getParent(0)->removeChild(upperGroup);
 }
-/*void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
+void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
 {
     float height =2;
     float length =3;
@@ -336,7 +344,10 @@ Pump::~Pump()
         for(int x =0;x< 2; x++)
         {
             osg::Vec3 pos{xpos+x*1.1f*length,ypos+y*1.11f*width,0.0f};
-            safetyZones.push_back(new SafetyZone(pos,prio,length,width,height));
+            osg::Matrix m;
+            m.setTrans(pos);
+            std::shared_ptr<SafetyZone> sz = std::make_shared<SafetyZone>(m,prio,length,width,height);
+            safetyZones.push_back(std::move(sz));
             finalScene->addChild( safetyZones.back()->getSafetyZoneDrawable().get());
             //update PRIO List afterwards !
         }
@@ -344,7 +355,7 @@ Pump::~Pump()
     cover->getObjectsRoot()->addChild(finalScene.get());
 
 }
-*/
+
 void EKU::createScene()
 {   //add silo
     {
@@ -419,60 +430,15 @@ void EKU::createScene()
 
     }
 */    cover->getObjectsRoot()->addChild(finalScene.get());
-
 }
 
 EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 {
-   // Wireframe *test = new Wireframe();
-    //cover->getObjectsRoot()->addChild(test->getZoneGeode().get());
-
-
-   // newSZ= new SZ("test",1,osg::Vec3(0,0,0),osg::Vec3(0,0,0),1.0,1.0);
-    //Create user Interation
-
-
-    osg::Matrix m,m2,mC1,mC2;
-    m.setTrans(5.0,15,0);
-    m2.setTrans(5.0,20,-15);
-
-    mC2.setTrans(0.0,0.0,0);
-    mC2.setTrans(0,0,0);
-  //  testCam = new CamPosition(mC1);
-   // cover->getObjectsRoot()->addChild(testCam->getCamGeode().get());
-
-   //   allCamPositions.push_back(new CamPosition(mC2));
-   //std::shared_ptr<CamPosition> a = std::make_shared<CamPosition>(mC2);
-
- /*  for(const auto & x:allCamPositions)
-   {
-    cover->getObjectsRoot()->addChild(x->getCamGeode().get());
-    }
-*/
-
-    //safetyZones.push_back(new SafetyZone (m,SafetyZone::PRIO2,2.0f,2.0f,2.0f) );
-   // safetyZones.push_back(new SafetyZone (m2,SafetyZone::PRIO2,2.0f,2.0f,2.0f) );
-
- /*   for(const auto & x:safetyZones)
-    {
-     cover->getObjectsRoot()->addChild(x->getSafetyZoneDrawable().get());
-     }
-*/
-
-    myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::ButtonA, "MoveMode", vrui::coInteraction::Medium);
-    interActing = false;
-    mymtf = new osg::MatrixTransform();
-
     plugin = this;
     fprintf(stderr, "EKUplugin::EKUplugin\n");
     finalScene = new osg::Group;
     finalScene->setName("finalScene");
     createScene();
-    for(const auto& x : userInteraction)
-        sensorList.append(x);
-
-
-
 
     truck = coVRFileManager::instance()->loadFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/truck_surface.stl",NULL,finalScene);
     if (!truck.valid())
@@ -595,38 +561,49 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     });
 
     //Optimize nbr of cameras
-
     OptNbrCams = new ui::Action(EKUMenu , "OptNbrCameras");
     OptNbrCams->setCallback([this](){
-        for(const auto& x: allCamPositions)
+
+     /*   std::vector<osg::Vec3> pointsToObserve;
+        pointsToObserve.reserve(safetyZones.size());
+        for(const auto& x : safetyZones)
+            pointsToObserve.push_back(x->getPosition());
+
+        for(const auto& x : allCamPositions)
         {
-            //for(const auto& x1 : x->allCameras)
-              //  x1->calcVisMat(observationPoints);
+            x->camDraw->cam->calcVisMat();
+            for(const auto& x1: x->allCameras)
+                x1->calcVisMat();
         }
-/*        for(const auto& x: finalCams)
-            x->~CamDrawable();
-        finalCams.clear();
-        createCamsForEachCamPos();
 
-       // std::array<int,192> finalCamIndex;
+        std::vector<std::shared_ptr<Cam>> c;
+        c.reserve(allCamPositions.size()*allCamPositions.at(1)->allCameras.size());
+
+        for(const auto &x: allCamPositions)
+        {
+            for (const auto &x1 : x->allCameras)
+                c.push_back(x1);
+        }
         //if (coVRMSController::instance()->isMaster())
-        //{
-                ga =new GA(cameras,safetyZones);
-                auto finalCamIndex = ga->getfinalCamPos();
-                delete this->ga;
+        GA::nbrCamPositions=allCamPositions.size();
+        GA::nbrCamsPerCamPosition=allCamPositions.at(1)->allCameras.size();
+        GA::nbrPoints = safetyZones.size();
+        ga =new GA(c,safetyZones);
+        auto finalCamIndex = ga->getfinalCamPos();
+        delete this->ga;
 
-        //}
+
         //coVRMSController::instance()->syncData(&finalCamIndex, finalCamIndex.size());
         size_t cnt2=0;
         for(auto& x:finalCamIndex)
         {
             
-            if(x==1){
-                   finalCams.push_back(new CamDrawable(cameras.at(cnt2)));
-               }
-           cnt2++;
+           // if(x==1){
+                   //finalCams.push_back(new CamDrawable(cameras.at(cnt2)));
+          //     }
+          // cnt2++;
         }
-*/
+
 /*         //this is for GA with std::vector<std::array>
          size_t cnt2=0;
          for(const auto& x:finalCamIndex)
@@ -745,6 +722,8 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
                for(const auto& x1: x->allCameras)
                    x1->calcVisMat();
            }
+           //show Points which are currently not visible
+           findNotVisiblePoints();
        }
     });
 
@@ -772,6 +751,47 @@ bool EKU::init()
 {
 
     return true;
+}
+
+void EKU::findNotVisiblePoints()
+{
+    std::vector<std::vector<double>> result(safetyZones.size());
+    result = allCamPositions.front()->camDraw->cam->visMat;
+    for(auto &x:result)
+        std::fill(x.begin(), x.end(), 0);
+
+    size_t counter =0;
+    for(const auto& x : allCamPositions)
+    {
+        //init with 0
+       // result.at(counter).assign(x->camDraw->cam->visMat.at(counter).size(),0);
+
+        for(const auto& x1: x->camDraw->cam->visMat)
+        {
+            std::transform(x1.begin(),x1.end(),result.at(counter).begin(),result.at(counter).begin(),std::plus<double>());
+            counter ++;
+
+        }
+        counter =0;
+
+    }
+    //go over all SZ and check if nbr of Cams == PRIO zone!
+    counter =0;
+    for(const auto& x :result)
+    {
+        std::vector<double>visMat;
+        visMat.reserve(x.size());
+        for(const auto&x1 :x)
+        {
+            if(safetyZones.at(counter)->getPriority()>x1)
+                visMat.push_back(1);
+            else
+                visMat.push_back(0);
+
+        }
+        safetyZones.at(counter)->pointsVisibleForEnoughCameras(visMat);
+        counter++;
+    }
 }
 
 void EKU::doAddTruck()
@@ -858,11 +878,12 @@ void EKU::doRemoveCam(std::shared_ptr<CamPosition> &camera)
 
 void EKU::doAddPRIO1()
 {
+
     osg::Matrix localSafetyZone;
-    localSafetyZone.setTrans(osg::Vec3(0.0,10.0,0.0));
-    std::shared_ptr<SafetyZone> sz =std::make_shared<SafetyZone>(localSafetyZone,SafetyZone::PRIO1,4.0f,4.0f,2.0f);
+    localSafetyZone.setTrans(osg::Vec3(0.0,-20.0,0.5));
+    std::shared_ptr<SafetyZone> sz =std::make_shared<SafetyZone>(localSafetyZone,SafetyZone::PRIO1,10.0f,15.0f,2.0f);
     safetyZones.push_back(std::move(sz));
-    cover->getObjectsRoot()->addChild(safetyZones.back()->getSafetyZoneDrawable().get());
+    cover->getObjectsRoot()->addChild(safetyZones.back()->getSZ());
 
     std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
 
@@ -872,9 +893,9 @@ void EKU::doAddPRIO2()
 {
     osg::Matrix localSafetyZone;
     localSafetyZone.setTrans(osg::Vec3(0.0,0.0,0.0));
-    std::shared_ptr<SafetyZone> sz =std::make_shared<SafetyZone>(localSafetyZone,SafetyZone::PRIO2,4.0f,4.0f,2.0f);
+    std::shared_ptr<SafetyZone> sz =std::make_shared<SafetyZone>(localSafetyZone,SafetyZone::PRIO2,10.0f,15.0f,2.0f);
     safetyZones.push_back(std::move(sz));
-    cover->getObjectsRoot()->addChild(safetyZones.back()->getSafetyZoneDrawable().get());
+    cover->getObjectsRoot()->addChild(safetyZones.back()->getSZ());
 
     std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
 

@@ -1,7 +1,7 @@
 #include <SafetyZone.h>
 
 using namespace opencover;
-
+#include <algorithm>
 void restrictTranslation(coCoord startPos,osg::Matrix &mat, bool noX,  bool noY, bool noZ)
 {
     coCoord coord;
@@ -26,140 +26,690 @@ void restrictTranslation(coCoord startPos,osg::Matrix &mat, bool noX,  bool noY,
 
 size_t SafetyZone:: count = 0;
 
-/*SafetyZone::SafetyZone(osg::Vec3 pos, Priority priority, float length = 2, float width =2, float height = 8):pos(pos),priority(priority),length(length),width(width),height(height)
-{
-
-    count++;
-    fprintf(stderr, "new SafetyZone\n");
-    zone = new osg::Box(pos,length,width,height);
-    safetyZoneDrawable = new osg::ShapeDrawable(zone,hint.get());
-    name = "Zone "+std::to_string(SafetyZone::count);
-
-    // Declare a instance of the geode class:
-    safetyZoneGeode = new osg::Geode();
-    safetyZoneGeode->setName("SafetyZone" +std::to_string(SafetyZone::count));
-    osg::StateSet *stateset = safetyZoneGeode->getOrCreateStateSet();
-    stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
-    stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA ,GL_ONE_MINUS_SRC_ALPHA), osg::StateAttribute::ON);
-    osg::Vec4 _color;
-    if(priority == PRIO1)
-        _color.set(1.0, 0.0, 0.0, 0.5);
-    else if(priority == PRIO2)
-         _color.set(1.0, 0.0, 1.0, 0.5);
-    safetyZoneDrawable->setColor(_color);
-    safetyZoneDrawable->setUseDisplayList(false);
-    osg::StateSet *mystateSet = safetyZoneGeode->getOrCreateStateSet();
-    setStateSet(mystateSet);
-
-    // Add the unit cube drawable to the geode:
-    safetyZoneGeode->addDrawable(safetyZoneDrawable);
-
-
-    text = new osgText::Text;
-  //  text->setName("Text");
-  //  text->setText("SafetyZone"+std::to_string(SafetyZone::count));
-    //text->setColor()
-  //  text->setCharacterSize(4);
-  //  text->setPosition(SafetyZone->getCenter());
-
-    //SafetyZoneGeode->addChild(text.get());
-
-    //User Interaction
-  //  myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::AllButtons, "MoveMode", vrui::coInteraction::Medium);
-  //  interActing = false;
-  //  aSensor = new mySensor(SafetyZoneGeode, name, myinteraction);
-  //  sensorList.append(aSensor);
-
-}
-*/
 SafetyZone::SafetyZone(osg::Matrix m, Priority priority, float length = 2, float width =2, float height = 8):mat(m),priority(priority),length(length),width(width),height(height)
 {
 
     count++;
     fprintf(stderr, "new SafetyZone\n");
-    zone = new osg::Box(m.getTrans(),length,width,height);
-    safetyZoneDrawable = new osg::ShapeDrawable(zone,hint.get());
+
     name = "Zone "+std::to_string(SafetyZone::count);
-
-    // Declare a instance of the geode class:
-    safetyZoneGeode = new osg::Geode();
-    safetyZoneGeode->setName("SafetyZone" +std::to_string(SafetyZone::count));
-    osg::StateSet *stateset = safetyZoneGeode->getOrCreateStateSet();
-    stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
-    stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA ,GL_ONE_MINUS_SRC_ALPHA), osg::StateAttribute::ON);
-    osg::Vec4 _color;
     if(priority == PRIO1)
-        _color.set(1.0, 0.0, 0.0, 0.5);
+        color = {0.5 ,0.0, 0.0,1};
     else if(priority == PRIO2)
-         _color.set(1.0, 0.0, 1.0, 0.5);
-    safetyZoneDrawable->setColor(_color);
-    safetyZoneDrawable->setUseDisplayList(false);
-    osg::StateSet *mystateSet = safetyZoneGeode->getOrCreateStateSet();
-    setStateSet(mystateSet);
+        color = {0.9,0.6,0.0,1.0};
 
-    // Add the unit cube drawable to the geode:
-    safetyZoneGeode->addDrawable(safetyZoneDrawable);
+    localDCS =new osg::MatrixTransform();
+    localDCS->setMatrix(m);
+    localDCS->setName(name);
+    safetyZoneGeode = plotSafetyZone(m);
+    safetyZoneGeode->setName("Wireframe");
+    localDCS->addChild(safetyZoneGeode);
+
+    //create points at vertices
+    createPoints();
+
+ /*   pointsVerts.reserve(8);
+    for(int i =0;i<=7;i++)
+    {
+        std::unique_ptr<Point> newPoint(new Point(verts->at(i)));
+        pointsVerts.push_back(std::move(newPoint));
+//      localDCS->addChild(pointsVerts.back()->getPoint());
+
+    }
+ */   //create Points inside
+
+    // interactors
+    float _interSize = cover->getSceneSize() / 25;
+
+    interactor= new coVR3DTransRotInteractor(m, _interSize/3, vrui::coInteraction::ButtonA, "hand", "sizeInteractor", vrui::coInteraction::Medium);
+    interactor->show();
+    interactor->enableIntersection();
 
 
-    text = new osgText::Text;
-  //  text->setName("Text");
-  //  text->setText("SafetyZone"+std::to_string(SafetyZone::count));
-    //text->setColor()
-  //  text->setCharacterSize(4);
-  //  text->setPosition(SafetyZone->getCenter());
+    osg::Vec3 startPosY=osg::Vec3(length/2,0,verts->at(7).z())*m;
+    sizeYInteractor = new coVR3DTransInteractor(startPosY, _interSize/2, vrui::coInteraction::ButtonA, "hand", "sizeInteractor", vrui::coInteraction::Medium);
+    sizeYInteractor->hide();
+    sizeYInteractor->disableIntersection();
 
-    //SafetyZoneGeode->addChild(text.get());
+    osg::Vec3 startPosX = osg::Vec3(0,width/2,verts->at(7).z())*m;
+    sizeXInteractor = new coVR3DTransInteractor(startPosX, _interSize/2, vrui::coInteraction::ButtonA, "hand", "sizeInteractor", vrui::coInteraction::Medium);
+    sizeXInteractor->hide();
+    sizeXInteractor->disableIntersection();
+
+    distanceInteractors = startPosY-startPosX;
+    distanceX = verts->at(7).x() - startPosX.x();
+    distanceY = verts->at(7).x() - startPosY.y();
+
+    updateWorldPosOfAllObservationPoints();
 
     //User Interaction
-  /*  myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::AllButtons, "MoveMode", vrui::coInteraction::Medium);
+ /*  myinteraction = new vrui::coTrackerButtonInteraction(vrui::coInteraction::AllButtons, "MoveMode", vrui::coInteraction::Medium);
     interActing = false;
     aSensor = new mySensor(SafetyZoneGeode, name, myinteraction);
     sensorList.append(aSensor);
-    */
+  */
 }
+osg::Geode* SafetyZone::plotSafetyZone(osg::Matrix m)
+{
+    osg::Geode* geode = new osg::Geode();
+    geode->setName("Wireframe");
+    osg::Geometry* geom = new osg::Geometry();
+    osg::StateSet *stateset = geode->getOrCreateStateSet();
+    setStateSet(stateset);
+    //necessary for dynamic redraw (command:dirty)
+    geom->setDataVariance(osg::Object::DataVariance::DYNAMIC) ;
+    geom->setUseDisplayList(false);
+    geom->setUseVertexBufferObjects(true);
+    geode->addDrawable(geom);
+    geode->getStateSet()->setMode( GL_BLEND, osg::StateAttribute::ON );
+    geode->getStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+    // Declare an array of vertices to create a simple pyramid.
+    verts = new osg::Vec3Array;
+    verts->push_back( osg::Vec3( -length/2, width/2, -1 ) ); // lower back left
+    verts->push_back( osg::Vec3( -length/2,-width/2, -1 ) );// lower front left
+    verts->push_back( osg::Vec3(  length/2,-width/2, -1 ) );// lower front right
+    verts->push_back( osg::Vec3(  length/2, width/2, -1 ) ); // lower back right
+    verts->push_back( osg::Vec3( -length/2, width/2,  1 ) ); // upper back left
+    verts->push_back( osg::Vec3( -length/2,-width/2,  1 ) );// upper front left
+    verts->push_back( osg::Vec3(  length/2,-width/2,  1 ) );// upper front right
+    verts->push_back( osg::Vec3(  length/2, width/2,  1) ); // upper back right
 
+
+    // Associate this set of vertices with the Geometry.
+    geom->setVertexArray(verts);
+
+    // Next, create primitive sets and add them to the Geometry.
+    // Each primitive set represents a Line of the Wireframe
+
+    //Lower Rectangle
+    osg::DrawElementsUInt* line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(0);
+    line->push_back(1);
+    geom->addPrimitiveSet(line);
+
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(1);
+    line->push_back(2);
+    geom->addPrimitiveSet(line);
+
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(2);
+    line->push_back(3);
+    geom->addPrimitiveSet(line);
+
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(3);
+    line->push_back(0);
+    geom->addPrimitiveSet(line);
+
+    //UpperRectangle
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(4);
+    line->push_back(5);
+    geom->addPrimitiveSet(line);
+
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(5);
+    line->push_back(6);
+    geom->addPrimitiveSet(line);
+
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(6);
+    line->push_back(7);
+    geom->addPrimitiveSet(line);
+
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(7);
+    line->push_back(4);
+    geom->addPrimitiveSet(line);
+
+    //Vertical Lines
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(0);
+    line->push_back(4);
+    geom->addPrimitiveSet(line);
+
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(1);
+    line->push_back(5);
+    geom->addPrimitiveSet(line);
+
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(2);
+    line->push_back(6);
+    geom->addPrimitiveSet(line);
+
+    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+    line->push_back(3);
+    line->push_back(7);
+    geom->addPrimitiveSet(line);
+
+
+
+    LineWidth *lw = new LineWidth(2.0);
+    stateset->setAttribute(lw);
+    return geode;
+}
 void SafetyZone::setStateSet(osg::StateSet *stateSet)
 {
     osg::Material *material = new osg::Material();
     material->setColorMode(osg::Material::DIFFUSE);
-    material->setDiffuse(osg::Material::FRONT_AND_BACK, osg::Vec4(1.0f, 0.0f, 0.0f, 1.0f));
-  /*  osg::LightModel *defaultLm;
+    material->setDiffuse(osg::Material::FRONT_AND_BACK, color);//0.5
+    osg::LightModel *defaultLm;
     defaultLm = new osg::LightModel();
     defaultLm->setLocalViewer(true);
     defaultLm->setTwoSided(true);
     defaultLm->setColorControl(osg::LightModel::SINGLE_COLOR);
-    */stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
-  //  stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
+    stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
+    stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
 }
+void SafetyZone::createPoints()
+{
+    std::unique_ptr<Point> p6(new Point(verts.get()->at(6)-osg::Vec3(0,0,height/2),color));
+    std::vector<std::unique_ptr<Point>> rowFirst;
+    rowFirst.push_back(std::move(p6));
+    points.push_back(std::move(rowFirst));
+
+    //create Vectors
+    double startValueY = distance;
+    while(startValueY < width)
+    {
+        std::vector<std::unique_ptr<Point>> rowUp;
+        std::unique_ptr<Point> newPointUp(new Point(verts.get()->at(6)+osg::Vec3(0,startValueY,-height/2),color));
+        rowUp.push_back(std::move(newPointUp));
+        points.push_back(std::move(rowUp));
+        startValueY +=distance;
+    }
+    //add last row from point 7
+    std::unique_ptr<Point> p7(new Point(verts.get()->at(7)-osg::Vec3(0,0,height/2),color));
+    std::vector<std::unique_ptr<Point>> rowLast;
+    rowLast.push_back(std::move(p7));
+    points.push_back(std::move(rowLast));
+
+
+
+    // add points to each existing Vector
+    double startValueX = distance;
+    while(startValueX < length)
+    {
+        for(auto &x : points)
+        {
+            osg::Vec3 newPos = x.front() ->getPos()-osg::Vec3(startValueX,0,0.0);
+            std::unique_ptr<Point> newPoint(new Point(newPos,color));
+            x.push_back(std::move(newPoint));
+        }
+
+        startValueX +=distance;
+    }
+
+    //add last Point to each row
+    for(auto &x : points)
+    {
+       std::unique_ptr<Point> lastPoint(new Point(osg::Vec3(verts.get()->at(5).x(),x.front()->getPos().y(),0),color));//warum hier height?
+       x.push_back(std::move(lastPoint));
+    }
+
+    //visualize all points
+    for(const auto& x : points )
+    {
+        for(const auto& x1 :x)
+            localDCS->addChild(x1->getPoint());
+
+    }
+
+    std::cout<<"number of vectors: "<<points.size()<<std::endl;
+    std::cout<<"number of elements in vetor: "<<points.back().size()<<std::endl;
+   // double currentYpos =
+    //while(distance < width)
+}
+
+void SafetyZone::preFrame()
+{
+    interactor->preFrame();
+    sizeYInteractor->preFrame();
+    sizeXInteractor->preFrame();
+    static osg::Vec3 startPosY,startPosX;
+    if(interactor->wasStarted())
+    {
+        startPosX = sizeXInteractor->getPos();
+    }
+    if(interactor->isRunning())
+    {
+
+        osg::Matrix localMat = interactor->getMatrix();
+        localDCS->setMatrix(localMat);
+         osg::Vec3 localVec;
+        localVec = localMat.getTrans();
+
+        //legt Position des sizeXInteractors fest!
+        osg::Vec3 scaleVec =startPosX;
+        //osg::Vec3 scaleVec{0,10,0};
+
+        scaleVec = Matrix::transform3x3(scaleVec, localMat); // ohne das tut rotation nicht!
+        scaleVec += localVec;       //ohne das tut translation nicht !
+
+        sizeXInteractor->updateTransform(scaleVec);
+
+
+    }
+    if(interactor->wasStopped())
+    {
+        updateWorldPosOfAllObservationPoints();
+    }
+    if(sizeYInteractor->wasStarted())
+    {
+        std::cout<<"YInteractor started"<<std::endl;
+
+        startPosY = sizeYInteractor->getPos();
+    }
+
+    if(sizeYInteractor->isRunning())
+    {
+        osg::Vec3 tmp = sizeYInteractor->getPos();
+        tmp.set(startPosY.x(),tmp.y(),startPosY.z());
+        sizeYInteractor->updateTransform(tmp);
+        updateGeometryY(tmp);
+
+
+    }
+    if(sizeYInteractor->wasStopped())
+    {
+        width = std::fabs(verts->at(7).y()-verts->at(6).y());
+        double lastYvalue;
+        osg::Vec3 endPosY = sizeYInteractor->getPos();
+        osg::Vec3 newPos;
+        std::vector<std::unique_ptr<Point>> newVec;// hier crasht es
+
+        if(points.empty())
+        {
+            lastYvalue = 0;
+        }
+        else
+        {
+            lastYvalue = points.back().back()->getPos().y();
+        }
+        //add Points
+        if(endPosY.y() > lastYvalue)
+        {
+
+             if(points.empty())
+             {
+                 newPos = startPosY;//+osg::Vec3(0.0,distance,0.0);
+                 std::unique_ptr<Point> newPoint(new Point(newPos,color));
+                 newVec.push_back(std::move(newPoint));
+             }
+             else
+             {
+                 newPos = points.back().at(0)->getPos()+osg::Vec3(0.0,distance,0.0);
+             }
+
+             while(newPos.y() < endPosY.y())
+             {
+
+                 if(!points.empty())
+                 {
+                     for(auto &x : points.back())
+                     {
+                         osg::Vec3 newPosInVector = x->getPos()+osg::Vec3(0.0,distance,0.0);
+                         std::unique_ptr<Point> newPointinVector(new Point(newPosInVector,color));
+                         newVec.push_back(std::move(newPointinVector));
+                     }
+                 }
+                 points.push_back(std::move(newVec));
+                for(const auto& x : points.back())
+                 {
+                     static int count;
+                     count ++;
+                     std::cout<<"counter: "<<count<<std::endl;
+                     localDCS->addChild(x->getPoint());
+                 }
+                 newPos += osg::Vec3(0.0,distance,0.0);
+             }
+             /*//add last Point Position of Lines
+             for(auto &x : points.back())
+             {
+                 osg::Vec3 newPosInVector = osg::Vec3(x->getPos().x(),sizeXInteractor->getPos().y(), x->getPos().z());
+                 std::unique_ptr<Point> newPointinVector(new Point(newPosInVector));
+                 newVec.push_back(std::move(newPointinVector));
+             }
+             points.push_back(std::move(newVec));
+             for(const auto& x : points.back())
+             {
+                 static int count;
+                 count ++;
+                 std::cout<<"counter: "<<count<<std::endl;
+                 localDCS->addChild(x->getPoint());
+             }
+            */
+
+        }
+        //removePoints
+        else if(endPosY.y() < lastYvalue)
+        {
+            if(!points.empty())
+            {
+                //remove all Vectors with Points that have y value smaller endPosY.y()
+                points.erase(std::remove_if(points.begin(),points.end(),[&endPosY](std::vector<std::unique_ptr<Point>>const& it){return it.back()->getPos().y()>endPosY.y();}),points.end());
+                if(points.empty())
+                {
+                    points.clear();
+                    std::cout<<"cleared"<<std::endl;
+                }
+            }
+            else
+                std::cout<<"Safety Zone hast no points to delete!"<<std::endl;
+        }
+          std::cout<<"number of vectors: "<<points.size()<<std::endl;
+          std::cout<<"number of elements in vetor: "<<points.back().size()<<std::endl;
+
+          updateWorldPosOfAllObservationPoints();
+    }
+
+    if(sizeXInteractor->wasStarted())
+    {
+        std::cout<<"XInteractor started"<<std::endl;
+
+        startPosX = sizeXInteractor->getPos();
+    }
+
+    if(sizeXInteractor->isRunning())
+    {
+        osg::Vec3 tmp = sizeXInteractor->getPos();
+        tmp.set(tmp.x(),startPosX.y(),startPosX.z());
+        sizeXInteractor->updateTransform(tmp);
+        updateGeometryX(tmp);
+
+    }
+    if(sizeXInteractor->wasStopped())
+    {
+        length =std::fabs(verts->at(7).x()-verts->at(4).x());
+        double lastXvalue;
+        osg::Vec3 endPosX = sizeXInteractor->getPos();
+        osg::Vec3 newPos;
+        std::vector<std::unique_ptr<Point>> newVec;
+
+
+        if(points.empty())
+        {
+            lastXvalue = 0;
+        }
+        else
+        {
+            lastXvalue = points.back().back()->getPos().x();
+        }
+        //add Points
+        if(endPosX.x() > lastXvalue)
+        {
+           if(points.empty())
+           {
+               newPos = startPosX;//+osg::Vec3(distance,0,0.0);
+               std::unique_ptr<Point> newPoint(new Point(newPos,color));
+               newVec.push_back(std::move(newPoint));
+               points.push_back(move(newVec));
+               localDCS->addChild(points.back().back()->getPoint());
+
+           }
+           for(auto& x : points)
+               {
+                   newPos = x.back()->getPos()+osg::Vec3(distance,0,0.0);
+                   while(newPos.x() < endPosX.x())
+                   {
+                       std::unique_ptr<Point> newPoint(new Point(newPos,color));
+                       x.push_back(std::move(newPoint));
+                       localDCS->addChild(x.back()->getPoint());
+                       newPos += osg::Vec3(distance,0,0.0);
+                   }
+
+               }
+
+
+           }
+        //removePoints
+        else if(endPosX.x() < lastXvalue)
+        {
+            if(!points.empty())
+            {
+             //remove all Points with y value smaller endPosY.y()
+             for(auto & x:points)
+             {
+                 x.erase(std::remove_if( x.begin(), x.end(),[&endPosX](std::unique_ptr<Point>const& it){return it->getPos().x()>endPosX.x();}),x.end());
+             }
+             if(points.back().empty())
+             {
+               points.clear();//Note: tell owner to remove this object ?
+               std::cout<<"deleted complete vector!"<<std::endl;
+             }
+         }
+            else
+                std::cout<<"Safety Zone hast no points to delete!"<<std::endl;
+        }
+        std::cout<<"number of vectors: "<<points.size()<<std::endl;
+        std::cout<<"number of elements in vetor: "<<points.back().size()<<std::endl;
+
+        updateWorldPosOfAllObservationPoints();
+    }
+
+}
+
+
+
+void SafetyZone::updateGeometryY(osg::Vec3 tmp)
+{
+        osg::Matrix m;
+        m.setTrans(osg::Vec3(0,0,0));//#################################asfasfasfs
+        static int oldDistance;
+       //std::cout<<"static: "<<count <<std::endl;
+  //  if(std::abs(verts->at(6).y()-tmp.y())>=std::abs(distanceY))
+  //  {
+        //update verts
+        verts->at(7) = (tmp+osg::Vec3(0,distanceY,0))*m;
+        verts->at(3) = (tmp+osg::Vec3(0,distanceY,-height))*m;
+        verts->at(4) = (tmp+osg::Vec3(-length,distanceY,0))*m;
+        verts->at(0) = (tmp+osg::Vec3(-length,distanceY,-height))*m;
+        verts->dirty();
+
+        //update Points at verts
+     /*   pointsVerts.at(7)->setPos(verts->at(7));
+        pointsVerts.at(3)->setPos(verts->at(3));
+        pointsVerts.at(4)->setPos(verts->at(4));
+        pointsVerts.at(0)->setPos(verts->at(0));
+*/
+        //update other Interactor
+        sizeXInteractor->updateTransform(tmp-distanceInteractors);
+  //  }
+  /*  else //if(std::abs(verts->at(7).y()-tmp.y())>std::abs(distanceY))
+    {
+        verts->at(6) = tmp+osg::Vec3(0,-distanceY,0);
+        verts->at(2) = tmp+osg::Vec3(0,-distanceY,-height);
+        verts->at(5) = tmp+osg::Vec3(-length,-distanceY,0);
+        verts->at(1) = tmp+osg::Vec3(-length,-distanceY,-height);
+        verts->dirty();
+    }
+    */
+    /*    int distance = std::trunc(std::abs(verts->at(6).y()-tmp.y()));
+        std::cout<<"Distanz: " <<distance<<std::endl;
+        if(distance % 4 == 0 && distance-oldDistance ==1)
+        {
+            std::unique_ptr<Point> newPoint(new Point(tmp));
+            pointsY.push_back(std::move(newPoint));
+            localDCS->addChild(pointsY.back()->getPoint());
+
+            std::unique_ptr<Point> newPoint1(new Point(tmp+osg::Vec3(-length,0,0)));
+            pointsY.push_back(std::move(newPoint1));
+            localDCS->addChild(pointsY.back()->getPoint());
+        }
+        //remember old distance:
+        oldDistance = distance;
+*/
+}
+void SafetyZone::updateGeometryX(osg::Vec3 tmp)
+{
+    //update verts don't use tmp weil tmp bereits durch Matrix verschoben
+    verts->at(7) = tmp+osg::Vec3(distanceX,0,0);
+    verts->at(3) = tmp+osg::Vec3(distanceX,0,-height);
+    verts->at(6) = tmp+osg::Vec3(distanceX,-width,0);
+    verts->at(2) = tmp+osg::Vec3(distanceX,-width,-height);
+    verts->dirty();
+
+    //update Points at verts
+/*    pointsVerts.at(7)->setPos(verts->at(7));
+    pointsVerts.at(3)->setPos(verts->at(3));
+    pointsVerts.at(6)->setPos(verts->at(6));
+    pointsVerts.at(2)->setPos(verts->at(2));
+
+  */  //update other Interactor
+    sizeYInteractor->updateTransform(tmp+distanceInteractors);
+
+}
+
 SafetyZone::~SafetyZone()
 {
-    safetyZoneGeode->getParent(0)->removeChild(safetyZoneGeode.get());
+    delete interactor;
+    delete sizeXInteractor;
+    delete sizeYInteractor;
+    points.clear();
+    localDCS->getParent(0)->removeChild(localDCS.get());
+
     std::cout<<"Removed Safety Zone"<<std::endl;
 }
 
-bool::SafetyZone::destroy()
+void SafetyZone::updateWorldPosOfAllObservationPoints()
 {
-    //is this function necessary or do it in Destructor?
-    //free memory space???
-    //call desctuctor???
-    safetyZoneGeode->getParent(0)->removeChild(safetyZoneGeode);
-    return true;
+    worldPosOfAllObservationPoints.clear();
+    for(const auto& x : points )
+    {
+        for(const auto& x1 :x)
+        {
+            osg::Vec3 pos = x1->getPos()*localDCS.get()->getMatrix();
+            worldPosOfAllObservationPoints.push_back(pos);
+            std::cout<< "Point World Coordinates: " << pos.x() <<" | "<< pos.y()<<" | "<< pos.z()<<std::endl;
+
+        }
+
+    }
 }
 
-void SafetyZone::updateColor()
+void SafetyZone::updateColor(const std::vector<double>& update)const
 {
-    safetyZoneDrawable->setColor(osg::Vec4(1., 1., 0., 0.5f));
+    const int nbrOfPointsInInput = update.size();
+    const int nbrOfPointsInVector = points.front().size();
+    int counter =0;
+    //conter vector<double> to corresponding vector<vector<double>>
+    for(int i =0;i<nbrOfPointsInInput;i++)
+    {
+        if(update.at(i) !=0)//if point is visible
+            points.at(i/nbrOfPointsInVector).at(counter)->updateColor();
+        counter++;
+        if(counter == nbrOfPointsInVector)
+        {
+            counter =0;
+        }
+    }
+}
+void SafetyZone::pointsVisibleForEnoughCameras(const std::vector<double>& update)const
+{
+    const int nbrOfPointsInInput = update.size();
+    const int nbrOfPointsInVector = points.front().size();
+    int counter =0;
+    //conter vector<double> to corresponding vector<vector<double>>
+    for(int i =0;i<nbrOfPointsInInput;i++)
+    {
+        if(update.at(i) ==1)//if point is not visible
+            points.at(i/nbrOfPointsInVector).at(counter)->visible(false);
+        else
+            points.at(i/nbrOfPointsInVector).at(counter)->visible(true);
+        counter++;
+        if(counter == nbrOfPointsInVector)
+        {
+            counter =0;
+        }
+    }
 }
 
-void SafetyZone::resetColor()
+void SafetyZone::resetColor(const std::vector<double>& reset)const
 {
-    if(priority == PRIO1)
-        safetyZoneDrawable->setColor(osg::Vec4(1.0, 0.0, 0.0, 0.5));
-    else if(priority == PRIO2)
-         safetyZoneDrawable->setColor(osg::Vec4(1.0, 0.0, 1.0, 0.5));
+    for(const auto& x : points )
+    {
+        for(const auto& x1 :x)
+        {
+            if(x1 !=0)
+                x1->resetColor();
+        }
+
+    }
 }
 
+Point::Point(osg::Vec3 pos,osg::Vec4 color):color(color),visibleForEnoughCameras(true)
+{
+    osg::Matrix local;
+    local.setTrans(pos);
+    localDCS = new osg::MatrixTransform();
+    localDCS->setMatrix(local);
+    localDCS->setName("Translation");
+    sphere = new osg::Sphere(osg::Vec3(0,0,0), 0.5);
+    sphereDrawable = new osg::ShapeDrawable(sphere);
 
+    //red color
+    sphereDrawable->setColor(color);
+    geode = new osg::Geode();
+    osg::StateSet *mystateSet = geode->getOrCreateStateSet();
+    setStateSet(mystateSet);
+    geode->setName("Point");
+    geode->addDrawable(sphereDrawable);
+
+    localDCS->addChild(geode.get());
+}
+Point::~Point()
+{
+    std::cout<<"Point destructor called"<<std::endl;
+
+}
+void Point::setStateSet(osg::StateSet *stateSet)
+{
+    osg::Material *material = new osg::Material();
+    material->setColorMode(osg::Material::DIFFUSE);
+    material->setDiffuse(osg::Material::FRONT_AND_BACK, color);
+    osg::LightModel *defaultLm;
+    defaultLm = new osg::LightModel();
+    defaultLm->setLocalViewer(true);
+    defaultLm->setTwoSided(true);
+    defaultLm->setColorControl(osg::LightModel::SINGLE_COLOR);
+    stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
+    stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
+}
+void Point::setPos(osg::Vec3 p)
+{
+    osg::Matrix tmp;
+    tmp.setTrans(p);
+    localDCS->setMatrix(tmp);
+}
+void Point::updateColor()
+{
+    sphereDrawable->setColor(osg::Vec4(0.0,1.0,0.0,1.0));
+}
+void Point::resetColor()
+{
+    if(visibleForEnoughCameras)
+        sphereDrawable->setColor(color);
+    else
+        sphereDrawable->setColor(osg::Vec4{0.0,0.0,1.0,1});
+
+}
+void Point::visible(bool input)
+{
+    if(!input)
+    {
+        visibleForEnoughCameras=false;
+        sphereDrawable->setColor(osg::Vec4{0.0,0.0,1.0,1});
+    }
+    else
+    {
+        visibleForEnoughCameras =true;
+        resetColor();
+    }
+
+
+}
 using namespace osg;
 double SZ::imgHeightPixel = 1080;
 double SZ::imgWidthPixel = 1920;
@@ -428,9 +978,11 @@ void SZ::updateGeometry()
   //  scaleVec = Vec3(800 / scale_, 0, -600 / scale_); // urspruenglich 800 x -600
 
     //legt Ort für scale Interactor fest!
-    scaleVec = Vec3(imgWidth / scale_, depthView / scale_, imgHeight / scale_); // urspruenglich 800 x -600
-    scaleVec = Matrix::transform3x3(scaleVec, localMat);
-    scaleVec += localVec;
+
+   //scaleVec = Vec3(imgWidth / scale_, depthView / scale_, imgHeight / scale_); // urspruenglich 800 x -600
+   scaleVec= Vec3(0,50,0); //legt Position von Interactor fest!
+   scaleVec = Matrix::transform3x3(scaleVec, localMat); // ohne das tut rotation nicht!
+    scaleVec += localVec;       //ohne das tut translation nicht !
 
     scaleInteractor->updateTransform(scaleVec);
 
@@ -823,47 +1375,6 @@ void SZ2::showInteractors(bool state)
 
         }
 }
-
-Wireframe::Wireframe()
-{
-    createGeometry();
-
-}
-
-void Wireframe::createGeometry()
-{
-    vertices = new osg::Vec3Array;
-    vertices->push_back(osg::Vec3(0.0f, 0.0f, 10.0f));
-    vertices->push_back(osg::Vec3(1.0f, 0.0f, 10.0f));
-    vertices->push_back(osg::Vec3(1.0f, 1.0f, 10.0f));
-    vertices->push_back(osg::Vec3(0.0f, 1.0f, 10.0f));
-
-    normals = new osg::Vec3Array;
-    normals->push_back(osg::Vec3(0.0f, -1.0f, 0.0f));
-
-    colors = new osg::Vec4Array; colors->push_back(osg::Vec4(1.0f, 0.0f, 0.0f, 1.0f));
-    colors->push_back(osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f));
-    colors->push_back(osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f));
-    colors->push_back(osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f));
-    colors->push_back(osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f));
-
-    //ow create a geometry object, where the description of our square will be stored, which will be rendered. Pass an array of vertices to this geometry.
-    quad = new osg::Geometry;
-    quad->setVertexArray(vertices.get());
-    //Transmitting an array of normals, we inform the engine that a single normal will be used for all vertices, indicating the method of linking ("binding") the normals BIND_OVAERALL
-    quad->setNormalArray(normals.get());
-    quad->setNormalBinding(osg::Geometry::BIND_OVERALL);
-    // Now we create a set of primitives for geometry. We indicate that square (GL_QUADS) faces should be generated from the array of vertices, taking the vertex with index 0 as the first vertex, and the total number of vertices will be 4
-    quad->addPrimitiveSet(new osg::DrawArrays(GL_QUADS, 0, 4));
-
-    wireframe = new osg::Geode;
-    wireframe->addDrawable(quad.get());
-}
-
-
-
-
-
 
 
 

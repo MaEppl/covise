@@ -82,14 +82,17 @@ void mySensor::activate()
     }
     //activate sensor
     else{
- */       isActive = true;
+ */
+
+  //  ######################### DAS hier war davor aktiviert!!!!!!!!!!!!!!!!
+        isActive = true;
         cout << "---Activate--" << sensorName << endl;
         vrui::coInteractionManager::the()->registerInteraction(_interA);
         startTime = cover->frameTime();
         _interA->doActivation();
         if(shapDr != nullptr)
             shapDr->setColor(osg::Vec4(1., 1., 0., 1.0f));
-        else if(camDr != nullptr)
+/*        else if(camDr != nullptr)
         {
             size_t cnt=0;
             //camDr->updateColor();
@@ -119,7 +122,7 @@ void mySensor::activate()
             }
 
         }
-    }
+   */ }
 //}
 
 //-----------------------------------------------------------
@@ -130,7 +133,7 @@ void mySensor::disactivate()
     vrui::coInteractionManager::the()->unregisterInteraction(_interA);
     if(shapDr != nullptr)
         shapDr->setColor(osg::Vec4(1., 0., 0., 1.0f));
-    else if(camDr != nullptr)
+/*    else if(camDr != nullptr)
     {
         size_t cnt=0;
         //camDr->resetColor();
@@ -160,15 +163,8 @@ void mySensor::disactivate()
         }
 
     }
- //   else
- //   {
- //       EKU::plugin ->updateObservationPointPosition();
- //       for(auto x :EKU::plugin->finalCams)
- //       {
- //         x->cam->calcVisMat((EKU::plugin)->*observationPoints);
- //       }
- //   }
 
+*/
 
 }
 
@@ -189,3 +185,4 @@ bool mySensor::isSensorActive()
 }
 
 //-----------------------------------------------------------
+
