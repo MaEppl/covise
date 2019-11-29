@@ -19,7 +19,7 @@ class PLUGIN_UTILEXPORT coVR3DTransRotInteractor : public coVRIntersectionIntera
 {
 
 private:
-    bool _rotateOnly = false, _translateOnly = false;
+    bool _rotateOnly = false, _translateOnly = false, _noTranslationNoRotation=false;
     osg::Matrix _interMat_o, _oldHandMat;
     osg::Matrix _invOldHandMat_o;
     osg::Matrix _oldInteractorXformMat_o;
@@ -45,7 +45,6 @@ protected:
     typedef vrb::SharedState<osg::Matrix> SharedMatrix;
 public:
     coVR3DTransRotInteractor(osg::Matrix m, float s, coInteraction::InteractionType type, const char *iconName, const char *interactorName, coInteraction::InteractionPriority priority);
-
     // delete scene graph
     virtual ~coVR3DTransRotInteractor();
 
@@ -60,6 +59,7 @@ public:
         return _interMat_o;
     }
     void setShared(bool state) override;
+    void setNoTranslationNoRotation(bool status){_noTranslationNoRotation = status;}
 };
 }
 #endif

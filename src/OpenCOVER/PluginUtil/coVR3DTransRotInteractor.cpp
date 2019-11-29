@@ -268,125 +268,130 @@ coVR3DTransRotInteractor::doInteraction()
     osg::Matrix relHandMoveMat_o = _invOldHandMat_o * currHandMat_o;
 
     osg::Matrix interactorXformMat_o = _oldInteractorXformMat_o;
-    if (_rotateOnly)
+    if(_noTranslationNoRotation)
     {
-        osg::Matrix i_to_o = scaleTransform->getMatrix()*moveTransform->getMatrix();
-        osg::Matrix o_to_i = osg::Matrix::inverse(i_to_o);
-        osg::Vec3 hand_i = origin * currHandMat * w_to_o * o_to_i;
-        osg::Vec3 pos = hand_i;
-        osg::Vec3 dir = yaxis * currHandMat * w_to_o * o_to_i;
-        dir -= pos;
-        dir.normalize();
-        //std::cerr << "pos: " << pos << ", dir: " << dir << std::endl;
-        double R = _diff.length() / getScale();
-        double a = dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2];
-        double b = 2.*(dir[0]*pos[0] + dir[1]*pos[1] + dir[2]*pos[2]);
-        double c = pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2] - R*R;
-        double D = b*b-4*a*c;
-        //std::cerr << "scale=" << getScale() << ", a=" << a << ", b=" << b << ", c=" << c << ", disc=" << D << std::endl;
-        double t = -1.;
-        if (D >= 0)
-        {
-            double t1 = 0.5*(-b-sqrt(D))/a;
-            double t2 = 0.5*(-b+sqrt(D))/a;
-            if (t1 < 0)
-            {
-                t = t2;
-            }
-            else if (is2D())
-            {
-                t = t1;
-            }
-            else
-            {
-                double old = _distance / getScale();
-                if (std::abs(old-t1) < std::abs(old-t2))
-                    t = t1;
-                else
-                    t = t2;
-            }
-            //std::cerr << "solution: t1=" << t1 << ", t2=" << t2 << ", t=" << t << std::endl;
-            //osg::Vec3 v1 = pos+dir*t1;
-            //osg::Vec3 v2 = pos+dir*t2;
-            //std::cerr << "    v1: " << v1 << ", v2: " << v2 << std::endl;
-        }
-        if (t < 0)
-        {
-            t = -dir * pos;
-        }
-        if (t >= 0)
-        {
-            _distance = t * getScale();
-            osg::Vec3 isect = pos+dir*t;
-            //std::cerr << "valid intersection: t=" << t << ", p=" << isect << ", dist=" << isect.length() << std::endl;
-            osg::Matrix rot;
-            rot.makeRotate(osg::Vec3(0,-1,0), isect);
-
-            interactorXformMat_o = rot * getMatrix();
-        }
-        else
-        {
-            _distance = 0;
-        }
-    }
-    else if (_translateOnly)
-    {
-        auto lp1_o = origin * currHandMat_o;
-        auto lp2_o = yaxis * currHandMat_o;
-
-        auto pointerDir_o = lp2_o - lp1_o;
-        pointerDir_o.normalize();
-
-        // get hand pos in object coords
-        auto currHandPos_o = currHandMat_o.getTrans();
-
-        auto interPos = currHandPos_o + pointerDir_o * _distance + _diff;
-        interactorXformMat_o.setTrans(interPos);
-    }
-    else if (coVRNavigationManager::instance()->getMode() == coVRNavigationManager::TraverseInteractors)
-    {
-        // move old mat to hand position, apply rel hand movement and move it back to
-        interactorXformMat_o = _oldInteractorXformMat_o * transToHand_o * relHandMoveMat_o * revTransToHand_o;
+        // only use the interactor as button, no translation or rotation -> do nothing
     }
     else
     {
-        // apply rel hand movement
-        interactorXformMat_o = _oldInteractorXformMat_o * relHandMoveMat_o;
-    }
-
-    // save old transformation
-    _oldInteractorXformMat_o = interactorXformMat_o;
-
-    _oldHandMat = currHandMat; // save current hand for rotation start
-    _invOldHandMat_o.invert(currHandMat_o);
-
-    if (cover->restrictOn())
-    {
-        // restrict to visible scene
-        osg::Vec3 pos_o, restrictedPos_o;
-        pos_o = interactorXformMat_o.getTrans();
-        restrictedPos_o = restrictToVisibleScene(pos_o);
-        interactorXformMat_o.setTrans(restrictedPos_o);
-    }
-
-    if (coVRNavigationManager::instance()->isSnapping())
-    {
-        if (coVRNavigationManager::instance()->isDegreeSnapping())
+        if (_rotateOnly)
         {
-            // snap orientation
-            snapToDegrees(coVRNavigationManager::instance()->snappingDegrees(), &interactorXformMat_o);
+            osg::Matrix i_to_o = scaleTransform->getMatrix()*moveTransform->getMatrix();
+            osg::Matrix o_to_i = osg::Matrix::inverse(i_to_o);
+            osg::Vec3 hand_i = origin * currHandMat * w_to_o * o_to_i;
+            osg::Vec3 pos = hand_i;
+            osg::Vec3 dir = yaxis * currHandMat * w_to_o * o_to_i;
+            dir -= pos;
+            dir.normalize();
+            //std::cerr << "pos: " << pos << ", dir: " << dir << std::endl;
+            double R = _diff.length() / getScale();
+            double a = dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2];
+            double b = 2.*(dir[0]*pos[0] + dir[1]*pos[1] + dir[2]*pos[2]);
+            double c = pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2] - R*R;
+            double D = b*b-4*a*c;
+            //std::cerr << "scale=" << getScale() << ", a=" << a << ", b=" << b << ", c=" << c << ", disc=" << D << std::endl;
+            double t = -1.;
+            if (D >= 0)
+            {
+                double t1 = 0.5*(-b-sqrt(D))/a;
+                double t2 = 0.5*(-b+sqrt(D))/a;
+                if (t1 < 0)
+                {
+                    t = t2;
+                }
+                else if (is2D())
+                {
+                    t = t1;
+                }
+                else
+                {
+                    double old = _distance / getScale();
+                    if (std::abs(old-t1) < std::abs(old-t2))
+                        t = t1;
+                    else
+                        t = t2;
+                }
+                //std::cerr << "solution: t1=" << t1 << ", t2=" << t2 << ", t=" << t << std::endl;
+                //osg::Vec3 v1 = pos+dir*t1;
+                //osg::Vec3 v2 = pos+dir*t2;
+                //std::cerr << "    v1: " << v1 << ", v2: " << v2 << std::endl;
+            }
+            if (t < 0)
+            {
+                t = -dir * pos;
+            }
+            if (t >= 0)
+            {
+                _distance = t * getScale();
+                osg::Vec3 isect = pos+dir*t;
+                //std::cerr << "valid intersection: t=" << t << ", p=" << isect << ", dist=" << isect.length() << std::endl;
+                osg::Matrix rot;
+                rot.makeRotate(osg::Vec3(0,-1,0), isect);
+
+                interactorXformMat_o = rot * getMatrix();
+            }
+            else
+            {
+                _distance = 0;
+            }
+        }
+        else if (_translateOnly)
+        {
+            auto lp1_o = origin * currHandMat_o;
+            auto lp2_o = yaxis * currHandMat_o;
+
+            auto pointerDir_o = lp2_o - lp1_o;
+            pointerDir_o.normalize();
+
+            // get hand pos in object coords
+            auto currHandPos_o = currHandMat_o.getTrans();
+
+            auto interPos = currHandPos_o + pointerDir_o * _distance + _diff;
+            interactorXformMat_o.setTrans(interPos);
+        }
+        else if (coVRNavigationManager::instance()->getMode() == coVRNavigationManager::TraverseInteractors)
+        {
+            // move old mat to hand position, apply rel hand movement and move it back to
+            interactorXformMat_o = _oldInteractorXformMat_o * transToHand_o * relHandMoveMat_o * revTransToHand_o;
         }
         else
         {
-            // snap orientation to 45 degree
-            snapTo45Degrees(&interactorXformMat_o);
+            // apply rel hand movement
+            interactorXformMat_o = _oldInteractorXformMat_o * relHandMoveMat_o;
         }
+
+        // save old transformation
+        _oldInteractorXformMat_o = interactorXformMat_o;
+
+        _oldHandMat = currHandMat; // save current hand for rotation start
+        _invOldHandMat_o.invert(currHandMat_o);
+
+        if (cover->restrictOn())
+        {
+            // restrict to visible scene
+            osg::Vec3 pos_o, restrictedPos_o;
+            pos_o = interactorXformMat_o.getTrans();
+            restrictedPos_o = restrictToVisibleScene(pos_o);
+            interactorXformMat_o.setTrans(restrictedPos_o);
+        }
+
+        if (coVRNavigationManager::instance()->isSnapping())
+        {
+            if (coVRNavigationManager::instance()->isDegreeSnapping())
+            {
+                // snap orientation
+                snapToDegrees(coVRNavigationManager::instance()->snappingDegrees(), &interactorXformMat_o);
+            }
+            else
+            {
+                // snap orientation to 45 degree
+                snapTo45Degrees(&interactorXformMat_o);
+            }
+        }
+        // and now we apply it
+
+        updateTransform(interactorXformMat_o);
     }
-
-
-    // and now we apply it
-    updateTransform(interactorXformMat_o);
-
 }
 
 void
