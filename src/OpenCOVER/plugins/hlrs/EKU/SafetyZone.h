@@ -17,6 +17,7 @@
 #include<Sensor.h>
 using namespace opencover;
 using namespace osg;
+osg::Vec3 calcDirectionVec(osg::Matrix& m); //returns direction Vector of coVR3DTransRotInteractor
 
 class Point;
 class SafetyZone
@@ -89,7 +90,6 @@ private:
     coVR3DTransRotInteractor *preferredDirectionInteractor;
 
     osg::Geode* plotSafetyZone();
-    void calcPreferredDirection(osg::Matrix& m);
     void updateGeometryY(double tmp);
     void updateGeometryX(double tmp);
     void createPoints();

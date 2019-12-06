@@ -4,6 +4,14 @@ using namespace opencover;
 #include <algorithm>
 
 size_t SafetyZone:: count = 0;
+osg::Vec3 calcDirectionVec(osg::Matrix &m)
+{
+    osg::Matrix rotation = osg::Matrix::rotate(m.getRotate());
+    osg::Vec3 direction = osg::Vec3{0,-1,0} *rotation; //{0,1,0} is init Vec of coVR3DTransRotInteractor
+    direction.normalize();
+    std::cout<<"Direction Vector: "<<direction.x()<<", "<<direction.y()<<", "<<direction.z()<<std::endl;
+    return direction;
+}
 
 SafetyZone::SafetyZone(osg::Matrix m, Priority priority, float length = 2, float width =2, float height = 8):priority(priority),length(length),width(width),height(height)
 {
@@ -54,8 +62,7 @@ SafetyZone::SafetyZone(osg::Matrix m, Priority priority, float length = 2, float
     preferredDirectionInteractor = new coVR3DTransRotInteractor(local,_interSize/3,vrui::coInteraction::ButtonA, "hand", "preferredDirectionInteractor", vrui::coInteraction::Medium);
     preferredDirectionInteractor->show();
     preferredDirectionInteractor->enableIntersection();
-    calcPreferredDirection(local);
-
+    preferredDirection =  calcDirectionVec(local);
 
     updateWorldPosOfAllObservationPoints();
 }
@@ -438,17 +445,11 @@ void SafetyZone::preFrame()
     if(preferredDirectionInteractor->wasStopped())
     {
         osg::Matrix m = preferredDirectionInteractor->getMatrix();
-        calcPreferredDirection(m);
+        preferredDirection = calcDirectionVec(m);
     }
 
 }
-void SafetyZone::calcPreferredDirection(osg::Matrix &m)
-{
-    osg::Matrix rotation = osg::Matrix::rotate(m.getRotate());
-    preferredDirection = osg::Vec3{0,-1,0} *rotation; //{0,1,0} is init Vec of coVR3DTransRotInteractor
-    preferredDirection.normalize();
-    std::cout<<"Direction Vector: "<<preferredDirection.x()<<", "<<preferredDirection.y()<<", "<<preferredDirection.z()<<std::endl;
-}
+
 
 
 void SafetyZone::updateGeometryY(double y)
