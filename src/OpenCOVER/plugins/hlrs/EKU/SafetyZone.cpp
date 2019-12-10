@@ -64,6 +64,13 @@ SafetyZone::SafetyZone(osg::Matrix m, Priority priority, float length = 2, float
     preferredDirectionInteractor->enableIntersection();
     preferredDirection =  calcDirectionVec(local);
 
+    osg::Quat q2;
+    q2.makeRotate(osg::DegreesToRadians(90.0),osg::X_AXIS);
+    local.setRotate(q2);
+    preferredDirectionInteractor2 = new coVR3DTransRotInteractor(local,_interSize/3,vrui::coInteraction::ButtonA, "hand", "preferredDirectionInteractor2", vrui::coInteraction::Medium);
+    preferredDirectionInteractor2->show();
+    preferredDirectionInteractor2->enableIntersection();
+
     updateWorldPosOfAllObservationPoints();
 }
 osg::Geode* SafetyZone::plotSafetyZone()
@@ -275,6 +282,8 @@ void SafetyZone::preFrame()
     sizeYInteractor->preFrame();
     sizeXInteractor->preFrame();
     preferredDirectionInteractor->preFrame();
+    preferredDirectionInteractor2->preFrame();
+
     static osg::Vec3 startPos_Interactor_w, startPos_YInteractor_w, startPos_XInteractor_w,startPos_PDInteractor_w;
     static osg::Vec3 startPos_Interactor_o, startPos_YInteractor_o, startPos_XInteractor_o,startPos_PDInteractor_o;
     if(interactor->wasStarted())
@@ -311,6 +320,13 @@ void SafetyZone::preFrame()
         osg::Matrix m = preferredDirectionInteractor->getMatrix();
         m.setTrans(preferredDirectionInteractor_pos_w);
         preferredDirectionInteractor->updateTransform(m);
+
+        osg::Quat q;
+        q.makeRotate(osg::DegreesToRadians(180.0),osg::X_AXIS);
+        osg::Matrix m2;
+        m2.setRotate(q);
+        preferredDirectionInteractor2->updateTransform(m2*m);
+
 
     }
     if(interactor->wasStopped())
@@ -379,6 +395,14 @@ void SafetyZone::preFrame()
         }
         preferredDirectionInteractor->updateTransform(preferredDirectionInteractor_to_w);
 
+        osg::Quat q;
+        q.makeRotate(osg::DegreesToRadians(180.0),osg::X_AXIS);
+        osg::Matrix rotPD2;
+        rotPD2.setRotate(q);
+
+        preferredDirectionInteractor2->updateTransform(rotPD2 * preferredDirectionInteractor_to_w);
+
+
     }
     if(sizeYInteractor->wasStopped())
     {
@@ -445,6 +469,13 @@ void SafetyZone::preFrame()
             preferredDirectionInteractor_to_w.setTrans( sizeXInteractor_pos_w-center_w);
         }
         preferredDirectionInteractor->updateTransform(preferredDirectionInteractor_to_w);
+
+        osg::Quat q;
+        q.makeRotate(osg::DegreesToRadians(180.0),osg::X_AXIS);
+        osg::Matrix rotPD2;
+        rotPD2.setRotate(q);
+
+        preferredDirectionInteractor2->updateTransform(rotPD2 * preferredDirectionInteractor_to_w);
     }
     if(sizeXInteractor->wasStopped())
     {
@@ -452,10 +483,40 @@ void SafetyZone::preFrame()
         updateWorldPosOfAllObservationPoints();
     }
 
+    if(preferredDirectionInteractor->isRunning())
+    {
+        osg::Matrix m = preferredDirectionInteractor->getMatrix();
+        osg::Quat q;
+        q.makeRotate(osg::DegreesToRadians(180.0),osg::X_AXIS);
+        osg::Matrix rotPD2;
+        rotPD2.setRotate(q);
+
+        preferredDirectionInteractor2->updateTransform(rotPD2*m);
+    }
+
     if(preferredDirectionInteractor->wasStopped())
     {
         osg::Matrix m = preferredDirectionInteractor->getMatrix();
         preferredDirection = calcDirectionVec(m);
+       // std::cout<<"PD: "<<preferredDirection.x()<<" "<<preferredDirection.y()<<" "<<preferredDirection.z()<<std::endl;
+
+    }
+    if(preferredDirectionInteractor2->isRunning())
+    {
+        osg::Matrix m = preferredDirectionInteractor2->getMatrix();
+        osg::Quat q;
+        q.makeRotate(osg::DegreesToRadians(-180.0),osg::X_AXIS);
+        osg::Matrix rotPD;
+        rotPD.setRotate(q);
+
+        preferredDirectionInteractor->updateTransform(rotPD*m);
+    }
+
+    if(preferredDirectionInteractor2->wasStopped())
+    {
+        osg::Matrix m = preferredDirectionInteractor->getMatrix();
+        preferredDirection = calcDirectionVec(m);
+      //  std::cout<<"PD: "<<preferredDirection.x()<<" "<<preferredDirection.y()<<" "<<preferredDirection.z()<<std::endl;
     }
 
 }
@@ -489,6 +550,8 @@ SafetyZone::~SafetyZone()
     delete sizeXInteractor;
     delete sizeYInteractor;
     delete preferredDirectionInteractor;
+    delete preferredDirectionInteractor2;
+
     points.clear();
     localDCS->getParent(0)->removeChild(localDCS.get());
 
@@ -582,6 +645,8 @@ void SafetyZone::changeInteractorStatus(bool status)
         sizeXInteractor->show();
         sizeXInteractor->enableIntersection();
         preferredDirectionInteractor->enableIntersection();
+        preferredDirectionInteractor2->enableIntersection();
+
 
     }
     else
@@ -593,6 +658,8 @@ void SafetyZone::changeInteractorStatus(bool status)
         sizeXInteractor->hide();
         sizeXInteractor->disableIntersection();
         preferredDirectionInteractor->disableIntersection();
+        preferredDirectionInteractor2->enableIntersection();
+
 
     }
 }

@@ -89,6 +89,8 @@ private:
     coVR3DTransInteractor *sizeYInteractor;
     coVR3DTransInteractor *sizeXInteractor;
     coVR3DTransRotInteractor *preferredDirectionInteractor;
+    coVR3DTransRotInteractor *preferredDirectionInteractor2;//2. Interactor which shows in opposite direction
+
 
     osg::Geode* plotSafetyZone();
     void updateGeometryY(double tmp);
