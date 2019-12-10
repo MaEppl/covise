@@ -9,57 +9,72 @@
 #include <openGA.hpp>
 #include <Cam.h>
 #include<SafetyZone.h>
-#define CAMS_PER_POINT 16
-#define CAMS 64
-#define CAM_POINTS 4
+
 //8:384 , 9:423 ,current: 192
 #if(1)
 class GA
 {
 public:
-    GA(std::vector<Cam*>& cam, std::vector<SafetyZone*>& safetyZoneList);
+    GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_ptr<SafetyZone>>& safetyZoneList,std::vector<int>& allVisMatsPRIO1,std::vector<int>& allVisMatsPRIO2);
     ~GA()=default;
-    std::vector<int> getfinalCamPos() const;
+    std::vector<std::shared_ptr<Cam> > getfinalCamPos() const;
+    static int nbrCamsPerCamPosition;
+    static int nbrCamPositions;
+    static int nbrPoints;
 
 private:
-    std::ofstream output_file;              //store result of GA
-    std::vector<Cam*>& camlist;
+    std::ofstream output_file;                          //store result of GA
+    std::vector<std::shared_ptr<CamPosition>>& camlist;
     std::vector<int> priorityList;
-    size_t nbrpoints;                 //number of points to observe
-    const size_t nbrcams=camlist.size();    //number of cameras
-
+    std::vector<int>& visMatPrio1;
+    std::vector<int>& visMatPrio2;
+    unsigned int minCoveragePrio1 = 70;
+    unsigned int minCoveragePrio2 = 50;
     struct MySolution{
-        //https://stackoverflow.com/questions/40887305/c-initializing-a-vector-inside-a-struct-definition
-         std::vector<int> cam = std::vector<int>(CAMS, 0);
+
+         MySolution():cameras(nbrCamPositions,0){}
+         std::vector<std::shared_ptr<Cam>> cameras;     //camera network
+
          std::string to_string() const
          {
+             std::string output;
+             for(const auto& x :cameras)
+                 output += std::to_string(x->getID())+" ";
 
-             std::string myString;
-             int cnt =1;
-             for(auto i : cam)
-             {
-                myString += "cam"+std::to_string(cnt)+":"+std::to_string(i)+" ";
-                cnt++;
-             }
-             return
-                 std::string("{") + myString + "}";
+             return std::string("{") + output + "}";
 
          }
 
      };
-    struct MyMiddleCost{double objective;};
+    struct MyMiddleCost{
+
+        struct Coverage //coverage in %
+        {
+            double prio2;
+            double prio1;
+            double total;
+            std::string to_string() const
+            {
+                std::string output;
+                    output = "total: "+std::to_string(total)+" Prio1: "+std::to_string(prio1)+" Prio2 " +std::to_string(prio2)+" ";
+                return std::string("{") + output + "}";
+            }
+        };
+
+        double objective;
+        Coverage coverage;
+
+    };
     typedef EA::Genetic<MySolution,MyMiddleCost> GA_Type;
     typedef EA::GenerationType<MySolution,MyMiddleCost> Generation_Type;
     GA_Type ga_obj;
-    int myrandom();
-    int myrandom2();
     void init_genes(MySolution& p,const std::function<double(void)> &rnd01);
     MySolution mutate(const MySolution& X_base,const std::function<double(void)> &rnd01,double shrink_scale);
     MySolution crossover(const MySolution& X1, const MySolution& X2,const std::function<double(void)> &rnd01);
     bool eval_solution(const MySolution& p,MyMiddleCost &c);
     double calculate_SO_total_fitness(const GA_Type::thisChromosomeType &X);
     void SO_report_generation(int generation_number,const EA::GenerationType<MySolution,MyMiddleCost> &last_generation,const MySolution& best_genes);
-
+    std::shared_ptr<Cam> getRandomCamera(int camPos, int index);
 };
 #else
 class GA

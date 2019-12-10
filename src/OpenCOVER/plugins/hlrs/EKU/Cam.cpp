@@ -6,6 +6,7 @@
  * License: LGPL 2+ */
 #include <iostream>
 #include <math.h>
+#include <numeric>
 
 #include <Cam.h>
 #include <EKU.h>
@@ -19,15 +20,20 @@ void printCoCoord(coCoord m)
 double Cam::imgHeightPixel = 1080;
 double Cam::imgWidthPixel = 1920;
 double Cam::fov = 60;
-double Cam::depthView = 30;
+double Cam::depthView = 70;
 double Cam::focalLengthPixel = Cam::imgWidthPixel*0.5/(std::tan(Cam::fov*0.5*M_PI/180));
 double Cam::imgWidth = 2*depthView*std::tan(Cam::fov/2*osg::PI/180);
 double Cam::imgHeight = Cam::imgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
-
+double Cam::rangeDistortionDepth =18;
+size_t Cam::count=0;
 
 Cam::Cam(coCoord matrix,std::string name):pos(matrix.xyz),rot(matrix.hpr[0],matrix.hpr[1]),name(name)
 {
-    std::cout<<"new Cam"<<std::endl;
+ //   std::cout<<"new Cam:" <<id<<std::endl;
+    count++;
+    matrix.makeMat(mat);
+    directionVec = calcDirectionVec(mat);
+
 }
 Cam::~Cam()
 {
@@ -37,12 +43,17 @@ void Cam::setPosition(coCoord& m)
 {
     pos = m.xyz;
     rot.set(m.hpr[0],m.hpr[1]);
+    m.makeMat(mat);
+    directionVec = calcDirectionVec(mat);
 }
 
 
 void Cam::calcVisMat()
-{
+{   visMatPrio1.clear();
+    visMatPrio2.clear();
     visMat.clear();
+    distortionValuePrio1.clear();
+    distortionValuePrio2.clear();
     visMat.reserve(EKU::safetyZones.size());
     osg::Matrix T = osg::Matrix::translate(-pos);
     osg::Matrix zRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.x()), osg::Z_AXIS);
@@ -55,6 +66,9 @@ void Cam::calcVisMat()
     {
         std::vector<double> visMatForThisSafetyZone;
         visMatForThisSafetyZone.reserve(p->getWorldPosOfAllObservationPoints().size());
+
+        //Preferred Direction Coefficient is equal for whole safety zone
+        double PDC = calcPreferredDirectionFactor(p->getPreferredDirection());
 
         for(const auto& p1 :p->getWorldPosOfAllObservationPoints())
         {
@@ -79,21 +93,63 @@ void Cam::calcVisMat()
                (std::abs(newPoint.z()) <=Cam::imgHeight/2 * newPoint.y()/Cam::depthView))
             {
                 if(calcIntersection(p1)==false)
+                {
                     visMatForThisSafetyZone.push_back(1);//*calcRangeDistortionFactor(newPoint));//*calcRangeDistortionFactor(newPoint));
+                    if(p->getPriority() == SafetyZone::PRIO1)
+                    {
+                        visMatPrio1.push_back(1);
+                        double SRC = 1;//calcRangeDistortionFactor(newPoint);
+                        distortionValuePrio1.push_back(SRC*PDC);
+                    }
+                    else if(p->getPriority() ==SafetyZone::PRIO2)
+                    {
+                        visMatPrio2.push_back(1);
+                        double SRC = 1;//calcRangeDistortionFactor(newPoint);
+                        distortionValuePrio2.push_back(SRC*PDC);
+                    }
+                }
                 else
+                {
                     visMatForThisSafetyZone.push_back(0);
+                    if(p->getPriority() == SafetyZone::PRIO1)
+                    {
+                        visMatPrio1.push_back(0);
+                        distortionValuePrio1.push_back(0);
+                    }
+                    else if(p->getPriority() ==SafetyZone::PRIO2)
+                    {
+                        visMatPrio2.push_back(0);
+                        distortionValuePrio2.push_back(0);
+
+                    }
+                }
             }
             else
+            {
                 visMatForThisSafetyZone.push_back(0);
+                if(p->getPriority() == SafetyZone::PRIO1)
+                {
+                    visMatPrio1.push_back(0);
+                    distortionValuePrio1.push_back(0);
 
-            std::cout <<"P"<<cnt<<": "<<visMatForThisSafetyZone.back()<<" ";
+                }
+                else if(p->getPriority() ==SafetyZone::PRIO2)
+                {
+                    visMatPrio2.push_back(0);
+                    distortionValuePrio2.push_back(0);
+
+                }
+            }
+
+ //           std::cout <<"P"<<cnt<<": "<<visMatForThisSafetyZone.back()<<" ";
             cnt++;
         }
         visMat.push_back(visMatForThisSafetyZone);
+
     }
 
 
-    std::cout<<" "<<std::endl;
+ //   std::cout<<" "<<std::endl;
 }
 bool Cam::calcIntersection(const osg::Vec3d& end)
 {
@@ -103,7 +159,7 @@ bool Cam::calcIntersection(const osg::Vec3d& end)
    // EKU::plugin->finalScene->accept(visitor);// NOTE: how to do this rigth ? wihout acces to class EKU?
     cover->getObjectsRoot()->accept(visitor);
     const osgUtil::LineSegmentIntersector::Intersections hits = intersector->getIntersections();
-    std::cout<<"Intersect: "<<hits.size()<<" with ";
+ //   std::cout<<"Intersect: "<<hits.size()<<" with ";
     size_t numberOfNonRelevantObstacles = 0;
     for(osgUtil::LineSegmentIntersector::Intersections::iterator hitr =hits.begin(); hitr!=hits.end();++hitr)
     {
@@ -112,7 +168,7 @@ bool Cam::calcIntersection(const osg::Vec3d& end)
         // Nodes with cx and px are safety areas or possible camera positions, these are no real obstacles
         if(((name.find("Point") != std::string::npos) ||name.find("Wireframe") != std::string::npos) ||(name.find("Cam") != std::string::npos) || (name.find("SafetyZone") != std::string::npos) || (name.find("Pyramid") != std::string::npos))
             ++numberOfNonRelevantObstacles;
-        std::cout<<hitr->nodePath.back()->getName()<<" & ";
+//        std::cout<<hitr->nodePath.back()->getName()<<" & ";
     }
     if(hits.size()-numberOfNonRelevantObstacles>0)
         return true;
@@ -120,15 +176,29 @@ bool Cam::calcIntersection(const osg::Vec3d& end)
         return false;
 }
 
-double Cam::calcRangeDistortionFactor(const osg::Vec3d &point)
+double Cam::calcRangeDistortionFactor(const osg::Vec3d &point) const
 {
-    double x = point.x(); //distance between point and sensor in x direction
-    double sigma = 14; //
-
+    double y = point.y(); //distance between point and sensor in depth direction
+ //   std::cout<<"distance"<<y<<std::endl;
     //SRC = Sensor Range Coefficient
     //normalized Rayleigh distribution function
-    double SRC = sigma*exp(0.5) * (x / pow(sigma,2)) * exp(-(pow(x,2)) / (2*pow(sigma,2)));
-    return 1/SRC;
+    double SRC = rangeDistortionDepth*exp(0.5) * (y / pow(rangeDistortionDepth,2)) * exp(-(pow(y,2)) / (2*pow(rangeDistortionDepth,2)));
+  //  std::cout<<"SRC: "<<SRC<<std::endl;
+    return SRC;
+}
+
+double Cam::calcPreferredDirectionFactor( osg::Vec3 directionOfSafetyZone)
+{
+    //Prefered Direction Coefficient
+    double c =0.0;
+    double PDC =0.0;
+    directionOfSafetyZone.normalize();
+    if(directionOfSafetyZone.z()>0.6)
+        PDC = 0.5;
+    else
+         PDC = std::pow((directionVec.operator *(directionOfSafetyZone)/(directionVec.normalize()*directionOfSafetyZone.normalize())),2) + c;
+  //  std::cout<<"PDC: "<<PDC<<std::endl;
+    return PDC;
 }
 
 size_t CamDrawable::count=0;
@@ -136,11 +206,12 @@ size_t CamDrawable::count=0;
 CamDrawable::CamDrawable(coCoord &m)
 {
     count++;
-    fprintf(stderr, "new CamDrawable from Point\n");
+//    fprintf(stderr, "new CamDrawable from Point\n");
     cam = std::unique_ptr<Cam>(new Cam(m,"Original from CamDrawable"));
     //create pyramide
     camGeode = plotCam();
     camGeode->setName("CamDrawable"+std::to_string(CamDrawable::count));
+
     //create interactor
   /*  mySphere = new osg::Sphere(verts.get()->at(0), 1.);
     osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
@@ -284,12 +355,13 @@ void CamDrawable::updateFOV(float value)
     cam->fov = value;
     cam->imgWidth = 2*cam->depthView*std::tan(cam->fov/2*osg::PI/180);
     cam->imgHeight = cam->imgWidth/(cam->imgWidthPixel/cam->imgHeightPixel);
-    verts->resize(0);
-    verts->push_back( osg::Vec3(cam->depthView, -cam->imgWidth/2, cam->imgHeight/2 ) ); // 0 upper  front base
-    verts->push_back( osg::Vec3(cam->depthView, -cam->imgWidth/2,-cam->imgHeight/2 ) ); // 1 lower front base
-    verts->push_back( osg::Vec3(cam->depthView,  cam->imgWidth/2,-cam->imgHeight/2 ) ); // 3 lower  back  base
-    verts->push_back( osg::Vec3(cam->depthView,  cam->imgWidth/2, cam->imgHeight/2 ) ); // 2 upper back  base
-    verts->push_back( osg::Vec3( 0,  0,  0) ); // 4 peak
+
+    verts->at(0) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 0 upper  front base
+    verts->at(1) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 1 lower front base
+    verts->at(2) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 3 lower  back  base
+    verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 2 upper back  base
+    verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
+
     verts->dirty();
 
 }
@@ -299,12 +371,13 @@ void CamDrawable::updateVisibility(float value)
     cam->depthView = value;
     cam->imgWidth = 2*cam->depthView*std::tan(cam->fov/2*osg::PI/180);
     cam->imgHeight = cam->imgWidth/(cam->imgWidthPixel/cam->imgHeightPixel);
-    verts->resize(0);
-    verts->push_back( osg::Vec3(cam->depthView, -cam->imgWidth/2, cam->imgHeight/2 ) ); // 0 upper  front base
-    verts->push_back( osg::Vec3(cam->depthView, -cam->imgWidth/2,-cam->imgHeight/2 ) ); // 1 lower front base
-    verts->push_back( osg::Vec3(cam->depthView,  cam->imgWidth/2,-cam->imgHeight/2 ) ); // 3 lower  back  base
-    verts->push_back( osg::Vec3(cam->depthView,  cam->imgWidth/2, cam->imgHeight/2 ) ); // 2 upper back  base
-    verts->push_back( osg::Vec3( 0,  0,  0) ); // 4 peak
+
+    verts->at(0) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 0 upper  front base
+    verts->at(1) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 1 lower front base
+    verts->at(2) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 3 lower  back  base
+    verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 2 upper back  base
+    verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
+
     verts->dirty();
 }
 
@@ -361,6 +434,7 @@ CamPosition::CamPosition(osg::Matrix m)
 
     createCamsInSearchSpace();
     searchSpaceGroup->setNodeMask(0);
+    directionVec = calcDirectionVec(m);
     updateCamMatrixes();
     cover->getObjectsRoot()->addChild(localDCS.get());
 
@@ -369,7 +443,7 @@ CamPosition::CamPosition(osg::Matrix m)
 }
 CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
 {
-    std::cout<<"The next CamPosition is created from a Truck"<<std::endl;
+  //  std::cout<<"The next CamPosition is created from a Truck"<<std::endl;
     status =true;
     counter ++;
     searchSpaceState = false;
@@ -399,6 +473,7 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
 
     createCamsInSearchSpace();
     searchSpaceGroup->setNodeMask(0);
+    directionVec = calcDirectionVec(m);
     updateCamMatrixes();
 }
 void CamPosition::activate()
@@ -423,43 +498,51 @@ CamPosition::~CamPosition()
 
     std::cout<<"deleted Camposition: "<<name<<std::endl;
 
-
 }
 void CamPosition::preFrame()
 {
+
     viewpointInteractor->preFrame();
+
     //change positions of cameras
     if(EKU::modifyScene==true)
     {
+        viewpointInteractor->setNoTranslationNoRotation(false);
+        coCoord testEuler;
         if(viewpointInteractor->wasStarted())
-            std::cout<<"START"<<std::endl;
+        {
+         //  osg::Matrix test = viewpointInteractor->getMatrix();
+         //   testEuler = test;
+         //   std::cout<<"START"<<std::endl;
+        }
         if(viewpointInteractor->isRunning())
         {
             osg::Matrix local = viewpointInteractor->getMatrix();
             coCoord localEuler = local;
             //restrict rotation around y
-        //    localEuler.hpr[2]=0.0;
+          //  localEuler.hpr[2]=testEuler.hpr[2];
             //cameras are always looking downwards -> no neg rotation around x
-         //   if(localEuler.hpr[1] < 0.0)
-         //       localEuler.hpr[1] = 0.0;
+            //if(localEuler.hpr[1] < 0.0)
+            //    localEuler.hpr[1] = 0.0;
             localEuler.makeMat(local);
             localDCS->setMatrix(local);
 
-            std::cout<<"Rotation(around global axes): "<<"z:"<<localEuler.hpr[0]<< " x:"<<localEuler.hpr[1]<<" y:"<<localEuler.hpr[2]<<std::endl;
+    //        std::cout<<"Rotation(around global axes): "<<"z:"<<localEuler.hpr[0]<< " x:"<<localEuler.hpr[1]<<" y:"<<localEuler.hpr[2]<<std::endl;
         }
         if(viewpointInteractor->wasStopped())
         {
-            updateCamMatrixes();
+
             osg::Matrix local = viewpointInteractor->getMatrix();
-            coCoord tmp =local;
-            //printCoCoord(tmp);
+            directionVec = calcDirectionVec(local);
+            updateCamMatrixes();
 
         }
 
     }
     // use interactor to show all visible SZ
     else
-    {
+    {        viewpointInteractor->setNoTranslationNoRotation(true);
+
         if(viewpointInteractor->wasStarted())
         {
             camDraw->activate();
@@ -492,8 +575,8 @@ void CamPosition::preFrame()
 void CamPosition::createCamsInSearchSpace()
 {
     //around z axis
-    int zMax = 50;
-    int stepSizeZ = 20; //in Degree
+    int zMax = 80;
+    int stepSizeZ = 10; //in Degree
 
     int xMax = 20;
     int stepSizeX = 10; //in Degree
@@ -501,21 +584,23 @@ void CamPosition::createCamsInSearchSpace()
     osg::Matrix m = localDCS.get()->getMatrix();
     coCoord coord=m;
     coCoord newCoordPlus,newCoordMinus;
+    newCoordPlus.hpr[2] =0;
+    newCoordMinus.hpr[2] =0;
 
     //std::cout<<"StartPos: "<<"z:"<<coord.hpr[0]<< " x:"<<coord.hpr[1]<<" y:"<<coord.hpr[2]<<std::endl;
 
+    int nbrOfCameras =0;
     osg::Matrix m_new;
 
-  //For debugging
-/*   newCoordPlus.makeMat(m_new);
+  //For debugging: only 1 cam in search space
+  /*  newCoordPlus.makeMat(m_new);
     searchSpace.push_back(new osg::MatrixTransform );
     searchSpaceGroup->addChild(searchSpace.back().get());
     searchSpace.back()->setMatrix(m_new);
-   // searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1]));
+    searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1]));
     searchSpace.back()->addChild(camDraw->getCamGeode().get());
 */
     int count =0;
-    int nbrOfCameras =0;
     for(int cnt = 0 ; cnt<zMax/stepSizeZ; cnt++)//############## ===cnt = 0!!!!!!!!!!!muss hier hin
     {
 
@@ -548,8 +633,8 @@ void CamPosition::createCamsInSearchSpace()
             searchSpace.back()->setMatrix(m_new);
             searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1]));
             searchSpace.back()->addChild(camDraw->getCamGeode().get());
-            std::cout<<" + Search space Matrix"<<std::endl;
-            printCoCoord(newCoordPlus);
+       //     std::cout<<" + Search space Matrix"<<std::endl;
+       //     printCoCoord(newCoordPlus);
 
 
             if(countX==0)
@@ -564,8 +649,8 @@ void CamPosition::createCamsInSearchSpace()
             searchSpace.back()->setMatrix(m_new);
             searchSpace.back()->setName(std::to_string(nbrOfCameras)+"-MATRIX Z:" + std::to_string( newCoordMinus.hpr[0])+ " X:" +std::to_string( newCoordMinus.hpr[1]));
             searchSpace.back()->addChild(camDraw->getCamGeode().get());
-            std::cout<<" - Search space Matrix"<<std::endl;
-            printCoCoord(newCoordMinus);
+        //    std::cout<<" - Search space Matrix"<<std::endl;
+        //    printCoCoord(newCoordMinus);
 
 
             countX++;
@@ -583,7 +668,7 @@ void CamPosition::updateCamMatrixes()
         {
             count++;
             std::string name = std::to_string(count);
-            osg::Quat q = localDCS.get()->getMatrix().getRotate() * x->getMatrix().getRotate();
+            osg::Quat q = x->getMatrix().getRotate()*localDCS.get()->getMatrix().getRotate();
             osg::Matrix tmp;
             tmp.setRotate(q);
             tmp.setTrans(localDCS.get()->getMatrix().getTrans());
@@ -598,12 +683,13 @@ void CamPosition::updateCamMatrixes()
         int cnt =0; //important!!
         for(const auto& x :searchSpace)
         {
-            osg::Quat q = localDCS.get()->getMatrix().getRotate() * x->getMatrix().getRotate();
+            osg::Quat q = x->getMatrix().getRotate()*localDCS.get()->getMatrix().getRotate();
             osg::Matrix tmp;
             tmp.setRotate(q);
             tmp.setTrans(localDCS.get()->getMatrix().getTrans());
             coCoord euler = tmp;
             allCameras.at(cnt)->setPosition(euler);
+      //      printCoCoord(euler);
             cnt++;
 
         }
@@ -628,8 +714,8 @@ void CamPosition::setSearchSpaceState(bool state)
     else
         searchSpaceGroup->setNodeMask(0);
 
-
-
 }
+
+
 
 

@@ -48,6 +48,7 @@ public:
     osg::ref_ptr<osg::Geode> getSafetyZoneDrawable()const{return safetyZoneGeode;}
     void updateColor(const std::vector<double> &update)const;
     void resetColor(const std::vector<double> &reset)const;
+    void changeInteractorStatus(bool status);
     void pointsVisibleForEnoughCameras(const std::vector<double>& update)const;
    // osg::Vec3 getPosition(){return mat.getTrans();}
     int getPriority(){return priority;}
@@ -72,7 +73,7 @@ private:
     float length = 2;
     float width = 2;
     float height = 8;
-    const double distance =5.0; //distance between Points
+    const double distance =4.0; //distance between Points
     const int priority;
     osg::Vec3 preferredDirection;//Direction from which SZ should be observed (x,y,z)
     std::string name;

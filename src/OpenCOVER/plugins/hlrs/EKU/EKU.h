@@ -139,8 +139,8 @@ public:
     void doRemoveTruck(std::unique_ptr<Pump> &t);
     void doAddCam();
     void doRemoveCam(std::shared_ptr<CamPosition> &c);
-    void doAddPRIO1();
-    void doAddPRIO2();
+    void doAddPRIO1(osg::Vec3 pos, double l, double w, double h);
+    void doAddPRIO2(osg::Vec3 pos, double l, double w, double h);
     void doRemovePRIOZone(std::shared_ptr<SafetyZone> &s);
     void doCalcVisMat();
     void findNotVisiblePoints();
@@ -157,7 +157,6 @@ public:
     std::vector<CamDrawable*> finalCams;
 
 
-    SZ* newSZ;
     GA *ga;
     static EKU *plugin;
     osg::ref_ptr<osg::Group> finalScene;
@@ -172,6 +171,9 @@ private:
     ui::Button *MakeCamsInvisible = nullptr, *ShowSearchSpace = nullptr,*ModifyScene = nullptr;
 
 
+    ui::Menu *Optimize = nullptr;
+
+    ui::Menu *Test = nullptr;
     osg::MatrixTransform *mymtf;
     vrui::coTrackerButtonInteraction *myinteraction;
     bool interActing;
@@ -184,6 +186,8 @@ private:
     osg::ref_ptr<osg::Node> silo1;
     osg::ref_ptr<osg::Node> silo2;
     osg::ref_ptr<osg::Node> container;
+    osg::ref_ptr<osg::Node> christmasTree;
+
 
 
     osg::ref_ptr<osg::Node> truck;

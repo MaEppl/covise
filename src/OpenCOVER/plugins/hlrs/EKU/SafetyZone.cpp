@@ -9,7 +9,7 @@ osg::Vec3 calcDirectionVec(osg::Matrix &m)
     osg::Matrix rotation = osg::Matrix::rotate(m.getRotate());
     osg::Vec3 direction = osg::Vec3{0,-1,0} *rotation; //{0,1,0} is init Vec of coVR3DTransRotInteractor
     direction.normalize();
-    std::cout<<"Direction Vector: "<<direction.x()<<", "<<direction.y()<<", "<<direction.z()<<std::endl;
+//    std::cout<<"Direction Vector: "<<direction.x()<<", "<<direction.y()<<", "<<direction.z()<<std::endl;
     return direction;
 }
 
@@ -76,6 +76,8 @@ osg::Geode* SafetyZone::plotSafetyZone()
     //necessary for dynamic redraw (command:dirty)
     geom->setDataVariance(osg::Object::DataVariance::DYNAMIC) ;
     geom->setUseDisplayList(false);
+    geom->setColorBinding(Geometry::BIND_OVERALL);
+    geom->setNormalBinding(osg::Geometry::BIND_OVERALL);
     geom->setUseVertexBufferObjects(true);
     geode->addDrawable(geom);
     geode->getStateSet()->setMode( GL_BLEND, osg::StateAttribute::ON );
@@ -91,11 +93,13 @@ osg::Geode* SafetyZone::plotSafetyZone()
     verts->push_back( osg::Vec3(  0,0,  1 ) );// upper front right
     verts->push_back( osg::Vec3(  0, width,  1) ); // upper back right
 
-
-
     // Associate this set of vertices with the Geometry.
     geom->setVertexArray(verts);
 
+    //set normals
+    osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array;
+    normals->push_back((osg::Vec3(0.0,0.0,-1.0)));
+    geom->setNormalArray(normals);
     // Next, create primitive sets and add them to the Geometry.
     // Each primitive set represents a Line of the Wireframe
 
@@ -164,22 +168,28 @@ osg::Geode* SafetyZone::plotSafetyZone()
 
 
 
-    LineWidth *lw = new LineWidth(2.0);
+    LineWidth *lw = new LineWidth(3.0);
     stateset->setAttribute(lw);
     return geode;
 }
 void SafetyZone::setStateSet(osg::StateSet *stateSet)
 {
     osg::Material *material = new osg::Material();
-    material->setColorMode(osg::Material::DIFFUSE);
+    material->setColorMode(osg::Material::AMBIENT_AND_DIFFUSE);
     material->setDiffuse(osg::Material::FRONT_AND_BACK, color);//0.5
+    material->setSpecular(Material::FRONT_AND_BACK, Vec4(0.9f, 0.9f, 0.9f, 1.f));
+    material->setAmbient(Material::FRONT_AND_BACK, Vec4(0.2f, 0.2f, 0.2f, 1.f));
+    material->setEmission(Material::FRONT_AND_BACK, Vec4(0.0f, 0.0f, 0.0f, 1.f));
+    material->setShininess(Material::FRONT_AND_BACK, 16.f);
+    material->setTransparency(Material::FRONT_AND_BACK, 0.0f); // Noch Wert anpassen fuer Transparency
     osg::LightModel *defaultLm;
     defaultLm = new osg::LightModel();
     defaultLm->setLocalViewer(true);
     defaultLm->setTwoSided(true);
     defaultLm->setColorControl(osg::LightModel::SINGLE_COLOR);
     stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
-    stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
+     stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
+
 }
 void SafetyZone::createPoints()
 {
@@ -520,20 +530,31 @@ void SafetyZone::updateColor(const std::vector<double>& update)const
 }
 void SafetyZone::pointsVisibleForEnoughCameras(const std::vector<double>& update)const
 {
-    const int nbrOfPointsInInput = update.size();
-    const int nbrOfPointsInVector = points.front().size();
-    int counter =0;
-    //conter vector<double> to corresponding vector<vector<double>>
-    for(int i =0;i<nbrOfPointsInInput;i++)
+    if(!update.empty())
     {
-        if(update.at(i) ==1)//if point is not visible
-            points.at(i/nbrOfPointsInVector).at(counter)->visible(false);
-        else
-            points.at(i/nbrOfPointsInVector).at(counter)->visible(true);
-        counter++;
-        if(counter == nbrOfPointsInVector)
+        const int nbrOfPointsInInput = update.size();
+        const int nbrOfPointsInVector = points.front().size();
+        int counter =0;
+        //conter vector<double> to corresponding vector<vector<double>>
+        for(int i =0;i<nbrOfPointsInInput;i++)
         {
-            counter =0;
+            if(update.at(i) ==1)//if point is not visible
+                points.at(i/nbrOfPointsInVector).at(counter)->visible(false);
+            else
+                points.at(i/nbrOfPointsInVector).at(counter)->visible(true);
+            counter++;
+            if(counter == nbrOfPointsInVector)
+            {
+                counter =0;
+            }
+        }
+    }
+    else // no point is visible
+    {
+        for(const auto& x :points)
+        {
+            for(const auto & x1 :x)
+                x1->visible(false);
         }
     }
 }
@@ -550,7 +571,31 @@ void SafetyZone::resetColor(const std::vector<double>& reset)const
 
     }
 }
+void SafetyZone::changeInteractorStatus(bool status)
+{
+    if(status == true)
+    {
+        interactor->show();
+        interactor->enableIntersection();
+        sizeYInteractor->show();
+        sizeYInteractor->enableIntersection();
+        sizeXInteractor->show();
+        sizeXInteractor->enableIntersection();
+        preferredDirectionInteractor->enableIntersection();
 
+    }
+    else
+    {
+        interactor->hide();
+        interactor->disableIntersection();
+        sizeYInteractor->hide();
+        sizeYInteractor->disableIntersection();
+        sizeXInteractor->hide();
+        sizeXInteractor->disableIntersection();
+        preferredDirectionInteractor->disableIntersection();
+
+    }
+}
 Point::Point(osg::Vec3 pos,osg::Vec4 color):color(color),visibleForEnoughCameras(true)
 {
     osg::Matrix local;
@@ -578,8 +623,12 @@ Point::~Point()
 void Point::setStateSet(osg::StateSet *stateSet)
 {
     osg::Material *material = new osg::Material();
-    material->setColorMode(osg::Material::DIFFUSE);
+    material->setColorMode(osg::Material::AMBIENT_AND_DIFFUSE);
     material->setDiffuse(osg::Material::FRONT_AND_BACK, color);
+    material->setSpecular(Material::FRONT_AND_BACK, Vec4(0.9f, 0.9f, 0.9f, 1.f));
+    material->setAmbient(Material::FRONT_AND_BACK, Vec4(0.2f, 0.2f, 0.2f, 1.f));
+    material->setEmission(Material::FRONT_AND_BACK, Vec4(0.0f, 0.0f, 0.0f, 1.f));
+    material->setShininess(Material::FRONT_AND_BACK, 16.f);
     osg::LightModel *defaultLm;
     defaultLm = new osg::LightModel();
     defaultLm->setLocalViewer(true);

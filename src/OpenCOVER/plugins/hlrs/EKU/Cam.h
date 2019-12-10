@@ -37,12 +37,14 @@
 #include<osgFX/Scribe>
 
 #include<Sensor.h>
-
+#include<SafetyZone.h>
 using namespace opencover;
 
 class Cam
 {   
 public:
+    static size_t count;
+
     static double imgWidth;
     static double imgHeight;
     static double imgWidthPixel;
@@ -50,28 +52,41 @@ public:
     static double fov;
     static double depthView;
     static double focalLengthPixel;
-
+    static double rangeDistortionDepth;
     Cam(coCoord m,const std::string name);
     ~Cam();
     std::vector<std::vector<double>> getVisMat(){return visMat;}
-
-
+    std::vector<int> getVisMatPrio1(){return visMatPrio1;}
+    std::vector<int> getVisMatPrio2(){return visMatPrio2;}
+    const int id=count;
     osg::Vec2 rot; // [0]=alpha =zRot, [1]=beta =yRot
     osg::Vec3 pos;
-
+    osg::Vec3 directionVec; //direction Vector
+    osg::Matrix mat;
     //check if points are visible for this camera
     void calcVisMat();
-    std::vector<std::vector<double>> visMat; //
+    std::vector<std::vector<double>> visMat; //outer Vector is for SafetyZones, inner for dots in each SafetyZone
+    std::vector<int> visMatPrio1;
+    std::vector<int> visMatPrio2;
+    std::vector<double> distortionValuePrio1;
+    std::vector<double> distortionValuePrio2;
+
     std::string getName()const{return name;}
     void setPosition(coCoord& m);
+    osg::Matrix getMatrix(){
+        coCoord euler = mat;
+        std::cout<<"Cam "<<count<<" :"<<euler.hpr[0]<<","<<euler.hpr[1]<<","<<euler.hpr[2]<<std::endl;
+        return mat;}
+    int getID(){return id;}
 protected:
-    const std::string name;
+     std::string name;
 private:
     //osg::Box *mySphere; // for visualization
     // Calculates if Obstacles are in line of sigth betwenn camera and observation Point
     bool calcIntersection(const osg::Vec3d& end);
     // sensor will gather the most relevant data only at a particular distance with gradually fading efficiency on either side of it
-    double calcRangeDistortionFactor(const osg::Vec3d& point);
+    double calcRangeDistortionFactor(const osg::Vec3d& point) const;
+    double calcPreferredDirectionFactor(osg::Vec3 directionOfPoint);
 
 
 };
@@ -130,6 +145,8 @@ public:
         return localDCS.get()->getMatrix().getTrans();}
 
     osg::Matrix getMatrix(){return viewpointInteractor->getMatrix();}
+    osg::Vec3 &getDirectionVec(){return directionVec;}
+
     std::string getName(){return name;}
     void setPosition( osg::Matrix matrix1)
     {
@@ -144,7 +161,6 @@ public:
     void createCamsInSearchSpace();
     void setSearchSpaceState(bool state);
     void updateCamMatrixes();
-
     std::vector<std::shared_ptr<Cam>> allCameras;
     std::unique_ptr<CamDrawable> camDraw;
     void activate();
@@ -159,6 +175,9 @@ private:
     osg::ref_ptr<osg::MatrixTransform> localDCS;
     osg::ref_ptr<osg::Group> searchSpaceGroup;
     std::vector<osg::ref_ptr<osg::MatrixTransform>> searchSpace;
+    osg::Vec3 directionVec; // Direction Vector of camera (direction of arrow)
+
+
 
 
 
