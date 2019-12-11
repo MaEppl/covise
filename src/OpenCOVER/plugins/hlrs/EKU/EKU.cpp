@@ -628,31 +628,25 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         GA::nbrCamsPerCamPosition=allCamPositions.front()->allCameras.size();
         GA::nbrPoints = safetyZones.size();
 
-        std::vector<int> allVisMatsPRIO1;
-        std::vector<int> allVisMatsPRIO2;
-    /*    for(const auto& x:allCamPositions)
-        {
-            for(const auto& x1 :x->allCameras )
-            {
-              // std::copy(x1->getVisMatPrio1().begin(),x1->getVisMatPrio1().end(),allVisMatsPRIO1.end());
-               allVisMatsPRIO1.insert(allVisMatsPRIO1.end(),x1->getVisMatPrio1().begin(),x1->getVisMatPrio1().end());
-               allVisMatsPRIO2.insert(allVisMatsPRIO2.end(),x1->getVisMatPrio2().begin(),x1->getVisMatPrio2().end());
-            }
-        }
-*/
-        ga =new GA(allCamPositions,safetyZones,allVisMatsPRIO1,allVisMatsPRIO2);
+        ga =new GA(allCamPositions,safetyZones);
         delete this->ga;
 
-        //show Points which are currently not visible
+        ModifyScene->setState(false);
+        modifyScene = false;
+
+        for(const auto& x : safetyZones)
+        {
+            x->changeInteractorStatus(false);
+        }
+
         for(const auto& x : allCamPositions)
         {
             x->camDraw->cam->calcVisMat();
             for(const auto& x1: x->allCameras)
                 x1->calcVisMat();
         }
-        findNotVisiblePoints();
-
-
+          //show Points which are currently not visible
+          findNotVisiblePoints();
     });
 
     //Optimize nbr of cameras
@@ -731,6 +725,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         for(const auto& x : userInteraction)
             sensorList.append(x);
 */
+    });
+
+    //Add Truck
+    StopGA = new ui::Action(Optimize , "StopOptimization");
+    StopGA->setText("Stop Optimization");
+    StopGA->setCallback([this](){
+        if(ga != nullptr)
+            ga->stopGA();
     });
 
     //FOV

@@ -15,21 +15,24 @@
 class GA
 {
 public:
-    GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_ptr<SafetyZone>>& safetyZoneList,std::vector<int>& allVisMatsPRIO1,std::vector<int>& allVisMatsPRIO2);
+    GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_ptr<SafetyZone>>& safetyZoneList);
     ~GA()=default;
     std::vector<std::shared_ptr<Cam> > getfinalCamPos() const;
     static int nbrCamsPerCamPosition;
     static int nbrCamPositions;
     static int nbrPoints;
+    void stopGA(){
+        std::cout<<"Stop requested"<<std::endl;
+        user_stop=true;}
 
 private:
     std::ofstream output_file;                          //store result of GA
     std::vector<std::shared_ptr<CamPosition>>& camlist;
     std::vector<int> priorityList;
-    std::vector<int>& visMatPrio1;
-    std::vector<int>& visMatPrio2;
     unsigned int minCoveragePrio1 = 70;
     unsigned int minCoveragePrio2 = 50;
+    double weighting = 3;
+    bool user_stop =false;
     struct MySolution{
 
          MySolution():cameras(nbrCamPositions,0){}
@@ -71,7 +74,7 @@ private:
     void init_genes(MySolution& p,const std::function<double(void)> &rnd01);
     MySolution mutate(const MySolution& X_base,const std::function<double(void)> &rnd01,double shrink_scale);
     MySolution crossover(const MySolution& X1, const MySolution& X2,const std::function<double(void)> &rnd01);
-    bool eval_solution(const MySolution& p,MyMiddleCost &c);
+    bool eval_solution(const MySolution& p, MyMiddleCost &c);
     double calculate_SO_total_fitness(const GA_Type::thisChromosomeType &X);
     void SO_report_generation(int generation_number,const EA::GenerationType<MySolution,MyMiddleCost> &last_generation,const MySolution& best_genes);
     std::shared_ptr<Cam> getRandomCamera(int camPos, int index);

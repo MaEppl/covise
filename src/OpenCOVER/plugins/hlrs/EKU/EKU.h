@@ -157,14 +157,14 @@ public:
     std::vector<CamDrawable*> finalCams;
 
 
-    GA *ga;
+    GA *ga =nullptr;
     static EKU *plugin;
     osg::ref_ptr<osg::Group> finalScene;
     void restrictMovement(osg::Matrix &mat);
 private:
     //UI
     ui::Menu *EKUMenu  = nullptr;
-    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*RmvCam = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr, *RmvSafetyZone = nullptr,*calcVisMat = nullptr;
+    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*RmvCam = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr, *RmvSafetyZone = nullptr,*calcVisMat = nullptr,*StopGA = nullptr;
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
     ui::Group *Frame = nullptr;
     ui::Label *Label = nullptr;

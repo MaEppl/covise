@@ -567,7 +567,7 @@ void SafetyZone::updateWorldPosOfAllObservationPoints()
         {
             osg::Vec3 pos = x1->getPos()*localDCS.get()->getMatrix();
             worldPosOfAllObservationPoints.push_back(pos);
-            std::cout<< "Point World Coordinates: " << pos.x() <<" | "<< pos.y()<<" | "<< pos.z()<<std::endl;
+           // std::cout<< "Point World Coordinates: " << pos.x() <<" | "<< pos.y()<<" | "<< pos.z()<<std::endl;
 
         }
 

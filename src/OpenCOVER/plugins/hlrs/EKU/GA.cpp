@@ -80,37 +80,40 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
     c.coverage.total =(sum_observed_prio2 + sum_observed_prio1) / (visMatPrio1.size()+visMatPrio2.size()) *100;
 
     static size_t counter = 0;
-    if(c.coverage.prio1 < minCoveragePrio1 || c.coverage.prio2 < minCoveragePrio2)
+    if(!user_stop)
     {
-        counter++;
-        if(counter == 1000000)
+        if(c.coverage.prio1 < minCoveragePrio1 || c.coverage.prio2 < minCoveragePrio2)
         {
-            minCoveragePrio1 -= 10;
-            minCoveragePrio2 -= 10;
-            std::cout << "No camera network found, reducing MIN coverage values!"<<std::endl;
-            std::cout <<"New min coverage for PRIO1: " <<minCoveragePrio1<<std::endl;
-            std::cout <<"New min coverage for PRIO2: " <<minCoveragePrio2<<std::endl;
-            counter =0;
-            if(minCoveragePrio1 == 0 || minCoveragePrio2 == 0)
+            counter++;
+            if(counter == 800000 && user_stop ==false)
             {
-                std::cout<<"It's not possible to find a valid network, CANCEL !"<<std::endl;
-                ga_obj.user_request_stop=true;
+                minCoveragePrio1 -= 10;
+                minCoveragePrio2 -= 10;
+                std::cout << "No camera network found, reducing MIN coverage values!"<<std::endl;
+                std::cout <<"New min coverage for PRIO1: " <<minCoveragePrio1<<std::endl;
+                std::cout <<"New min coverage for PRIO2: " <<minCoveragePrio2<<std::endl;
+                counter =0;
+                if(minCoveragePrio1 == 0 || minCoveragePrio2 == 0)
+                {
+                    user_stop=true;
+                }
             }
+            return false;
         }
-        return false;
-    }
-    else
-    {   // if coverage is high enough then calc sum of PDC and RDC
-        std::vector<double> visFactor_prio1(p.cameras.begin()->get()->distortionValuePrio1.size(),0);
-        std::vector<double> visFactor_prio2(p.cameras.begin()->get()->distortionValuePrio2.size(),0);
-        for(const auto &x: p.cameras)
-        {
-            std::transform(x->distortionValuePrio1.begin(),x->distortionValuePrio1.end(),visFactor_prio1.begin(),visFactor_prio1.begin(),std::plus<double>());
-            std::transform(x->distortionValuePrio2.begin(),x->distortionValuePrio2.end(),visFactor_prio2.begin(),visFactor_prio2.begin(),std::plus<double>());
+        else
+        {   // if coverage is high enough then calc sum of PDC and RDC
+            std::vector<double> visFactor_prio1(p.cameras.begin()->get()->distortionValuePrio1.size(),0);
+            std::vector<double> visFactor_prio2(p.cameras.begin()->get()->distortionValuePrio2.size(),0);
+            for(const auto &x: p.cameras)
+            {
+                std::transform(x->distortionValuePrio1.begin(),x->distortionValuePrio1.end(),visFactor_prio1.begin(),visFactor_prio1.begin(),std::plus<double>());
+                std::transform(x->distortionValuePrio2.begin(),x->distortionValuePrio2.end(),visFactor_prio2.begin(),visFactor_prio2.begin(),std::plus<double>());
+            }
+            c.objective = -(weighting * std::accumulate(visFactor_prio1.begin(),visFactor_prio1.end(),0.0) + std::accumulate(visFactor_prio2.begin(),visFactor_prio2.end(),0.0));
+            return true;
         }
-        c.objective = -(2 * std::accumulate(visFactor_prio1.begin(),visFactor_prio1.end(),0.0) + std::accumulate(visFactor_prio2.begin(),visFactor_prio2.end(),0.0));
+    }else
         return true;
-    }
 }
 
 GA::MySolution GA:: mutate(const MySolution& X1,const std::function<double(void)> &rnd01,double shrink_scale)
@@ -132,6 +135,8 @@ GA::MySolution GA:: mutate(const MySolution& X1,const std::function<double(void)
 
 GA::MySolution GA::crossover(const MySolution& X1, const MySolution& X2,const std::function<double(void)> &rnd01)
 {
+    if(user_stop==true)
+        ga_obj.user_request_stop=true;
     int cutPoint = roundl(rnd01() * nbrCamPositions);
     MySolution X_new;
     X_new.cameras.clear();
@@ -147,6 +152,7 @@ double GA::calculate_SO_total_fitness(const GA_Type::thisChromosomeType &X)
     //obtain the final cost from the middle cost
     double final_cost=0;
     final_cost+=X.middle_costs.objective;
+    //ga_obj.user_request_stop=true;
     return final_cost;
 }
 
@@ -168,6 +174,13 @@ void GA::SO_report_generation(int generation_number,const EA::GenerationType<MyS
         <<last_generation.average_cost<<"\t"
         <<last_generation.best_total_cost<<"\t"
         <<best_genes.to_string()<<"\n";
+
+    if(user_stop==true)
+    {
+        std::cout<<"Was not possible to find a valid network, ABORTED (Solution not valid) !"<<std::endl;
+        ga_obj.user_request_stop=true;
+
+    }
 }
 
 std::vector<std::shared_ptr<Cam>> GA::getfinalCamPos() const
@@ -176,12 +189,11 @@ std::vector<std::shared_ptr<Cam>> GA::getfinalCamPos() const
  // auto result2= ga_obj.last_generation.chromosomes.at(ga_obj.last_generation.best_chromosome_index).middle_costs.tostring();
    return result ;
 }
-GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_ptr<SafetyZone> > &safetyZoneList,std::vector<int>& allVisMatsPRIO1,std::vector<int>& allVisMatsPRIO2):camlist(cam),visMatPrio1(allVisMatsPRIO1),visMatPrio2(allVisMatsPRIO2)
+GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_ptr<SafetyZone> > &safetyZoneList):camlist(cam)
 {
 
     for(const auto x : safetyZoneList)
         priorityList.push_back(x->getPriority());
-
 
     output_file.open("results.txt");
     output_file<<"step"<<"\t"<<"cost_avg"<<"\t"<<"cost_best"<<"\t"<<"solution_best"<<"\n";
@@ -203,19 +215,22 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     ga_obj.crossover=std::bind( &GA::crossover, this, _1,_2,_3 );
     ga_obj.SO_report_generation=std::bind( &GA::SO_report_generation, this, _1,_2,_3 );
     ga_obj.crossover_fraction=0.7;
-    ga_obj.mutation_rate=0.2;
+    ga_obj.mutation_rate=0.3;
     ga_obj.best_stall_max=10;
     ga_obj.elite_count=10;
     ga_obj.solve();
-    std::cout<<"The problem is optimized in "<<timer.toc()<<" seconds.###########################################"<<std::endl;
 
-    int count=0;
-    for(const auto &x : getfinalCamPos())
-    {
-        camlist.at(count)->setPosition(x->getMatrix());
-        count++;
-        coCoord euler = x->getMatrix();
-       // std::cout<<"Cam "<<count<<" :"<<euler.hpr[0]<<","<<euler.hpr[1]<<","<<euler.hpr[2]<<std::endl;
+    if(!user_stop){
+        std::cout<<"The problem is optimized in "<<timer.toc()<<" seconds.###########################################"<<std::endl;
+
+        int count=0;
+        for(const auto &x : getfinalCamPos())
+        {
+            camlist.at(count)->setPosition(x->getMatrix());
+            count++;
+            coCoord euler = x->getMatrix();
+           // std::cout<<"Cam "<<count<<" :"<<euler.hpr[0]<<","<<euler.hpr[1]<<","<<euler.hpr[2]<<std::endl;
+        }
     }
     output_file.close();
 
