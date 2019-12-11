@@ -24,7 +24,7 @@ double Cam::depthView = 70;
 double Cam::focalLengthPixel = Cam::imgWidthPixel*0.5/(std::tan(Cam::fov*0.5*M_PI/180));
 double Cam::imgWidth = 2*depthView*std::tan(Cam::fov/2*osg::PI/180);
 double Cam::imgHeight = Cam::imgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
-double Cam::rangeDistortionDepth =18;
+double Cam::rangeDistortionDepth =22;
 size_t Cam::count=0;
 
 Cam::Cam(coCoord matrix,std::string name):pos(matrix.xyz),rot(matrix.hpr[0],matrix.hpr[1]),name(name)
@@ -61,7 +61,6 @@ void Cam::calcVisMat()
     // BUGFIX: still problem at borders?
 
     size_t cnt =1;
-    std::cout<<name<<": ";
     for(const auto& p : EKU::safetyZones)
     {
         std::vector<double> visMatForThisSafetyZone;
@@ -98,14 +97,18 @@ void Cam::calcVisMat()
                     if(p->getPriority() == SafetyZone::PRIO1)
                     {
                         visMatPrio1.push_back(1);
-                        double SRC = 1;//calcRangeDistortionFactor(newPoint);
+                        double SRC = calcRangeDistortionFactor(newPoint);
                         distortionValuePrio1.push_back(SRC*PDC);
+                       // std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
+
                     }
                     else if(p->getPriority() ==SafetyZone::PRIO2)
                     {
                         visMatPrio2.push_back(1);
-                        double SRC = 1;//calcRangeDistortionFactor(newPoint);
+                        double SRC = calcRangeDistortionFactor(newPoint);
                         distortionValuePrio2.push_back(SRC*PDC);
+                        //std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
+
                     }
                 }
                 else
@@ -179,11 +182,16 @@ bool Cam::calcIntersection(const osg::Vec3d& end)
 double Cam::calcRangeDistortionFactor(const osg::Vec3d &point) const
 {
     double y = point.y(); //distance between point and sensor in depth direction
- //   std::cout<<"distance"<<y<<std::endl;
+   // std::cout<<"distance"<<y<<std::endl;
     //SRC = Sensor Range Coefficient
+    double calibratedValue = 70; // Parameter rangeDisortionDepth was calibrated for DephtView of 70;
+    double omega = rangeDistortionDepth * depthView / calibratedValue; // adapt calibratedValue to new depthView
     //normalized Rayleigh distribution function
-    double SRC = rangeDistortionDepth*exp(0.5) * (y / pow(rangeDistortionDepth,2)) * exp(-(pow(y,2)) / (2*pow(rangeDistortionDepth,2)));
-  //  std::cout<<"SRC: "<<SRC<<std::endl;
+    double SRC = omega*exp(0.5) * (y / pow(omega,2)) * exp(-(pow(y,2)) / (2*pow(omega,2)));
+
+   // std::cout<<"DepthView: "<<Cam::depthView<<std::endl;
+   // std::cout<<"SRC: "<<SRC<<std::endl;
+
     return SRC;
 }
 
@@ -576,7 +584,7 @@ void CamPosition::createCamsInSearchSpace()
 {
     //around z axis
     int zMax = 80;
-    int stepSizeZ = 10; //in Degree
+    int stepSizeZ = 5; //in Degree
 
     int xMax = 20;
     int stepSizeX = 10; //in Degree
@@ -592,8 +600,8 @@ void CamPosition::createCamsInSearchSpace()
     int nbrOfCameras =0;
     osg::Matrix m_new;
 
-  //For debugging: only 1 cam in search space
-  /*  newCoordPlus.makeMat(m_new);
+ /* //For debugging: only 1 cam in search space
+    newCoordPlus.makeMat(m_new);
     searchSpace.push_back(new osg::MatrixTransform );
     searchSpaceGroup->addChild(searchSpace.back().get());
     searchSpace.back()->setMatrix(m_new);
