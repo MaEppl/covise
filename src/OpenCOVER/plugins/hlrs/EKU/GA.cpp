@@ -41,9 +41,12 @@ void GA::init_genes(MySolution& p,const std::function<double(void)> &rnd01)
 
 
 bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
-{
-    // Überlappung der Kameras!
-    // Position Orientation -> für 3d Rekonstruktion
+{   /*
+     1) Überlappung der Kameras!      Position Orientation -> für 3d Rekonstruktion
+     2)
+
+
+    */
     std::vector<int> visYesNo_prio1(p.cameras.begin()->get()->visMatPrio1.size(),0);
     std::vector<int> visYesNo_prio2(p.cameras.begin()->get()->visMatPrio2.size(),0);
 
@@ -198,6 +201,8 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     output_file.open("results.txt");
     output_file<<"step"<<"\t"<<"cost_avg"<<"\t"<<"cost_best"<<"\t"<<"solution_best"<<"\n";
 
+    std::cout<<"GA: Number of cameras: "<< nbrCamsPerCamPosition*nbrCamPositions<<std::endl;
+    std::cout<<"GA: Number of points: "<< cam.at(0)->camDraw->cam->getVisMatPrio1().size() + cam.at(0)->camDraw->cam->getVisMatPrio2().size() <<std::endl;
     EA::Chronometer timer;
     timer.tic();
     using namespace std::placeholders;
@@ -205,7 +210,7 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     ga_obj.multi_threading=true;
     ga_obj.idle_delay_us=1;//10 // switch between threads quickly
     ga_obj.dynamic_threading=true;
-    ga_obj.verbose=false;
+    ga_obj.verbose=true;
     ga_obj.population=300;
     ga_obj.generation_max=1000;
     ga_obj.calculate_SO_total_fitness=std::bind( &GA::calculate_SO_total_fitness, this, _1);
@@ -217,7 +222,7 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     ga_obj.crossover_fraction=0.7;
     ga_obj.mutation_rate=0.3;
     ga_obj.best_stall_max=10;
-    ga_obj.elite_count=10;
+    ga_obj.elite_count=ga_obj.population/ 100 * 6; //6% of population size;
     ga_obj.solve();
 
     if(!user_stop){
