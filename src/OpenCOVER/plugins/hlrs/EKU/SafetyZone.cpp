@@ -567,13 +567,15 @@ void SafetyZone::updateWorldPosOfAllObservationPoints()
         {
             osg::Vec3 pos = x1->getPos()*localDCS.get()->getMatrix();
             worldPosOfAllObservationPoints.push_back(pos);
+            double z = pos.z();
+            if(z > highestZvalue)
+                highestZvalue = z;
            // std::cout<< "Point World Coordinates: " << pos.x() <<" | "<< pos.y()<<" | "<< pos.z()<<std::endl;
-
+            std::cout<<"zValue"<<z<<std::endl;
         }
 
     }
 }
-
 void SafetyZone::updateColor(const std::vector<double>& update)const
 {
     const int nbrOfPointsInInput = update.size();
