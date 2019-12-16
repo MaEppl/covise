@@ -21,6 +21,10 @@ public:
     static int nbrCamsPerCamPosition;
     static int nbrCamPositions;
     static int nbrPoints;
+
+    static double penalty;
+    static double weightingPRIO1;
+
     void stopGA(){
         std::cout<<"Stop requested"<<std::endl;
         user_stop=true;}
@@ -31,7 +35,6 @@ private:
     std::vector<int> priorityList;
     unsigned int minCoveragePrio1 = 70;
     unsigned int minCoveragePrio2 = 50;
-    double weighting = 3;
     bool user_stop =false;
     struct MySolution{
 

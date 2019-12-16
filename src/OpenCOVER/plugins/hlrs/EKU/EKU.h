@@ -67,6 +67,10 @@ class Action;
 
 using namespace opencover;
 
+//returns the highest z value of a safetyZone
+double getZvalueOfSZ();
+
+
 class Pump
 {
 public:
@@ -172,6 +176,8 @@ private:
 
 
     ui::Menu *Optimize = nullptr;
+    ui::Slider *penalty = nullptr, *weighting = nullptr;
+
 
     ui::Menu *Test = nullptr;
     osg::MatrixTransform *mymtf;

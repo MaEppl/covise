@@ -20,6 +20,8 @@
 int GA::nbrCamsPerCamPosition=16;
 int GA::nbrCamPositions=0;
 int GA::nbrPoints=0;
+double GA::weightingPRIO1 = 3;
+double GA::penalty =10;
 #if(1)
 
 std::shared_ptr<Cam> GA::getRandomCamera(int camPos, int index)
@@ -43,9 +45,22 @@ void GA::init_genes(MySolution& p,const std::function<double(void)> &rnd01)
 bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
 {   /*
      1) Überlappung der Kameras!      Position Orientation -> für 3d Rekonstruktion
-     2)
+     2) nur 1 Kamera gegeben und nur PRIO1 zones -> wenn visMatPrio1 genommen wird, dann keine Lösung
+     3) man nimmt visMatPrio: (also Vektor wo maximal 0 oder 1 drinsteht)
+        - 3 Kameras zur Verfügung, aber 2 decken bereits alle Punkte ab --> 3 ist random!
 
 
+        --> ohne rejected solutions fallen Ergebnisse in jedem Durchgang sehr unterschiedlich aus!
+        0 kommt raus wenn alle Punkte abgedeckt sind! was negatives wenn einige Punkte mit mehr als nötig Kameras abgedeckt sind
+        positives, wenn nicht alle Punkte abgedeckt sind ->stimmt ned!!!!
+
+
+        actNbrCam - minNbrCam >=0;
+        0         -     1        = -2 --> multiply with factor!
+        1         -     2        = -1 --> multiply with factor!
+
+        2         -      2       =0
+        3         -      2       =1 -->3 cameras are better than 2, but without factor!
     */
     std::vector<int> visYesNo_prio1(p.cameras.begin()->get()->visMatPrio1.size(),0);
     std::vector<int> visYesNo_prio2(p.cameras.begin()->get()->visMatPrio2.size(),0);
@@ -61,19 +76,30 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
 
     for(const auto&x :visYesNo_prio1)
     {
-        if(x>=SafetyZone::PRIO1)
+        double value = x-SafetyZone::PRIO1;
+        if(value < 0)
+            value=value*penalty;
+        visMatPrio1.push_back(value);
+     /*   if(x>=SafetyZone::PRIO1)
             visMatPrio1.push_back(1);
         else
             visMatPrio1.push_back(0);
+    */
     }
 
     for(const auto&x :visYesNo_prio2)
     {
-        if(x>=SafetyZone::PRIO2)
+        double value = x-SafetyZone::PRIO2;
+        if(value < 0)
+            value=value*penalty;
+        visMatPrio2.push_back(value);
+
+      /*  if(x>=SafetyZone::PRIO2)
             visMatPrio2.push_back(1);
         else
             visMatPrio2.push_back(0);
-    }
+ */
+ }
 
     //Coverage [%]
     double sum_observed_prio1 = std::accumulate(visMatPrio1.begin(),visMatPrio1.end(),0.0);
@@ -83,7 +109,7 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
     c.coverage.total =(sum_observed_prio2 + sum_observed_prio1) / (visMatPrio1.size()+visMatPrio2.size()) *100;
 
     static size_t counter = 0;
-    if(!user_stop)
+/*    if(!user_stop)
     {
         if(c.coverage.prio1 < minCoveragePrio1 || c.coverage.prio2 < minCoveragePrio2)
         {
@@ -112,11 +138,14 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
                 std::transform(x->distortionValuePrio1.begin(),x->distortionValuePrio1.end(),visFactor_prio1.begin(),visFactor_prio1.begin(),std::plus<double>());
                 std::transform(x->distortionValuePrio2.begin(),x->distortionValuePrio2.end(),visFactor_prio2.begin(),visFactor_prio2.begin(),std::plus<double>());
             }
-            c.objective = -(weighting * std::accumulate(visFactor_prio1.begin(),visFactor_prio1.end(),0.0) + std::accumulate(visFactor_prio2.begin(),visFactor_prio2.end(),0.0));
+           // c.objective = -(weighting * std::accumulate(visFactor_prio1.begin(),visFactor_prio1.end(),0.0) + std::accumulate(visFactor_prio2.begin(),visFactor_prio2.end(),0.0));
+  */          c.objective = -(weightingPRIO1 * std::accumulate(visMatPrio1.begin(),visMatPrio1.end(),0.0) + std::accumulate(visMatPrio2.begin(),visMatPrio2.end(),0.0));
+
             return true;
-        }
+/*        }
     }else
         return true;
+*/
 }
 
 GA::MySolution GA:: mutate(const MySolution& X1,const std::function<double(void)> &rnd01,double shrink_scale)
@@ -227,16 +256,18 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
 
     if(!user_stop){
         std::cout<<"The problem is optimized in "<<timer.toc()<<" seconds.###########################################"<<std::endl;
-
+        std::cout<<"Cam id: ";
         int count=0;
         for(const auto &x : getfinalCamPos())
         {
             camlist.at(count)->setPosition(x->getMatrix());
             count++;
             coCoord euler = x->getMatrix();
-           // std::cout<<"Cam "<<count<<" :"<<euler.hpr[0]<<","<<euler.hpr[1]<<","<<euler.hpr[2]<<std::endl;
+            int out = x->getID();
+            std::cout<<out<<", ";
         }
     }
+    std::cout<<" "<<std::endl;
     output_file.close();
 
 

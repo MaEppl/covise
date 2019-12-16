@@ -17,6 +17,11 @@ std::vector<std::shared_ptr<SafetyZone>> EKU::safetyZones;
 std::vector<std::shared_ptr<CamPosition>> EKU::allCamPositions;
 std::vector<std::unique_ptr<Pump>> EKU::allPumps;
 
+double getZvalueOfSZ()
+{
+  //  for(const auto& x : saf)
+
+}
 
 EKU *EKU::plugin = NULL;
 void EKU::restrictMovement(osg::Matrix &mat)
@@ -50,11 +55,11 @@ void Pump::preFrame()
                 //remember invStartHand-Matrix, when interaction started and mouse button was pressed
                 invStartHand.invert(cover->getPointerMat() * cover->getInvBaseMat());
                 startPos = fullMat->getMatrix(); //remember position of truck, when interaction started
-       /*         if(!camLeft.expired())
+                if(!camLeft.expired())
                     startPoscamPosinterActor1 = camLeft.lock()->getMatrix();//remember position of cam, when interaction started
                 if(!camRight.expired())
                     startPoscamPosinterActor2 = camRight.lock()->getMatrix();
-                if(!szLeft.expired())
+        /*        if(!szLeft.expired())
                     startPosSZ1=szLeft.lock()->getMatrix();
                 if(!szRight.expired())
                     startPosSZ2=szRight.lock()->getMatrix();
@@ -72,8 +77,8 @@ void Pump::preFrame()
                 trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),0);//set z trans to zero
                 trans.orthoNormalize(trans);//remove scale
                 osg::Matrix newTrans =  startPos * osg::Matrix::translate(trans.getTrans());//newTrans is translation only
-          //      osg::Matrix transcamPosinterActor1 = startPoscamPosinterActor1 *  osg::Matrix::translate(trans.getTrans());
-          //      osg::Matrix transcamPosinterActor2 = startPoscamPosinterActor2 * osg::Matrix::translate(trans.getTrans());
+                osg::Matrix transcamPosinterActor1 = startPoscamPosinterActor1 *  osg::Matrix::translate(trans.getTrans());
+                osg::Matrix transcamPosinterActor2 = startPoscamPosinterActor2 * osg::Matrix::translate(trans.getTrans());
           //      osg::Matrix transSZ1 = startPosSZ1 * osg::Matrix::translate(trans.getTrans());
           //      osg::Matrix transSZ2 = startPosSZ2 * osg::Matrix::translate(trans.getTrans());
 
@@ -94,15 +99,15 @@ void Pump::preFrame()
                 // For Translation:
                 fullMat->setMatrix(newTrans);
                 //update possitions of childs:
-           /*    if(!szLeft.expired())
+            /*   if(!szLeft.expired())
                    szLeft.lock()->setPosition(transSZ1);
                if(!szRight.expired())
                    szRight.lock()->setPosition(transSZ2);
-                if(!camLeft.expired())
+            */    if(!camLeft.expired())
                     camLeft.lock()->setPosition(transcamPosinterActor1);
                 if(!camRight.expired())
                     camRight.lock()->setPosition(transcamPosinterActor2);
-            */
+
 
             }
         }
@@ -220,20 +225,20 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
 */
 
     //create possible Cam locations ####Old values of Points:Vec3(1.5,1.6,-0.5) Vec3(-1.6,1.6,-0.5)
- /*   osg::Matrix localInteractor1,localInteractor2;
+    osg::Matrix localInteractor1,localInteractor2;
     localInteractor1.setTrans(osg::Vec3(1.6,1.6,-0.5));
     localInteractor1.setRotate(rotInteractor);
     std::shared_ptr<CamPosition> c1 =std::make_shared<CamPosition>(localInteractor1,this);
     camLeft = c1;
     allCams.push_back(std::move(c1));
-   // possibleCamLocations.push_back(new CamPosition(localInteractor1));//to side , height , forward
+    //possibleCamLocations.push_back(new CamPosition(localInteractor1));//to side , height , forward
     localInteractor2.setTrans(osg::Vec3(-1.6,1.6,-0.5));
     localInteractor2.setRotate(rotInteractor);
     std::shared_ptr<CamPosition> c2 =std::make_shared<CamPosition>(localInteractor2,this);
     camRight =c2;
     allCams.push_back(std::move(c2));
 
-*/
+
 
     //Rotation
     osg::Matrix rotate;
@@ -312,17 +317,17 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
      upperGroup->setName("Truck"+std::to_string(Pump::counter));
      upperGroup->addChild(fullMat.get());
     // for(const auto& x : possibleCamLocations)
-//    upperGroup->addChild(camLeft.lock()->getCamGeode().get());
-//    upperGroup->addChild(camRight.lock()->getCamGeode().get());
+     upperGroup->addChild(camLeft.lock()->getCamGeode().get());
+     upperGroup->addChild(camRight.lock()->getCamGeode().get());
 //    upperGroup->addChild(szLeft.lock()->getSZ());
 //    upperGroup->addChild(szRight.lock()->getSZ());
-//    camLeft.lock()->setPosition(localInteractor1*full);
-//    camRight.lock()->setPosition(localInteractor2*full);
+     camLeft.lock()->setPosition(localInteractor1*full);
+     camRight.lock()->setPosition(localInteractor2*full);
 //    szLeft.lock()->setPosition(localSafetyZone1* full);
 //    szRight.lock()->setPosition(localSafetyZone2* full);
 
-    // possibleCamLocations.at(0)->setPosition(localInteractor1*full);
-    // possibleCamLocations.at(1)->setPosition(localInteractor2*full);
+     //possibleCamLocations.at(0)->setPosition(localInteractor1*full);
+     //possibleCamLocations.at(1)->setPosition(localInteractor2*full);
 
      cover->getObjectsRoot()->addChild(upperGroup.get());
 }
@@ -467,13 +472,9 @@ void EKU::createScene()
 
 EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 {
+    //enable building KDTree structure for all geometries loaded: --> intersection Test is much faster!
+    osgDB::Registry::instance()->setBuildKdTreesHint(osgDB::Options::BUILD_KDTREES);
 
-    osg::Vec3 cam{200,0,0};
-    osg::Vec3 point{-0.200,0.8,0.0};
-    double c =0.0;
-    double PDC = std::pow((cam.operator *(point)/(cam.normalize()*point.normalize())),2) +c;
-    std::cout<<"PDC: "<<PDC<<std::endl;
-    std::cout <<"dot: "<<cam.operator *(point)<<std::endl;
     plugin = this;
     fprintf(stderr, "EKUplugin::EKUplugin\n");
     finalScene = new osg::Group;
@@ -727,13 +728,30 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 */
     });
 
-    //Add Truck
+    //StopGA
     StopGA = new ui::Action(Optimize , "StopOptimization");
     StopGA->setText("Stop Optimization");
     StopGA->setCallback([this](){
         if(ga != nullptr)
             ga->stopGA();
     });
+    //penalty
+    penalty = new ui::Slider(Optimize , "penalty");
+    penalty->setText("penalty");
+    penalty->setBounds(1., 30.);
+    penalty->setValue(GA::penalty);
+    penalty->setCallback([this](double value, bool released){
+        GA::penalty =value;
+    });
+    //weight for Prio1
+    weighting = new ui::Slider(Optimize , "weighting");
+    weighting->setText("weigthing PRIO1");
+    weighting->setBounds(1., 10.);
+    weighting->setValue(GA::weightingPRIO1);
+    weighting->setCallback([this](double value, bool released){
+        GA::weightingPRIO1=value;
+    });
+
 
     //FOV
     FOVRegulator = new ui::Slider(EKUMenu , "Slider1");
