@@ -708,7 +708,7 @@ void CamPosition::updateCamMatrixes()
     //update pos of camDraw
     coCoord euler =localDCS->getMatrix();
     camDraw->cam->setPosition(euler);
-    std::cout<<"All cam positions are updated!"<<std::endl;
+    //std::cout<<"All cam positions are updated!"<<std::endl;
 }
 
 void CamPosition::setSearchSpaceState(bool state)

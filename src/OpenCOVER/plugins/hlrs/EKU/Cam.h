@@ -75,7 +75,7 @@ public:
     void setPosition(coCoord& m);
     osg::Matrix getMatrix(){
         coCoord euler = mat;
-        std::cout<<"Cam "<<count<<" :"<<euler.hpr[0]<<","<<euler.hpr[1]<<","<<euler.hpr[2]<<std::endl;
+        //std::cout<<"Cam "<<count<<" :"<<euler.hpr[0]<<","<<euler.hpr[1]<<","<<euler.hpr[2]<<std::endl;
         return mat;}
     int getID(){return id;}
 protected:
@@ -152,8 +152,8 @@ public:
     {
         viewpointInteractor->updateTransform(matrix1);
         localDCS->setMatrix(matrix1);
-        osg::Vec3 poslocal= viewpointInteractor->getMatrix().getTrans();
-        std::cout<<"Camera in World: "<<name<<poslocal.x()<<"|"<<poslocal.y()<<"|"<<poslocal.z()<<std::endl;
+        //osg::Vec3 poslocal= viewpointInteractor->getMatrix().getTrans();
+       // std::cout<<"Camera in World: "<<name<<poslocal.x()<<"|"<<poslocal.y()<<"|"<<poslocal.z()<<std::endl;
         updateCamMatrixes();
     }
 
