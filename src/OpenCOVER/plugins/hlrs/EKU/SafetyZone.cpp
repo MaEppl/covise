@@ -660,7 +660,7 @@ void SafetyZone::changeInteractorStatus(bool status)
         sizeXInteractor->hide();
         sizeXInteractor->disableIntersection();
         preferredDirectionInteractor->disableIntersection();
-        preferredDirectionInteractor2->enableIntersection();
+        preferredDirectionInteractor2->disableIntersection();
 
 
     }
