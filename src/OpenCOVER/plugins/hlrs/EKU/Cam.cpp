@@ -219,7 +219,7 @@ CamDrawable::CamDrawable(coCoord &m)
     //create pyramide
     camGeode = plotCam();
     camGeode->setName("CamDrawable"+std::to_string(CamDrawable::count));
-
+    camGeode->setNodeMask(camGeode->getNodeMask() & (~Isect::Intersection) & (~Isect::Pick));
     //create interactor
   /*  mySphere = new osg::Sphere(verts.get()->at(0), 1.);
     osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
@@ -519,22 +519,22 @@ void CamPosition::preFrame()
         coCoord testEuler;
         if(viewpointInteractor->wasStarted())
         {
-         //  osg::Matrix test = viewpointInteractor->getMatrix();
-         //   testEuler = test;
-         //   std::cout<<"START"<<std::endl;
+           osg::Matrix test = viewpointInteractor->getMatrix();
+            testEuler = test;
+            std::cout<<"START"<<std::endl;
         }
         if(viewpointInteractor->isRunning())
         {
             osg::Matrix local = viewpointInteractor->getMatrix();
             coCoord localEuler = local;
             //restrict rotation around y
-          //  localEuler.hpr[2]=testEuler.hpr[2];
+           // localEuler.hpr[2]=testEuler.hpr[2];
             //cameras are always looking downwards -> no neg rotation around x
             //if(localEuler.hpr[1] < 0.0)
             //    localEuler.hpr[1] = 0.0;
             localEuler.makeMat(local);
             localDCS->setMatrix(local);
-
+           // viewpointInteractor->updateTransform(local);
     //        std::cout<<"Rotation(around global axes): "<<"z:"<<localEuler.hpr[0]<< " x:"<<localEuler.hpr[1]<<" y:"<<localEuler.hpr[2]<<std::endl;
         }
         if(viewpointInteractor->wasStopped())
@@ -583,7 +583,7 @@ void CamPosition::preFrame()
 void CamPosition::createCamsInSearchSpace()
 {
     //around z axis
-    int zMax = 80;
+    int zMax = 180;
     int stepSizeZ = 5; //in Degree
 
     int xMax = 20;
