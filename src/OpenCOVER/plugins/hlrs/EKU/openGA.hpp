@@ -995,18 +995,19 @@ protected:
             return ;
         }
 
-        if(verbose)
-            cout<<"Transfered elites: ";
+      //  if(verbose)
+       //     cout<<"Transfered elites: ";
         vector<int> blocked;
         for(int i=0;i<elite_count;i++)
         {
             g2.chromosomes.push_back(g.chromosomes[g.sorted_indices[i]]);
             blocked.push_back(g.sorted_indices[i]);
-            if(verbose)
+          /*  if(verbose)
             {
                 cout<<(i==0?"":", ");
                 cout<<(g.sorted_indices[i]+1);
             }
+        */
         }
         if(verbose)
             cout<<endl;
@@ -1025,8 +1026,8 @@ protected:
             g2.chromosomes.push_back(g.chromosomes[j]);
             blocked.push_back(g.sorted_indices[j]);
         }
-        if(verbose)
-            cout<<"Selection done."<<endl;
+      //  if(verbose)
+       //     cout<<"Selection done."<<endl;
     }
 
     void rank_population(thisGenerationType &gen)
@@ -1451,8 +1452,8 @@ protected:
         int *active_thread)
     {
 
-        if(verbose)
-            cout<<"Action: crossover"<<endl;
+        //if(verbose)
+          //  cout<<"Action: crossover"<<endl;
 
         bool successful=false;
         while(!successful)
@@ -1463,15 +1464,15 @@ protected:
             int pidx_c2=select_parent(last_generation);
             if(pidx_c1==pidx_c2)
                 continue ;
-            if(verbose)
-                cout<<"Crossover of chromosomes "<<pidx_c1<<","<<pidx_c2<<endl;
+            //if(verbose)
+             //   cout<<"Crossover of chromosomes "<<pidx_c1<<","<<pidx_c2<<endl;
             GeneType Xp1=last_generation.chromosomes[pidx_c1].genes;
             GeneType Xp2=last_generation.chromosomes[pidx_c2].genes;
             X.genes=crossover(Xp1,Xp2,[this](){return random01();});
             if(random01()<=mutation_rate)
             {
-                if(verbose)
-                    cout<<"Mutation of chromosome "<<endl;
+                //if(verbose)
+                  //  cout<<"Mutation of chromosome "<<endl;
                 double shrink_scale=get_shrink_scale(generation_step,[this](){return random01();});
                 X.genes=mutate(X.genes,[this](){return random01();},shrink_scale);
             }
