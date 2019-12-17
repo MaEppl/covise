@@ -218,7 +218,6 @@ void GA::SO_report_generation(int generation_number,const EA::GenerationType<MyS
 std::vector<std::shared_ptr<Cam>> GA::getfinalCamPos() const
 {
    std::vector<std::shared_ptr<Cam>>result= ga_obj.last_generation.chromosomes.at(ga_obj.last_generation.best_chromosome_index).genes.cameras;
- // auto result2= ga_obj.last_generation.chromosomes.at(ga_obj.last_generation.best_chromosome_index).middle_costs.tostring();
    return result ;
 }
 GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_ptr<SafetyZone> > &safetyZoneList):camlist(cam)
@@ -227,7 +226,8 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     for(const auto x : safetyZoneList)
         priorityList.push_back(x->getPriority());
 
-    output_file.open("results.txt");
+    std::string name = "results_"+std::to_string(coVRMSController::instance()->getID())+".txt";
+    output_file.open(name);
     output_file<<"step"<<"\t"<<"cost_avg"<<"\t"<<"cost_best"<<"\t"<<"solution_best"<<"\n";
 
     std::cout<<"GA: Number of cameras: "<< nbrCamsPerCamPosition*nbrCamPositions<<std::endl;
@@ -236,7 +236,7 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     timer.tic();
     using namespace std::placeholders;
     ga_obj.problem_mode=EA::GA_MODE::SOGA;
-    ga_obj.multi_threading=true;
+    ga_obj.multi_threading=false;
     ga_obj.idle_delay_us=1;//10 // switch between threads quickly
     ga_obj.dynamic_threading=true;
     ga_obj.verbose=true;
@@ -254,9 +254,9 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     ga_obj.elite_count=ga_obj.population/ 100 * 6; //6% of population size;
     ga_obj.solve();
 
-    if(!user_stop){
+   // if(!user_stop){
         std::cout<<"The problem is optimized in "<<timer.toc()<<" seconds.###########################################"<<std::endl;
-        std::cout<<"Cam id: ";
+     /*   std::cout<<"Cam id: ";
         int count=0;
         for(const auto &x : getfinalCamPos())
         {
@@ -268,6 +268,8 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
         }
     }
     std::cout<<" "<<std::endl;
+    /
+    */
     output_file.close();
 
 

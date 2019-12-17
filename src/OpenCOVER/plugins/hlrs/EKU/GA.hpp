@@ -9,7 +9,8 @@
 #include <openGA.hpp>
 #include <Cam.h>
 #include<SafetyZone.h>
-
+#include <cover/coVRPlugin.h>
+#include <cover/coVRMSController.h>
 //8:384 , 9:423 ,current: 192
 #if(1)
 class GA

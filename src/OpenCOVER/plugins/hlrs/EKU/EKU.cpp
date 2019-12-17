@@ -475,6 +475,15 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //enable building KDTree structure for all geometries loaded: --> intersection Test is much faster!
     osgDB::Registry::instance()->setBuildKdTreesHint(osgDB::Options::BUILD_KDTREES);
 
+    std::cout<< sizeof(double)    <<std::endl;
+   std::cout<< sizeof(osg::Matrix)<<std::endl;
+   std::cout<<sizeof(osg::Matrix[0])<<std::endl;
+
+   osg::Matrixd m;
+   m.setTrans(osg::Vec3(1,1,1));
+   auto test = sizeof(m);
+   std::cout<<sizeof(m)<<std::endl;
+
     plugin = this;
     fprintf(stderr, "EKUplugin::EKUplugin\n");
     finalScene = new osg::Group;
@@ -624,13 +633,40 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         //show Points which are currently not visible
         findNotVisiblePoints();
 
+        std::vector<osg::Matrix> finalCamMatrixes;
 
-        GA::nbrCamPositions=allCamPositions.size();
-        GA::nbrCamsPerCamPosition=allCamPositions.front()->allCameras.size();
-        GA::nbrPoints = safetyZones.size();
+      //  if(coVRMSController::instance()->isMaster())
+      //  {
 
-        ga =new GA(allCamPositions,safetyZones);
-        delete this->ga;
+            GA::nbrCamPositions=allCamPositions.size();
+            GA::nbrCamsPerCamPosition=allCamPositions.front()->allCameras.size();
+            GA::nbrPoints = safetyZones.size();
+
+            ga =new GA(allCamPositions,safetyZones);
+
+            std::vector<std::shared_ptr<Cam>>result = ga->getfinalCamPos();
+            for(const auto &x : result)
+            {
+                finalCamMatrixes.push_back(x->getMatrix());
+            }
+
+            delete this->ga;
+
+     //    }
+     /*   if(!coVRMSController::instance()->isMaster())
+        {
+            finalCamMatrixes.resize(allCamPositions.size());
+        }
+
+        coVRMSController::instance()->syncData(finalCamMatrixes.data(),sizeof(osg::Matrix)*allCamPositions.size());
+*/
+
+        int count=0;
+        for(const auto &x : finalCamMatrixes)
+        {
+            allCamPositions.at(count)->setPosition(x);
+            count ++;
+        }
 
         ModifyScene->setState(false);
         modifyScene = false;
