@@ -10,7 +10,7 @@
 #include <array>
 #include <cstdlib>
 #include<osgFX/Outline>
-
+#include<Cam.h>
 using namespace opencover;
 bool EKU::modifyScene=true;
 std::vector<std::shared_ptr<SafetyZone>> EKU::safetyZones;
@@ -635,8 +635,8 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
         std::vector<osg::Matrix> finalCamMatrixes;
 
-      //  if(coVRMSController::instance()->isMaster())
-      //  {
+        if(coVRMSController::instance()->isMaster())
+        {
 
             GA::nbrCamPositions=allCamPositions.size();
             GA::nbrCamsPerCamPosition=allCamPositions.front()->allCameras.size();
@@ -652,14 +652,40 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
             delete this->ga;
 
-     //    }
-     /*   if(!coVRMSController::instance()->isMaster())
+         }
+        if(!coVRMSController::instance()->isMaster())
         {
             finalCamMatrixes.resize(allCamPositions.size());
         }
 
         coVRMSController::instance()->syncData(finalCamMatrixes.data(),sizeof(osg::Matrix)*allCamPositions.size());
-*/
+        if(!coVRMSController::instance()->isMaster())
+        {
+            std::string name = "results_"+std::to_string(coVRMSController::instance()->getID())+".txt";
+
+            std::ofstream  output_file.open(name);
+            for(const auto& x : allCamPositions)
+            {
+                osg::Matrix m = x->getMatrix();
+                output_file<<"x"<<m.xyz[0]<<"\t"<<"y"<<m.xyz[1]<<"\t"<<"z"<<m.xyz[2]"\t"<<"xr"<<m.hpr[0]<<"\t"<<"yr"<<m.hpr[1]<<"\t"<<"zr"<<m.hpr[2]"\t"<<"\n";
+
+            }
+            output_file.close();
+        }
+        if(!coVRMSController::instance()->isMaster())
+        {
+            std::string name = "results_Master";
+
+            std::ofstream  output_file.open(name);
+            for(const auto& x : allCamPositions)
+            {
+                osg::Matrix m = x->getMatrix();
+                output_file<<"x"<<m.xyz[0]<<"\t"<<"y"<<m.xyz[1]<<"\t"<<"z"<<m.xyz[2]"\t"<<"xr"<<m.hpr[0]<<"\t"<<"yr"<<m.hpr[1]<<"\t"<<"zr"<<m.hpr[2]"\t"<<"\n";
+
+            }
+            output_file.close();
+        }
+
 
         int count=0;
         for(const auto &x : finalCamMatrixes)
