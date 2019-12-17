@@ -39,7 +39,7 @@
 #include<Sensor.h>
 #include<SafetyZone.h>
 using namespace opencover;
-
+void printCoCoord(coCoord m);
 class Cam
 {   
 public:
