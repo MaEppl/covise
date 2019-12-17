@@ -661,27 +661,31 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         coVRMSController::instance()->syncData(finalCamMatrixes.data(),sizeof(osg::Matrix)*allCamPositions.size());
         if(!coVRMSController::instance()->isMaster())
         {
-            std::string name = "results_"+std::to_string(coVRMSController::instance()->getID())+".txt";
+            std::string name = "resultsMatrix_"+std::to_string(coVRMSController::instance()->getID())+".txt";
 
-            std::ofstream  output_file.open(name);
+            std::ofstream  output_file;
+            output_file.open(name);
             for(const auto& x : allCamPositions)
             {
                 osg::Matrix m = x->getMatrix();
-                output_file<<"x"<<m.xyz[0]<<"\t"<<"y"<<m.xyz[1]<<"\t"<<"z"<<m.xyz[2]"\t"<<"xr"<<m.hpr[0]<<"\t"<<"yr"<<m.hpr[1]<<"\t"<<"zr"<<m.hpr[2]"\t"<<"\n";
+                coCoord euler =m;
+                output_file<<"x"<<euler.xyz[0]<<"\t"<<"y"<<euler.xyz[1]<<"\t"<<"z"<<euler.xyz[2]<<"\t"<<"xr"<<euler.hpr[0]<<"\t"<<"yr"<<euler.hpr[1]<<"\t"<<"zr"<<euler.hpr[2]<<"\t"<<"\n";
 
             }
             output_file.close();
         }
         if(!coVRMSController::instance()->isMaster())
         {
-            std::string name = "results_Master";
+            std::string name = "resultsMatrix_Master";
 
-            std::ofstream  output_file.open(name);
+            std::ofstream  output_file;
+            output_file.open(name);
             for(const auto& x : allCamPositions)
             {
                 osg::Matrix m = x->getMatrix();
-                output_file<<"x"<<m.xyz[0]<<"\t"<<"y"<<m.xyz[1]<<"\t"<<"z"<<m.xyz[2]"\t"<<"xr"<<m.hpr[0]<<"\t"<<"yr"<<m.hpr[1]<<"\t"<<"zr"<<m.hpr[2]"\t"<<"\n";
 
+                coCoord euler =m;
+                output_file<<"x"<<euler.xyz[0]<<"\t"<<"y"<<euler.xyz[1]<<"\t"<<"z"<<euler.xyz[2]<<"\t"<<"xr"<<euler.hpr[0]<<"\t"<<"yr"<<euler.hpr[1]<<"\t"<<"zr"<<euler.hpr[2]<<"\t"<<"\n";
             }
             output_file.close();
         }
