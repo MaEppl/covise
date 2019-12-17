@@ -236,7 +236,7 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     timer.tic();
     using namespace std::placeholders;
     ga_obj.problem_mode=EA::GA_MODE::SOGA;
-    ga_obj.multi_threading=false;
+    ga_obj.multi_threading=true;
     ga_obj.idle_delay_us=1;//10 // switch between threads quickly
     ga_obj.dynamic_threading=true;
     ga_obj.verbose=true;
@@ -254,22 +254,9 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     ga_obj.elite_count=ga_obj.population/ 100 * 6; //6% of population size;
     ga_obj.solve();
 
-   // if(!user_stop){
+    if(!user_stop)
         std::cout<<"The problem is optimized in "<<timer.toc()<<" seconds.###########################################"<<std::endl;
-     /*   std::cout<<"Cam id: ";
-        int count=0;
-        for(const auto &x : getfinalCamPos())
-        {
-            camlist.at(count)->setPosition(x->getMatrix());
-            count++;
-            coCoord euler = x->getMatrix();
-            int out = x->getID();
-            std::cout<<out<<", ";
-        }
-    }
-    std::cout<<" "<<std::endl;
-    /
-    */
+
     output_file.close();
 
 

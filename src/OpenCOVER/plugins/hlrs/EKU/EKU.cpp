@@ -635,6 +635,9 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
         std::vector<osg::Matrix> finalCamMatrixes;
 
+        /*Optimization is only done on master. Problem with random generator and multithreading on Slaves
+        ->get different results on each slave!
+        */
         if(coVRMSController::instance()->isMaster())
         {
 
@@ -659,36 +662,39 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         }
 
         coVRMSController::instance()->syncData(finalCamMatrixes.data(),sizeof(osg::Matrix)*allCamPositions.size());
-        if(!coVRMSController::instance()->isMaster())
-        {
-            std::string name = "resultsMatrix_"+std::to_string(coVRMSController::instance()->getID())+".txt";
 
-            std::ofstream  output_file;
-            output_file.open(name);
-            for(const auto& x : allCamPositions)
+        {// test if sync is successfull between Master and Slave
+        /*    if(!coVRMSController::instance()->isMaster())
             {
-                osg::Matrix m = x->getMatrix();
-                coCoord euler =m;
-                output_file<<"x"<<euler.xyz[0]<<"\t"<<"y"<<euler.xyz[1]<<"\t"<<"z"<<euler.xyz[2]<<"\t"<<"xr"<<euler.hpr[0]<<"\t"<<"yr"<<euler.hpr[1]<<"\t"<<"zr"<<euler.hpr[2]<<"\t"<<"\n";
+                std::string name = "resultsMatrix_"+std::to_string(coVRMSController::instance()->getID())+".txt";
 
+                std::ofstream  output_file;
+                output_file.open(name);
+                for(const auto& x : allCamPositions)
+                {
+                    osg::Matrix m = x->getMatrix();
+                    coCoord euler =m;
+                    output_file<<"x"<<euler.xyz[0]<<"\t"<<"y"<<euler.xyz[1]<<"\t"<<"z"<<euler.xyz[2]<<"\t"<<"xr"<<euler.hpr[0]<<"\t"<<"yr"<<euler.hpr[1]<<"\t"<<"zr"<<euler.hpr[2]<<"\t"<<"\n";
+
+                }
+                output_file.close();
             }
-            output_file.close();
-        }
-        if(!coVRMSController::instance()->isMaster())
-        {
-            std::string name = "resultsMatrix_Master";
-
-            std::ofstream  output_file;
-            output_file.open(name);
-            for(const auto& x : allCamPositions)
+            if(!coVRMSController::instance()->isMaster())
             {
-                osg::Matrix m = x->getMatrix();
+                std::string name = "resultsMatrix_Master";
 
-                coCoord euler =m;
-                output_file<<"x"<<euler.xyz[0]<<"\t"<<"y"<<euler.xyz[1]<<"\t"<<"z"<<euler.xyz[2]<<"\t"<<"xr"<<euler.hpr[0]<<"\t"<<"yr"<<euler.hpr[1]<<"\t"<<"zr"<<euler.hpr[2]<<"\t"<<"\n";
+                std::ofstream  output_file;
+                output_file.open(name);
+                for(const auto& x : allCamPositions)
+                {
+                    osg::Matrix m = x->getMatrix();
+
+                    coCoord euler =m;
+                    output_file<<"x"<<euler.xyz[0]<<"\t"<<"y"<<euler.xyz[1]<<"\t"<<"z"<<euler.xyz[2]<<"\t"<<"xr"<<euler.hpr[0]<<"\t"<<"yr"<<euler.hpr[1]<<"\t"<<"zr"<<euler.hpr[2]<<"\t"<<"\n";
+                }
+                output_file.close();
             }
-            output_file.close();
-        }
+        */}
 
 
         int count=0;
