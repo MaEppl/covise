@@ -124,7 +124,9 @@ public:
     void updateVisibility(float value);
     void updateColor();
     void resetColor();
-    void activate(){camGeode->setNodeMask(UINT_MAX);}
+    void activate(){camGeode->setNodeMask(UINT_MAX);
+                    camGeode->setNodeMask(camGeode->getNodeMask() & (~Isect::Intersection) & (~Isect::Pick));
+                   }
     void disactivate(){camGeode->setNodeMask(0);}
 };
 

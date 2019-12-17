@@ -14,7 +14,7 @@ using namespace opencover;
 
 void printCoCoord(coCoord m)
 {
-    std::cout<<"translation: "<<"x:"<<m.xyz[0]<< " y:"<<m.xyz[1]<<" z:"<<m.xyz[2]<<std::endl;
+   // std::cout<<"translation: "<<"x:"<<m.xyz[0]<< " y:"<<m.xyz[1]<<" z:"<<m.xyz[2]<<std::endl;
     std::cout<<"rotation: "<<"z:"<<m.hpr[0]<< " x:"<<m.hpr[1]<<" y:"<<m.hpr[2]<<std::endl;
 }
 double Cam::imgHeightPixel = 1080;
@@ -433,9 +433,7 @@ CamPosition::CamPosition(osg::Matrix m)
     viewpointInteractor = new coVR3DTransRotInteractor(m, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
     viewpointInteractor->show();
     viewpointInteractor->enableIntersection();
-
     localDCS->addChild(camDraw->getCamGeode());
-
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
     localDCS->addChild(searchSpaceGroup.get());
@@ -668,7 +666,7 @@ void CamPosition::createCamsInSearchSpace()
 }
 void CamPosition::updateCamMatrixes()
 {
-
+    std::cout<<"update cameras"<<std::endl;
     if(allCameras.empty())
     {
         int count = 0;
@@ -682,7 +680,8 @@ void CamPosition::updateCamMatrixes()
             tmp.setTrans(localDCS.get()->getMatrix().getTrans());
             coCoord euler = tmp;
             std::shared_ptr<Cam> camera = std::make_shared<Cam>(euler,name);
-            //std::unique_ptr<Cam> camera(new Cam(euler,name));
+          //  printCoCoord(euler);
+
             allCameras.push_back(std::move(camera));
         }
     }
@@ -692,12 +691,20 @@ void CamPosition::updateCamMatrixes()
         for(const auto& x :searchSpace)
         {
             osg::Quat q = x->getMatrix().getRotate()*localDCS.get()->getMatrix().getRotate();
+           // osg::Quat q = localDCS.get()->getMatrix().getRotate()*x->getMatrix().getRotate();
+            coCoord DCS = localDCS.get()->getMatrix();
+            coCoord local =  x->getMatrix();
+            std::cout<<"DCS"<<std::endl;
+            printCoCoord(DCS);
+            std::cout<<"local"<<std::endl;
+            printCoCoord(local);
             osg::Matrix tmp;
             tmp.setRotate(q);
             tmp.setTrans(localDCS.get()->getMatrix().getTrans());
             coCoord euler = tmp;
             allCameras.at(cnt)->setPosition(euler);
-      //      printCoCoord(euler);
+            std::cout<<"total"<<std::endl;
+            printCoCoord(euler);
             cnt++;
 
         }
