@@ -78,10 +78,12 @@ public:
         //std::cout<<"Cam "<<count<<" :"<<euler.hpr[0]<<","<<euler.hpr[1]<<","<<euler.hpr[2]<<std::endl;
         return mat;}
     int getID(){return id;}
+    void preFrame();
 protected:
      std::string name;
 private:
-    //osg::Box *mySphere; // for visualization
+    coVR3DTransRotInteractor *viewpointInteractor; // for Degugging: Visualization
+    osg::Box *mySphere; // for visualization
     // Calculates if Obstacles are in line of sigth betwenn camera and observation Point
     bool calcIntersection(const osg::Vec3d& end);
     // sensor will gather the most relevant data only at a particular distance with gradually fading efficiency on either side of it

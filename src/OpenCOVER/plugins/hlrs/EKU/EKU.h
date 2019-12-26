@@ -52,7 +52,8 @@ class Action;
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
 #include<osg/Node>
-
+#include<osg/Switch>
+#include<osgFX/Outline>
 
 #include <iostream>
 #include <vector>
@@ -104,6 +105,7 @@ private:
     osg::ref_ptr<osg::Node> truck;
     osg::ref_ptr<osg::Node> truckSurfaceBox;
     osg::ref_ptr<osg::Node> truckCabine;
+    osg::ref_ptr<osgFX::Outline> outline;
 
     osg::ref_ptr<osg::MatrixTransform> transMat;
     osg::ref_ptr<osg::MatrixTransform> rotMat;
@@ -114,6 +116,7 @@ private:
     osg::ref_ptr<osg::Group> group;
     osg::ref_ptr<osg::Group> group1;
     osg::ref_ptr<osg::Group> upperGroup;
+    osg::ref_ptr<osg::Switch> switchBetween;
 
     std::vector<std::shared_ptr<CamPosition>> &allCams;
     std::vector<std::shared_ptr<SafetyZone>> &allSZ;

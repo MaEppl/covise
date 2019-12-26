@@ -48,6 +48,8 @@ void Pump::preFrame()
         int state = cover->getPointerButton()->getState();
         if (myinteractionA->isRunning()) //when interacting the Sphere will be moved
         {
+            switchBetween->setChildValue(upperGroup.get(),false);
+            switchBetween->setChildValue(outline.get(),true);
             static osg::Matrix invStartHand;
             static osg::Matrix startPos,startPoscamPosinterActor1,startPoscamPosinterActor2,startPosSZ1,startPosSZ2;
             if (!interActingA)
@@ -115,6 +117,8 @@ void Pump::preFrame()
         {
 
             interActingA = false; //unregister interaction
+            switchBetween->setChildValue(upperGroup.get(),true);
+            switchBetween->setChildValue(outline.get(),false);
            // myinteractionA->cancelPendingActivation();
       //     vrui::coInteractionManager::the()->unregisterInteraction(myinteractionA);
            std::cout<<name<<"stop"<<std::endl;
@@ -276,11 +280,8 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
    group->addChild(transCabine.get());
    group1 = new osg::Group;
    group1->setName("bothTruckDrawables"+std::to_string(Pump::counter));
+   group1->addChild(group.get());
 
-
-
-
-    group1->addChild(group.get());
     //rotMat->addChild(group1.get());
 
     //Translation
@@ -329,7 +330,19 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
      //possibleCamLocations.at(0)->setPosition(localInteractor1*full);
      //possibleCamLocations.at(1)->setPosition(localInteractor2*full);
 
-     cover->getObjectsRoot()->addChild(upperGroup.get());
+
+     outline = new osgFX::Outline;
+     outline->setName("outline");
+     outline->setWidth(8);
+     outline->setColor(osg::Vec4(1,1,0,1));
+     outline->addChild(upperGroup.get());
+
+     switchBetween = new osg::Switch();
+     switchBetween->setName("switch");
+     switchBetween->addChild(upperGroup.get(),true);
+     switchBetween->addChild(outline.get(),false);
+
+     cover->getObjectsRoot()->addChild(switchBetween.get());
 }
 Pump::~Pump()
 {
@@ -516,7 +529,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
 
 
-    //draw Pumps:
+ /*   //draw Pumps:
     std::unique_ptr<Pump> newPump(new Pump(allCamPositions,safetyZones,truck,truckSurfaceBox,truckCabine));
     allPumps.push_back(std::move(newPump));
 
@@ -545,7 +558,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     std::unique_ptr<Pump> blender(new Pump(allCamPositions,safetyZones,truck,truckSurfaceBox,truckCabine,osg::Vec3(7,-5,0)));
     allPumps.push_back(std::move(blender));
-
+*/
     doAddPRIO1(osg::Vec3(20,-10,0),40,45,2);
 
 
@@ -1063,10 +1076,12 @@ void EKU::doRemoveTruck(std::unique_ptr<Pump> &truck)
 void EKU::doAddCam()
 {
     osg::Matrix localInteractor;
-    osg::Quat rotInteractor;
+    osg::Quat rotInteractor,rotInteractor2;
     rotInteractor.makeRotate(osg::DegreesToRadians(180.0),osg::Z_AXIS);
-    localInteractor.setTrans(osg::Vec3(0,-30,5));
-    localInteractor.setRotate(rotInteractor);
+   // rotInteractor2.makeRotate(osg::DegreesToRadians(45.0),osg::X_AXIS);
+
+  //  localInteractor.setTrans(osg::Vec3(0,-30,5));
+    localInteractor.setRotate(rotInteractor*rotInteractor2);
     std::shared_ptr<CamPosition> c1 =std::make_shared<CamPosition>(localInteractor);
     allCamPositions.push_back(std::move(c1));
 }

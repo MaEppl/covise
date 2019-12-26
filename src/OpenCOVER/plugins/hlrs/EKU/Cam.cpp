@@ -14,7 +14,7 @@ using namespace opencover;
 
 void printCoCoord(coCoord m)
 {
-   // std::cout<<"translation: "<<"x:"<<m.xyz[0]<< " y:"<<m.xyz[1]<<" z:"<<m.xyz[2]<<std::endl;
+    //std::cout<<"translation: "<<"x:"<<m.xyz[0]<< " y:"<<m.xyz[1]<<" z:"<<m.xyz[2]<<std::endl;
     std::cout<<"rotation: "<<"z:"<<m.hpr[0]<< " x:"<<m.hpr[1]<<" y:"<<m.hpr[2]<<std::endl;
 }
 double Cam::imgHeightPixel = 1080;
@@ -33,6 +33,12 @@ Cam::Cam(coCoord matrix,std::string name):pos(matrix.xyz),rot(matrix.hpr[0],matr
     count++;
     matrix.makeMat(mat);
     directionVec = calcDirectionVec(mat);
+    float _interSize = cover->getSceneSize() / 25;
+
+    // Debugging:
+    viewpointInteractor = new coVR3DTransRotInteractor(mat, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
+    viewpointInteractor->hide();
+    //viewpointInteractor->enableIntersection();
 
 }
 Cam::~Cam()
@@ -45,8 +51,12 @@ void Cam::setPosition(coCoord& m)
     rot.set(m.hpr[0],m.hpr[1]);
     m.makeMat(mat);
     directionVec = calcDirectionVec(mat);
+    viewpointInteractor->updateTransform(mat);
 }
-
+void Cam::preFrame()
+{
+    viewpointInteractor->preFrame();
+}
 
 void Cam::calcVisMat()
 {   visMatPrio1.clear();
@@ -58,6 +68,9 @@ void Cam::calcVisMat()
     osg::Matrix T = osg::Matrix::translate(-pos);
     osg::Matrix zRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.x()), osg::Z_AXIS);
     osg::Matrix yRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.y()), osg::X_AXIS);
+    coCoord eulerTest = mat;
+    double test = eulerTest.hpr[2];
+    osg::Matrix testRot = osg::Matrix::rotate(-osg::DegreesToRadians(test), osg::Y_AXIS);
     // BUGFIX: still problem at borders?
 
     size_t cnt =1;
@@ -71,7 +84,7 @@ void Cam::calcVisMat()
 
         for(const auto& p1 :p->getWorldPosOfAllObservationPoints())
         {
-            osg::Vec3 newPoint = p1*T*zRot*yRot;
+            osg::Vec3 newPoint = p1*T*zRot*yRot*testRot;
           // For Visualization of transfered Point
           /*  mySphere = new osg::Box(newPoint,2,2,2);
             osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
@@ -433,6 +446,8 @@ CamPosition::CamPosition(osg::Matrix m)
     viewpointInteractor = new coVR3DTransRotInteractor(m, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
     viewpointInteractor->show();
     viewpointInteractor->enableIntersection();
+    osg::Matrix test = viewpointInteractor->getMatrix();
+
     localDCS->addChild(camDraw->getCamGeode());
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
@@ -470,7 +485,6 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
     viewpointInteractor = new coVR3DTransRotInteractor(m, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
     viewpointInteractor->show();
     viewpointInteractor->enableIntersection();
-
     localDCS->addChild(camDraw->getCamGeode().get());
 
     searchSpaceGroup = new osg::Group;
@@ -507,6 +521,8 @@ CamPosition::~CamPosition()
 }
 void CamPosition::preFrame()
 {
+    for(const auto &x:allCameras)
+        x->preFrame();
 
     viewpointInteractor->preFrame();
 
@@ -526,7 +542,7 @@ void CamPosition::preFrame()
             osg::Matrix local = viewpointInteractor->getMatrix();
             coCoord localEuler = local;
             //restrict rotation around y
-           // localEuler.hpr[2]=testEuler.hpr[2];
+          //  localEuler.hpr[2]=testEuler.hpr[2];
             //cameras are always looking downwards -> no neg rotation around x
             //if(localEuler.hpr[1] < 0.0)
             //    localEuler.hpr[1] = 0.0;
@@ -582,10 +598,13 @@ void CamPosition::createCamsInSearchSpace()
 {
     //around z axis
     int zMax = 180;
-    int stepSizeZ = 5; //in Degree
+    int stepSizeZ = 10; //in Degree
 
     int xMax = 20;
     int stepSizeX = 10; //in Degree
+
+    int yMax = 180;
+    int stepSizeY = 20; //in Degree
 
     osg::Matrix m = localDCS.get()->getMatrix();
     coCoord coord=m;
@@ -593,13 +612,20 @@ void CamPosition::createCamsInSearchSpace()
     newCoordPlus.hpr[2] =0;
     newCoordMinus.hpr[2] =0;
 
+    osg::Matrix newCoordPlusM,newCoordMinusM;
     //std::cout<<"StartPos: "<<"z:"<<coord.hpr[0]<< " x:"<<coord.hpr[1]<<" y:"<<coord.hpr[2]<<std::endl;
 
     int nbrOfCameras =0;
     osg::Matrix m_new;
-
- /* //For debugging: only 1 cam in search space
-    newCoordPlus.makeMat(m_new);
+ /*   osg::Quat q;
+    q.makeRotate(osg::DegreesToRadians(45.0),osg::Z_AXIS);
+    m_new.setRotate(q);
+    coCoord euler = m_new;
+    euler =euler+coord;
+    euler.makeMat(m_new);
+*/
+  //For debugging: only 1 cam in search space
+/*    newCoordPlus.makeMat(m_new);
     searchSpace.push_back(new osg::MatrixTransform );
     searchSpaceGroup->addChild(searchSpace.back().get());
     searchSpace.back()->setMatrix(m_new);
@@ -614,9 +640,8 @@ void CamPosition::createCamsInSearchSpace()
         {
             newCoordPlus.hpr[0]=0;
             newCoordMinus.hpr[0]-= stepSizeZ;
-
-
-        }else
+        }
+        else
         {
             newCoordPlus.hpr[0] += stepSizeZ;
             newCoordMinus.hpr[0] -= stepSizeZ;
@@ -628,38 +653,53 @@ void CamPosition::createCamsInSearchSpace()
         for(int cnt2 = 0; cnt2<xMax/stepSizeX; cnt2++)
         {
             if(countX==0)
+            {
                  newCoordPlus.hpr[1]=0;
-            else
-                newCoordPlus.hpr[1] += stepSizeX;
-
-            nbrOfCameras++;
-            newCoordPlus.makeMat(m_new);
-            searchSpace.push_back(new osg::MatrixTransform );
-            searchSpaceGroup->addChild(searchSpace.back().get());
-            searchSpace.back()->setMatrix(m_new);
-            searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1]));
-            searchSpace.back()->addChild(camDraw->getCamGeode().get());
-       //     std::cout<<" + Search space Matrix"<<std::endl;
-       //     printCoCoord(newCoordPlus);
-
-
-            if(countX==0)
                  newCoordMinus.hpr[1]=0;
+
+            }
             else
+            {
+                newCoordPlus.hpr[1] += stepSizeX;
                 newCoordMinus.hpr[1] += stepSizeX;
-
-            nbrOfCameras++;
-            newCoordMinus.makeMat(m_new);
-            searchSpace.push_back(new osg::MatrixTransform );
-            searchSpaceGroup->addChild(searchSpace.back().get());
-            searchSpace.back()->setMatrix(m_new);
-            searchSpace.back()->setName(std::to_string(nbrOfCameras)+"-MATRIX Z:" + std::to_string( newCoordMinus.hpr[0])+ " X:" +std::to_string( newCoordMinus.hpr[1]));
-            searchSpace.back()->addChild(camDraw->getCamGeode().get());
-        //    std::cout<<" - Search space Matrix"<<std::endl;
-        //    printCoCoord(newCoordMinus);
-
-
+            }
             countX++;
+
+            //Rotation round Y
+            int countY =0;
+            for(int cnt3 = 0; cnt3<yMax/stepSizeY; cnt3++)
+            {
+                if(countY==0)
+                {
+                     newCoordPlus.hpr[2]=0;
+                     newCoordMinus.hpr[2]=0;
+
+                }
+                else
+                {
+                    newCoordPlus.hpr[2] += stepSizeY;
+                    newCoordMinus.hpr[2] += stepSizeY;
+
+                }
+                nbrOfCameras++;
+                newCoordPlus.makeMat(m_new);
+                searchSpace.push_back(new osg::MatrixTransform );
+                searchSpaceGroup->addChild(searchSpace.back().get());
+                searchSpace.back()->setMatrix(m_new);
+                searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1])+ " Y:" +std::to_string( newCoordPlus.hpr[2]));
+                searchSpace.back()->addChild(camDraw->getCamGeode().get());
+
+                nbrOfCameras++;
+                newCoordMinus.makeMat(m_new);
+                searchSpace.push_back(new osg::MatrixTransform );
+                searchSpaceGroup->addChild(searchSpace.back().get());
+                searchSpace.back()->setMatrix(m_new);
+                searchSpace.back()->setName(std::to_string(nbrOfCameras)+"-MATRIX Z:" + std::to_string( newCoordMinus.hpr[0])+ " X:" +std::to_string( newCoordMinus.hpr[1])+ " Y:" +std::to_string( newCoordMinus.hpr[2]));
+                searchSpace.back()->addChild(camDraw->getCamGeode().get());
+
+
+                countY++;
+            }
 
         }
     }
@@ -674,13 +714,11 @@ void CamPosition::updateCamMatrixes()
         {
             count++;
             std::string name = std::to_string(count);
-            osg::Quat q = x->getMatrix().getRotate()*localDCS.get()->getMatrix().getRotate();
-            osg::Matrix tmp;
-            tmp.setRotate(q);
-            tmp.setTrans(localDCS.get()->getMatrix().getTrans());
-            coCoord euler = tmp;
-            std::shared_ptr<Cam> camera = std::make_shared<Cam>(euler,name);
-          //  printCoCoord(euler);
+
+            osg::Matrix total=x->getMatrix()*viewpointInteractor->getMatrix();
+            total.setTrans(viewpointInteractor->getMatrix().getTrans());
+            coCoord eulerNew = total;
+            std::shared_ptr<Cam> camera = std::make_shared<Cam>(eulerNew,name);
 
             allCameras.push_back(std::move(camera));
         }
@@ -690,21 +728,12 @@ void CamPosition::updateCamMatrixes()
         int cnt =0; //important!!
         for(const auto& x :searchSpace)
         {
-            osg::Quat q = x->getMatrix().getRotate()*localDCS.get()->getMatrix().getRotate();
-           // osg::Quat q = localDCS.get()->getMatrix().getRotate()*x->getMatrix().getRotate();
-            coCoord DCS = localDCS.get()->getMatrix();
-            coCoord local =  x->getMatrix();
-            std::cout<<"DCS"<<std::endl;
-            printCoCoord(DCS);
-            std::cout<<"local"<<std::endl;
-            printCoCoord(local);
-            osg::Matrix tmp;
-            tmp.setRotate(q);
-            tmp.setTrans(localDCS.get()->getMatrix().getTrans());
-            coCoord euler = tmp;
-            allCameras.at(cnt)->setPosition(euler);
-            std::cout<<"total"<<std::endl;
-            printCoCoord(euler);
+            osg::Matrix total=x->getMatrix()*viewpointInteractor->getMatrix();
+            total.setTrans(viewpointInteractor->getMatrix().getTrans());
+            coCoord eulerNew = total;
+            allCameras.at(cnt)->setPosition(eulerNew);
+          //  std::cout<<"total"<<std::endl;
+          //  printCoCoord(eulerNew);
             cnt++;
 
         }
