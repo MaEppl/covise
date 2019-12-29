@@ -760,6 +760,80 @@ void CamPosition::setSearchSpaceState(bool state)
 
 }
 
+void CamPosition::calcIntersection(std::vector<osg::Vec3> &controlPoints)
+{
+   osg::Timer_t startTick = osg::Timer::instance()->tick();
+    //https://github.com/openscenegraph/OpenSceneGraph/blob/master/examples/osgintersection/osgintersection.cpp
+   visibilityMatrix.clear();
+   visibilityMatrix.reserve(controlPoints.size());
+   osg::ref_ptr<osgUtil::IntersectorGroup> intersectorGroup = new osgUtil::IntersectorGroup();
+   osg::Vec3 start = this->getPosition();
+   for(const auto& end : controlPoints)
+   {
+       osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector = new osgUtil::LineSegmentIntersector(start, end);
+       intersectorGroup->addIntersector( intersector.get() );
+   }
+
+   osgUtil::IntersectionVisitor visitor(intersectorGroup.get());
+   cover->getObjectsRoot()->accept(visitor);
+
+  osgUtil::IntersectorGroup::Intersectors& intersectors = intersectorGroup->getIntersectors();
+  for(osgUtil::IntersectorGroup::Intersectors::iterator intersector_itr = intersectors.begin();
+                  intersector_itr != intersectors.end();
+                  ++intersector_itr)
+    {
+        osgUtil::LineSegmentIntersector* lsi = dynamic_cast<osgUtil::LineSegmentIntersector*>(intersector_itr->get());
+
+        if(lsi)
+        {
+            osgUtil::LineSegmentIntersector::Intersections& hits = lsi->getIntersections();
+            size_t numberOfNonRelevantObstacles = 0;
+            for(osgUtil::LineSegmentIntersector::Intersections::iterator hitr =hits.begin(); hitr!=hits.end();++hitr)
+            {
+                std::string name = hitr->nodePath.back()->getName();
+
+                // Nodes with cx and px are safety areas or possible camera positions, these are no real obstacles
+                if(((name.find("Point") != std::string::npos) ||name.find("Wireframe") != std::string::npos) ||(name.find("Cam") != std::string::npos) || (name.find("SafetyZone") != std::string::npos) || (name.find("Pyramid") != std::string::npos))
+                    ++numberOfNonRelevantObstacles;
+        //        std::cout<<hitr->nodePath.back()->getName()<<" & ";
+            }
+            if(hits.size()-numberOfNonRelevantObstacles>0)
+                visibilityMatrix.push_back(0);
+            else
+                visibilityMatrix.push_back(1);
+
+        }
+
+    }
+   osg::Timer_t endTick = osg::Timer::instance()->tick();
+   std::cout<<"Completed in "<<osg::Timer::instance()->delta_s(startTick,endTick)<<std::endl;
+   for(const auto& x : visibilityMatrix)
+       std::cout<<x<<std::endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

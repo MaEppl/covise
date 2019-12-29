@@ -169,10 +169,13 @@ public:
     std::unique_ptr<CamDrawable> camDraw;
     void activate();
     void disactivate();
+    void calcIntersection(std::vector<osg::Vec3> &
+                                      controlPoints);
 private:
     bool status;
     std::string name;
     Pump* myPump = nullptr;
+    std::vector<int> visibilityMatrix;
 
 
     coVR3DTransRotInteractor *viewpointInteractor;
