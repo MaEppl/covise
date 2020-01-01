@@ -53,7 +53,7 @@ public:
     static double depthView;
     static double focalLengthPixel;
     static double rangeDistortionDepth;
-    Cam(coCoord m,const std::string name);
+    Cam(coCoord m,std::vector<std::vector<double>> visMat,const std::string name);
     ~Cam();
     std::vector<std::vector<double>> getVisMat(){return visMat;}
     std::vector<int> getVisMatPrio1(){return visMatPrio1;}
@@ -72,7 +72,7 @@ public:
     std::vector<double> distortionValuePrio2;
 
     std::string getName()const{return name;}
-    void setPosition(coCoord& m);
+    void setPosition(coCoord& m,std::vector<std::vector<double>> visMat);
     osg::Matrix getMatrix(){
         coCoord euler = mat;
         //std::cout<<"Cam "<<count<<" :"<<euler.hpr[0]<<","<<euler.hpr[1]<<","<<euler.hpr[2]<<std::endl;
@@ -117,7 +117,7 @@ public:
     static size_t count;
     std::unique_ptr<Cam> cam;
     osg::Geode* plotCam();
-    CamDrawable(coCoord& m);
+    CamDrawable(coCoord& m,std::vector<std::vector<double>> visMat);
     ~CamDrawable();
     bool _showRealSize=false;
 
@@ -160,8 +160,7 @@ public:
     {
         viewpointInteractor->updateTransform(matrix1);
         localDCS->setMatrix(matrix1);
-        //osg::Vec3 poslocal= viewpointInteractor->getMatrix().getTrans();
-       // std::cout<<"Camera in World: "<<name<<poslocal.x()<<"|"<<poslocal.y()<<"|"<<poslocal.z()<<std::endl;
+        calcIntersection();
         updateCamMatrixes();
     }
 
@@ -169,6 +168,7 @@ public:
     void createCamsInSearchSpace();
     void setSearchSpaceState(bool state);
     void updateCamMatrixes();
+    void updateVisibleCam();
     std::vector<std::shared_ptr<Cam>> allCameras;
     std::unique_ptr<CamDrawable> camDraw;
     void activate();
@@ -183,7 +183,7 @@ private:
     std::string name;
     Pump* myPump = nullptr;
     std::vector<std::vector<double>> visMat;
-    bool isVisibilityMatrixEmpty(Cam* cam);
+    bool isVisibilityMatrixEmpty(std::shared_ptr<Cam>& cam);
 
    // std::vector<std::pair<std::shared_ptr<SafetyZone,std::vector<int>>> visMatPerSafetyZone;
 
