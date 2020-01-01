@@ -6,6 +6,7 @@ SET(HEADERS
   GA.hpp
   FileReader.hpp
   Sensor.h
+  Equipment.h
 )
 SET(SOURCES
   EKU.cpp
@@ -14,6 +15,7 @@ SET(SOURCES
   GA.cpp
   FileReader.cpp
   Sensor.cpp
+  Equipment.cpp
   
 )
 cover_add_plugin(EKU ${HEADERS} ${SOURCES})

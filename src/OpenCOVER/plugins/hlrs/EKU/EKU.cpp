@@ -13,18 +13,18 @@
 #include<Cam.h>
 using namespace opencover;
 bool EKU::modifyScene=true;
+bool EKU::deleteObjects=false;
 std::vector<std::shared_ptr<SafetyZone>> EKU::safetyZones;
 std::vector<std::shared_ptr<CamPosition>> EKU::allCamPositions;
 std::vector<std::unique_ptr<Pump>> EKU::allPumps;
-
+std::vector<std::unique_ptr<Equipment>> EKU::equipment;
 double getZvalueOfSZ()
 {
   //  for(const auto& x : saf)
-
 }
 
 EKU *EKU::plugin = NULL;
-void EKU::restrictMovement(osg::Matrix &mat)
+void restrictMovement(osg::Matrix &mat)
 {
     coCoord coord;
     coord = mat;
@@ -75,7 +75,7 @@ void Pump::preFrame()
                 //calc the tranformation matrix when interacting is running and mouse button was pressed
                 osg::Matrix trans =invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
                 //trans.setTrans(osg::Vec3(0,0,0));//For rotation
-                EKU::plugin->restrictMovement(trans);
+                restrictMovement(trans);
                 trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),0);//set z trans to zero
                 trans.orthoNormalize(trans);//remove scale
                 osg::Matrix newTrans =  startPos * osg::Matrix::translate(trans.getTrans());//newTrans is translation only
@@ -126,6 +126,10 @@ void Pump::preFrame()
 
 
         }
+    }
+    else if(EKU::deleteObjects == true)
+    {
+
     }
 /*    if (myinteractionB->isRunning()) //when interacting the Sphere will be moved
     {
@@ -182,6 +186,11 @@ void EKU::preFrame()
         x->preFrame();
     for(const auto &x: safetyZones)
         x->preFrame();
+    if(modifyScene)
+    {
+        for(const auto &x : equipment)
+            x->preFrame();
+    }
 
    // newSZ->preFrame();
 
@@ -247,8 +256,8 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
     //Rotation
     osg::Matrix rotate;
     osg::Quat xRot, yRot;
-    xRot.makeRotate(osg::DegreesToRadians(90.0),osg::X_AXIS);
-    yRot.makeRotate(osg::DegreesToRadians(270.0+rotZ),osg::Y_AXIS);
+    xRot.makeRotate(osg::DegreesToRadians(0.0),osg::X_AXIS);//90
+    yRot.makeRotate(osg::DegreesToRadians(0.0+rotZ),osg::Y_AXIS);//270
     osg::Quat fullRot = yRot*xRot;
     rotate.setRotate(fullRot);
     rotMat = new osg::MatrixTransform();
@@ -350,7 +359,7 @@ Pump::~Pump()
         sensorList.remove();
     delete aSensor;
     std::cout<<"deleted Pump: "<<name<<std::endl;
-    upperGroup->getParent(0)->removeChild(upperGroup);
+    switchBetween->getParent(0)->removeChild(switchBetween);
 }
 void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
 {
@@ -376,6 +385,25 @@ void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
 
 void EKU::createScene()
 {
+    //add manifold
+    {
+        std::cout<<"Load Christmas Tree"<<std::endl;
+        //manifold = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/manifold.3ds");
+        manifold = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/manifold_simplified.3ds");
+
+        std::string name = "Manifold";
+        manifold->setName(name);
+        osg::Quat q;
+        q.makeRotate(osg::DegreesToRadians(180.0),osg::X_AXIS);
+        osg::Matrix m;
+        m.setTrans(0,0,0);
+        m.setRotate(q);
+        m.scale(osg::Vec3(0.003,0.003,0.003));
+        std::unique_ptr<Equipment> manifoldNew(new Equipment(name,m,manifold));
+        equipment.push_back(std::move(manifoldNew));
+
+
+    }
     //add Christmas Tree
     {
         std::cout<<"Load Christmas Tree"<<std::endl;
@@ -488,29 +516,22 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //enable building KDTree structure for all geometries loaded: --> intersection Test is much faster!
     osgDB::Registry::instance()->setBuildKdTreesHint(osgDB::Options::BUILD_KDTREES);
 
-    std::cout<< sizeof(double)    <<std::endl;
-   std::cout<< sizeof(osg::Matrix)<<std::endl;
-   std::cout<<sizeof(osg::Matrix[0])<<std::endl;
-
-   osg::Matrixd m;
-   m.setTrans(osg::Vec3(1,1,1));
-   auto test = sizeof(m);
-   std::cout<<sizeof(m)<<std::endl;
-
     plugin = this;
     fprintf(stderr, "EKUplugin::EKUplugin\n");
     finalScene = new osg::Group;
     finalScene->setName("finalScene");
     createScene();
 
-    truck = coVRFileManager::instance()->loadFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/truck_surface.stl",NULL,finalScene);
+
+    truck = coVRFileManager::instance()->loadFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/Truck_surface_box.osgt",NULL,finalScene);
     if (!truck.valid())
     {
           osg::notify( osg::FATAL ) << "Unable to load truck data file. Exiting." << std::endl;
     }
     truck->setName("Truck");
 
-    truckSurfaceBox = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/Truck_surface_box.osgt");
+    //"/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/Truck_surface_box.osgt"
+    truckSurfaceBox = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/trailerWithWheels_simplified.3ds");
     if (!truck.valid())
     {
           osg::notify( osg::FATAL ) << "Unable to load truck data file. Exiting." << std::endl;
@@ -529,7 +550,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
 
 
- /*   //draw Pumps:
+    //draw Pumps:
     std::unique_ptr<Pump> newPump(new Pump(allCamPositions,safetyZones,truck,truckSurfaceBox,truckCabine));
     allPumps.push_back(std::move(newPump));
 
@@ -558,7 +579,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     std::unique_ptr<Pump> blender(new Pump(allCamPositions,safetyZones,truck,truckSurfaceBox,truckCabine,osg::Vec3(7,-5,0)));
     allPumps.push_back(std::move(blender));
-*/
+
     doAddPRIO1(osg::Vec3(20,-10,0),40,45,2);
 
 
@@ -608,25 +629,8 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     RmvSafetyZone->setCallback([this](){
             doRemovePRIOZone(safetyZones.back());
     });
-    //Calc VisMat
-    calcVisMat = new ui::Action(EKUMenu , "calcVisMat");
-    calcVisMat->setCallback([this](){
-    /*    std::vector<osg::Vec3> pointsToObserve;
-        pointsToObserve.reserve(safetyZones.size());
-        for(const auto& x : safetyZones)
-            pointsToObserve.push_back(x->getPosition());
-*/
-        for(const auto& x : allCamPositions)
-        {
-            x->camDraw->cam->calcVisMat();
-            for(const auto& x1: x->allCameras)
-                x1->calcVisMat();
-        }
-    });
-
 
     //Menu for Optimization
-
     Optimize = new ui::Menu(EKUMenu, "Optimize");
     Optimize->setText("Optimize");
     //Optimize orientation
@@ -637,7 +641,18 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         for(const auto& x : safetyZones)
             pointsToObserve.push_back(x->getPosition());
 */
-        for(const auto& x : allCamPositions)
+        std::vector<osg::Vec3> points;
+        for(const auto& x : EKU::safetyZones)
+        {
+            for(const auto&x1 : x->getWorldPosOfAllObservationPoints())
+            points.push_back(x1);
+        }
+     /*   for(const auto& x : allCamPositions)
+        {
+            x->calcIntersection(points);
+
+        }
+     */   for(const auto& x : allCamPositions)
         {
             x->camDraw->cam->calcVisMat();
             for(const auto& x1: x->allCameras)
@@ -838,8 +853,60 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     });
 
 
+    //Menu for Camera
+    Camera = new ui::Menu(EKUMenu, "Camera");
+    Camera->setText("Camera");
+
+    //Size of shown camera
+    ShowRealSize = new ui::Button(Camera , "ShowRealSize");
+    ShowRealSize->setText("Real Camera FOV");
+    ShowRealSize->setState(false);
+    ShowRealSize->setCallback([this](bool state){
+
+       for(const auto &x :allCamPositions)
+       {
+           if(!state)
+           {
+                x->camDraw->_showRealSize = false;
+                x->camDraw->resetSize();
+            }
+           else
+            {
+               x->camDraw->_showRealSize = true;
+               x->camDraw->showRealSize();
+            }
+       }
+    });
+    //Show search space
+    ShowSearchSpace = new ui::Button(Camera , "ShowSearchSpace");
+    ShowSearchSpace->setText("ShowSearchSpace");
+    ShowSearchSpace->setState(false);
+    ShowSearchSpace->setCallback([this](bool state){
+
+       for(const auto &x :allCamPositions)
+       {
+            x->setSearchSpaceState(state);
+            x->setSearchSpaceState(state);
+       }
+    });
+
+    //Camera visibility
+    VisibilityRegulator = new ui::Slider(Camera , "Slider2");
+    VisibilityRegulator->setText("Visibility");
+    VisibilityRegulator->setBounds(10., 100.);
+    VisibilityRegulator->setValue(Cam::depthView);
+    VisibilityRegulator->setCallback([this](double value, bool released){
+        this->disactivateDetailedRendering();
+        for(const auto& x :allCamPositions)
+        {
+
+          x->camDraw->updateVisibility(value);
+        }
+      //  this-> activateDetailedRendering();
+    });
+
     //FOV
-    FOVRegulator = new ui::Slider(EKUMenu , "Slider1");
+    FOVRegulator = new ui::Slider(Camera , "Slider1");
     FOVRegulator->setText("FOV");
     FOVRegulator->setBounds(30., 120.);
     FOVRegulator->setValue(Cam::fov);
@@ -857,23 +924,10 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     });
 
-    //Camera visibility
-    VisibilityRegulator = new ui::Slider(EKUMenu , "Slider2");
-    VisibilityRegulator->setText("Visibility");
-    VisibilityRegulator->setBounds(10., 100.);
-    VisibilityRegulator->setValue(Cam::depthView);
-    VisibilityRegulator->setCallback([this](double value, bool released){
-        this->disactivateDetailedRendering();
-        for(const auto& x :allCamPositions)
-        {
 
-          x->camDraw->updateVisibility(value);
-        }
-      //  this-> activateDetailedRendering();
-    });
-    //Make Cameras invisible
+ /*  //Make Cameras invisible
     MakeCamsInvisible = new ui::Button(EKUMenu , "CamerasVisible");
-    MakeCamsInvisible->setText("CamerasVisible");
+    MakeCamsInvisible->setText("Cameras Visible");
     MakeCamsInvisible->setState(true);
     MakeCamsInvisible->setCallback([this](bool state){
         if(!state)
@@ -892,18 +946,22 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             }
         }
     });
+*/
 
-    //Show search space
-    MakeCamsInvisible = new ui::Button(EKUMenu , "ShowSearchSpace");
-    MakeCamsInvisible->setText("ShowSearchSpace");
-    MakeCamsInvisible->setState(false);
-    MakeCamsInvisible->setCallback([this](bool state){
-
-       for(const auto &x :allCamPositions)
-       {
-            x->setSearchSpaceState(state);
-            x->setSearchSpaceState(state);
-       }
+    //Calc VisMat
+    calcVisMat = new ui::Action(Camera , "calcVisMat");
+    calcVisMat->setCallback([this](){
+    /*    std::vector<osg::Vec3> pointsToObserve;
+        pointsToObserve.reserve(safetyZones.size());
+        for(const auto& x : safetyZones)
+            pointsToObserve.push_back(x->getPosition());
+*/
+        for(const auto& x : allCamPositions)
+        {
+            x->camDraw->cam->calcVisMat();
+            for(const auto& x1: x->allCameras)
+                x1->calcVisMat();
+        }
     });
 
     //Modify scene
@@ -938,19 +996,13 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
        }
     });
 
-    for(const auto& x:finalCams)
-    {
-      //  finalScene->addChild(x->getCamDrawable().get());
-        //add User interaction to each final camera
-    //   userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&safetyZones,&finalCams));
-    }
-
-
-
-   // activateDetailedRendering();
-
-    //Write obj file
-  //  osgDB::writeNodeFile(*finalScene, "OpenCOVER/plugins/hlrs/EKU/EKU_result.obj");
+    //Delete Selected Objects
+    Delete = new ui::Button(EKUMenu , "Delete");
+    Delete->setText("Delete Selected Objects");
+    Delete->setState(false);
+    Delete->setCallback([this](bool state){
+        deleteObjects = state;
+    });
 }
 
 EKU::~EKU()

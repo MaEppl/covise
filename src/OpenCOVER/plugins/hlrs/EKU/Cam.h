@@ -82,7 +82,7 @@ public:
 protected:
      std::string name;
 private:
-    coVR3DTransRotInteractor *viewpointInteractor; // for Degugging: Visualization
+    //coVR3DTransRotInteractor *viewpointInteractor; // for Degugging: Visualization
     osg::Box *mySphere; // for visualization
     // Calculates if Obstacles are in line of sigth betwenn camera and observation Point
     bool calcIntersection(const osg::Vec3d& end);
@@ -100,6 +100,7 @@ private:
     osg::ref_ptr<osg::Vec3Array> verts;
     osg::ref_ptr<osg::Vec4Array> colors;
     osg::ref_ptr<osg::Geode> camGeode;
+    int scale = 15;
    // osg::ref_ptr<osg::Geode> interactorGeode;
 
 
@@ -118,12 +119,15 @@ public:
     osg::Geode* plotCam();
     CamDrawable(coCoord& m);
     ~CamDrawable();
+    bool _showRealSize=false;
 
     osg::ref_ptr<osg::Geode> getCamGeode()const{return camGeode;}
 
     void preFrame();
     void updateFOV(float value);
     void updateVisibility(float value);
+    void showRealSize();
+    void resetSize();
     void updateColor();
     void resetColor();
     void activate(){camGeode->setNodeMask(UINT_MAX);
@@ -169,14 +173,20 @@ public:
     std::unique_ptr<CamDrawable> camDraw;
     void activate();
     void disactivate();
-    void calcIntersection(std::vector<osg::Vec3> &
-                                      controlPoints);
+
+   // void calcIntersection(std::vector<std::shared_ptr<SafetyZone> > &sz);
+    int calcVisibility(osg::Matrix cam,osg::Vec3 point);
+
+  //  Cam& CamPosition::compareCams(Cam &camA ,Cam &camB);
 private:
     bool status;
     std::string name;
     Pump* myPump = nullptr;
-    std::vector<int> visibilityMatrix;
+    std::vector<int> visibilityMatrixPrio1;
+    std::vector<int> visibilityMatrixPrio2;
+    bool isVisibilityMatrixEmpty(Cam* cam);
 
+   // std::vector<std::pair<std::shared_ptr<SafetyZone,std::vector<int>>> visMatPerSafetyZone;
 
     coVR3DTransRotInteractor *viewpointInteractor;
     osg::ref_ptr<osg::MatrixTransform> localDCS;

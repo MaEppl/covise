@@ -65,11 +65,13 @@ class Action;
 #include<GA.hpp>
 #include<FileReader.hpp>
 #include<Sensor.h>
+#include<Equipment.h>
 
 using namespace opencover;
 
 //returns the highest z value of a safetyZone
 double getZvalueOfSZ();
+void restrictMovement(osg::Matrix &mat);
 
 
 class Pump
@@ -134,11 +136,13 @@ private:
 };
 
 class mySensor;
+class Equipment;
 class EKU: public opencover::coVRPlugin, public opencover::ui::Owner
 {
     friend class mySensor;
 public:
     static bool modifyScene;
+    static bool deleteObjects;
     EKU();
     ~EKU();
     bool init();
@@ -157,7 +161,7 @@ public:
     static std::vector<std::shared_ptr<SafetyZone>> safetyZones;
     static std::vector<std::shared_ptr<CamPosition>> allCamPositions;
     static std::vector<std::unique_ptr<Pump>> allPumps;
-
+    static std::vector<std::unique_ptr<Equipment>> equipment;
 
 
     //std::vector<Cam*> cameras;
@@ -167,22 +171,25 @@ public:
     GA *ga =nullptr;
     static EKU *plugin;
     osg::ref_ptr<osg::Group> finalScene;
-    void restrictMovement(osg::Matrix &mat);
 private:
     //UI
     ui::Menu *EKUMenu  = nullptr;
-    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*RmvCam = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr, *RmvSafetyZone = nullptr,*calcVisMat = nullptr,*StopGA = nullptr;
-    ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
+    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*RmvCam = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr, *RmvSafetyZone = nullptr,*StopGA = nullptr;
     ui::Group *Frame = nullptr;
     ui::Label *Label = nullptr;
-    ui::Button *MakeCamsInvisible = nullptr, *ShowSearchSpace = nullptr,*ModifyScene = nullptr;
+    ui::Button *ModifyScene = nullptr,*Delete =nullptr;//*MakeCamsInvisible = nullptr;
 
 
     ui::Menu *Optimize = nullptr;
     ui::Slider *penalty = nullptr, *weighting = nullptr;
 
 
-    ui::Menu *Test = nullptr;
+    ui::Menu *Camera = nullptr;
+    ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
+    ui::Button  *ShowSearchSpace = nullptr,*ShowRealSize = nullptr;
+    ui::Action *calcVisMat = nullptr;
+
+
     osg::MatrixTransform *mymtf;
     vrui::coTrackerButtonInteraction *myinteraction;
     bool interActing;
@@ -190,12 +197,18 @@ private:
     std::vector<mySensor*> userInteraction;
 
 
-     //Landscape
+     //Equipment
     void createScene();
     osg::ref_ptr<osg::Node> silo1;
     osg::ref_ptr<osg::Node> silo2;
     osg::ref_ptr<osg::Node> container;
     osg::ref_ptr<osg::Node> christmasTree;
+    osg::ref_ptr<osg::Node> manifold;
+    osg::ref_ptr<osg::Node> blender;
+    osg::ref_ptr<osg::Node> dataVan;
+
+
+
 
 
 

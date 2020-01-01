@@ -29,17 +29,18 @@ size_t Cam::count=0;
 
 Cam::Cam(coCoord matrix,std::string name):pos(matrix.xyz),rot(matrix.hpr[0],matrix.hpr[1]),name(name)
 {
- //   std::cout<<"new Cam:" <<id<<std::endl;
     count++;
     matrix.makeMat(mat);
+    calcVisMat();
     directionVec = calcDirectionVec(mat);
-    float _interSize = cover->getSceneSize() / 25;
 
     // Debugging:
-    viewpointInteractor = new coVR3DTransRotInteractor(mat, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
-    viewpointInteractor->hide();
-    //viewpointInteractor->enableIntersection();
-
+    /*
+        float _interSize = cover->getScNeneSize() / 25;
+        viewpointInteractor = new coVR3DTransRotInteractor(mat, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
+        viewpointInteractor->hide();
+        viewpointInteractor->enableIntersection();
+    */
 }
 Cam::~Cam()
 {
@@ -51,11 +52,11 @@ void Cam::setPosition(coCoord& m)
     rot.set(m.hpr[0],m.hpr[1]);
     m.makeMat(mat);
     directionVec = calcDirectionVec(mat);
-    viewpointInteractor->updateTransform(mat);
+   // viewpointInteractor->updateTransform(mat);
 }
 void Cam::preFrame()
 {
-    viewpointInteractor->preFrame();
+  //  viewpointInteractor->preFrame();
 }
 
 void Cam::calcVisMat()
@@ -73,7 +74,9 @@ void Cam::calcVisMat()
     osg::Matrix testRot = osg::Matrix::rotate(-osg::DegreesToRadians(test), osg::Y_AXIS);
     // BUGFIX: still problem at borders?
 
-    size_t cnt =1;
+    register size_t countPrio1 =0;
+    register size_t countPrio2 =0;
+    size_t cnt=1;
     for(const auto& p : EKU::safetyZones)
     {
         std::vector<double> visMatForThisSafetyZone;
@@ -84,6 +87,7 @@ void Cam::calcVisMat()
 
         for(const auto& p1 :p->getWorldPosOfAllObservationPoints())
         {
+
             osg::Vec3 newPoint = p1*T*zRot*yRot*testRot;
           // For Visualization of transfered Point
           /*  mySphere = new osg::Box(newPoint,2,2,2);
@@ -289,10 +293,10 @@ osg::Geode* CamDrawable::plotCam()
     geode->getStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
     // Declare an array of vertices to create a simple pyramid.
     verts = new osg::Vec3Array;
-    verts->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 ) ); // 0 upper  front base
-    verts->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2 ) ); // 1 lower front base
-    verts->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2 ) ); // 3 lower  back  base
-    verts->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 ) ); // 2 upper back  base
+    verts->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale ); // 0 upper  front base
+    verts->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2 )/scale ); // 1 lower front base
+    verts->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2 )/scale ); // 3 lower  back  base
+    verts->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale ); // 2 upper back  base
     verts->push_back( osg::Vec3( 0,  0,  0) ); // 4 peak
 
 
@@ -377,12 +381,22 @@ void CamDrawable::updateFOV(float value)
     cam->imgWidth = 2*cam->depthView*std::tan(cam->fov/2*osg::PI/180);
     cam->imgHeight = cam->imgWidth/(cam->imgWidthPixel/cam->imgHeightPixel);
 
-    verts->at(0) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 0 upper  front base
-    verts->at(1) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 1 lower front base
-    verts->at(2) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 3 lower  back  base
-    verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 2 upper back  base
-    verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
-
+    if(_showRealSize)
+    {
+        verts->at(0) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 0 upper  front base
+        verts->at(1) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 1 lower front base
+        verts->at(2) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 3 lower  back  base
+        verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 2 upper back  base
+        verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
+    }
+    else
+    {
+        verts->at(0) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2)/scale; // 0 upper  front base
+        verts->at(1) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2)/scale; // 1 lower front base
+        verts->at(2) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2)/scale; // 3 lower  back  base
+        verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2)/scale; // 2 upper back  base
+        verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
+    }
     verts->dirty();
 
 }
@@ -393,13 +407,54 @@ void CamDrawable::updateVisibility(float value)
     cam->imgWidth = 2*cam->depthView*std::tan(cam->fov/2*osg::PI/180);
     cam->imgHeight = cam->imgWidth/(cam->imgWidthPixel/cam->imgHeightPixel);
 
-    verts->at(0) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 0 upper  front base
-    verts->at(1) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 1 lower front base
-    verts->at(2) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 3 lower  back  base
-    verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 2 upper back  base
-    verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
+    if(_showRealSize)
+    {
+        verts->at(0) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 0 upper  front base
+        verts->at(1) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 1 lower front base
+        verts->at(2) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 3 lower  back  base
+        verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 2 upper back  base
+        verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
+    }
+    else
+    {
+        verts->at(0) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2)/scale; // 0 upper  front base
+        verts->at(1) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2)/scale; // 1 lower front base
+        verts->at(2) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2)/scale; // 3 lower  back  base
+        verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2)/scale; // 2 upper back  base
+        verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
+    }
+    verts->dirty();
+}
+void CamDrawable::showRealSize()
+{
+    verts->at(0) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2);
+    verts->at(1) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2);
+    verts->at(2) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2);
+    verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2);
+    verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak                             ;
 
     verts->dirty();
+}
+void CamDrawable::resetSize()
+{
+    if(_showRealSize)
+    {
+        verts->at(0) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 0 upper  front base
+        verts->at(1) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 1 lower front base
+        verts->at(2) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2); // 3 lower  back  base
+        verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2); // 2 upper back  base
+        verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
+    }
+    else
+    {
+        verts->at(0) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2)/scale; // 0 upper  front base
+        verts->at(1) = osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2)/scale; // 1 lower front base
+        verts->at(2) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2)/scale; // 3 lower  back  base
+        verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2)/scale; // 2 upper back  base
+        verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
+    }
+    verts->dirty();                       ;
+
 }
 
 void CamDrawable::updateColor()
@@ -482,7 +537,7 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
 
     //create Interactors
     float _interSize = cover->getSceneSize() / 25;
-    viewpointInteractor = new coVR3DTransRotInteractor(m, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
+    viewpointInteractor = new coVR3DTransRotInteractor(m, _interSize/3, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
     viewpointInteractor->show();
     viewpointInteractor->enableIntersection();
     localDCS->addChild(camDraw->getCamGeode().get());
@@ -563,11 +618,14 @@ void CamPosition::preFrame()
     }
     // use interactor to show all visible SZ
     else
-    {        viewpointInteractor->setNoTranslationNoRotation(true);
+    {
+        viewpointInteractor->setNoTranslationNoRotation(true);
 
         if(viewpointInteractor->wasStarted())
         {
-            camDraw->activate();
+           // camDraw->activate();
+            camDraw->showRealSize();
+
             size_t cnt=0;
             double visible =1;
             for(const auto &x : camDraw->cam->visMat)
@@ -579,7 +637,8 @@ void CamPosition::preFrame()
         }
         if(viewpointInteractor->wasStopped())
         {
-            camDraw->disactivate();
+            //camDraw->disactivate();
+            camDraw->resetSize();
             size_t cnt=0;
             double visible =1;
             for(const auto &x : camDraw->cam->visMat)
@@ -760,12 +819,15 @@ void CamPosition::setSearchSpaceState(bool state)
 
 }
 
-void CamPosition::calcIntersection(std::vector<osg::Vec3> &controlPoints)
+/*void CamPosition::calcIntersection(std::vector<std::shared_ptr<SafetyZone>>& sz)
 {
    osg::Timer_t startTick = osg::Timer::instance()->tick();
     //https://github.com/openscenegraph/OpenSceneGraph/blob/master/examples/osgintersection/osgintersection.cpp
-   visibilityMatrix.clear();
-   visibilityMatrix.reserve(controlPoints.size());
+   visibilityMatrixPrio1.clear();
+   visibilityMatrixPrio2.clear();
+   visibilityMatrixPrio1.reserve(controlPointsPrio1.size());
+   visibilityMatrixPrio2.reserve(controlPointsPrio2.size());
+   std::vector<int> controlPoints(controlPointsPrio1,controlPointsPrio2);
    osg::ref_ptr<osgUtil::IntersectorGroup> intersectorGroup = new osgUtil::IntersectorGroup();
    osg::Vec3 start = this->getPosition();
    for(const auto& end : controlPoints)
@@ -774,9 +836,10 @@ void CamPosition::calcIntersection(std::vector<osg::Vec3> &controlPoints)
        intersectorGroup->addIntersector( intersector.get() );
    }
 
-   osgUtil::IntersectionVisitor visitor(intersectorGroup.get());
-   cover->getObjectsRoot()->accept(visitor);
-
+  osgUtil::IntersectionVisitor visitor(intersectorGroup.get());
+  cover->getObjectsRoot()->accept(visitor);
+  register int count =0;
+  const int endPrio1 = controlPointsPrio1.size();
   osgUtil::IntersectorGroup::Intersectors& intersectors = intersectorGroup->getIntersectors();
   for(osgUtil::IntersectorGroup::Intersectors::iterator intersector_itr = intersectors.begin();
                   intersector_itr != intersectors.end();
@@ -797,27 +860,93 @@ void CamPosition::calcIntersection(std::vector<osg::Vec3> &controlPoints)
                     ++numberOfNonRelevantObstacles;
         //        std::cout<<hitr->nodePath.back()->getName()<<" & ";
             }
-            if(hits.size()-numberOfNonRelevantObstacles>0)
-                visibilityMatrix.push_back(0);
-            else
-                visibilityMatrix.push_back(1);
-
+            if(count <= endPrio1){
+                if(hits.size()-numberOfNonRelevantObstacles>0)
+                    visibilityMatrixPrio1.push_back(0);
+                else
+                    visibilityMatrixPrio1.push_back(1);
+            }
+            else{
+                if(hits.size()-numberOfNonRelevantObstacles>0)
+                    visibilityMatrixPrio2.push_back(0);
+                else
+                    visibilityMatrixPrio2.push_back(1);
+            }
+            count++;
         }
 
     }
    osg::Timer_t endTick = osg::Timer::instance()->tick();
    std::cout<<"Completed in "<<osg::Timer::instance()->delta_s(startTick,endTick)<<std::endl;
-   for(const auto& x : visibilityMatrix)
+   std::cout<<"Prio1"<<std::endl;
+   for(const auto& x : visibilityMatrixPrio1)
+       std::cout<<x<<std::endl;
+   std::cout<<"Prio2"<<std::endl;
+   for(const auto& x : visibilityMatrixPrio2)
        std::cout<<x<<std::endl;
 }
 
 
+*/
+
+/*void CamPosition::createCams(bool rotx, bool roty, bool rotz)
+{
 
 
+ //   calcVisibility();
+}
+*/
+bool CamPosition::isVisibilityMatrixEmpty(Cam* cam)
+{
+    bool emptyPrio1 = std::all_of(cam->visMatPrio1.begin(), cam->visMatPrio1.end(), [](int i) { return i==0; });
+    bool emptyPrio2 = std::all_of(cam->visMatPrio2.begin(), cam->visMatPrio2.end(), [](int i) { return i==0; });
+    if(emptyPrio1 && emptyPrio2)
+        return true;
+    else
+        return false;
+}
 
+/*Cam& CamPosition::compareCams(Cam &camA ,Cam &camB)
+{
 
+    auto ItA = camA->visMatPrio1.begin();
+    auto ItB = camB->visMatPrio1.begin();
+    Cam* betterCam = nullptr;
+    int onlyInA =0;
+    int onlyInB =0;
+    while(ItA != camA->visMatPrio1.end() || ItB != camB->visMatPrio1.end())
+    {
+        if(*itA > *itB)
+            ++onlyInA;
+        if(*itB > *itA)
+            ++onlyInB;
 
+        if((onlyInA && onlyInB) !=0) //each camera can see points, which the other can't see --> keep both cameras!
+            return nullptr;
 
+        if(ItA != camA->visMatPrio1.end())
+        {
+            ++ItA;
+        }
+        if(ItB != camB->visMatPrio1.end())
+        {
+            ++ItB;
+        }
+    }
+
+    if(onlyInA != 0 && onlyInB == 0)
+            betterCam = camA;
+    else if(onlyInB != 0 && onlyInA == 0)
+            betterCam = camB;
+    else if((onlyInA == 0) && (onlyInB == 0) )
+    {
+        //SRC && PDC
+    }
+
+   return betterCam;
+
+}
+*/
 
 
 
