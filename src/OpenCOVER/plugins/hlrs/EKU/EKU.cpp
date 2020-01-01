@@ -647,12 +647,12 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             for(const auto&x1 : x->getWorldPosOfAllObservationPoints())
             points.push_back(x1);
         }
-     /*   for(const auto& x : allCamPositions)
+        for(const auto& x : allCamPositions)
         {
-            x->calcIntersection(points);
+            x->calcIntersection();
 
         }
-     */   for(const auto& x : allCamPositions)
+        for(const auto& x : allCamPositions)
         {
             x->camDraw->cam->calcVisMat();
             for(const auto& x1: x->allCameras)

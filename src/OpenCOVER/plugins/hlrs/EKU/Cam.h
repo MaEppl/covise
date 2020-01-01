@@ -174,7 +174,7 @@ public:
     void activate();
     void disactivate();
 
-   // void calcIntersection(std::vector<std::shared_ptr<SafetyZone> > &sz);
+    void calcIntersection();
     int calcVisibility(osg::Matrix cam,osg::Vec3 point);
 
   //  Cam& CamPosition::compareCams(Cam &camA ,Cam &camB);
@@ -182,8 +182,7 @@ private:
     bool status;
     std::string name;
     Pump* myPump = nullptr;
-    std::vector<int> visibilityMatrixPrio1;
-    std::vector<int> visibilityMatrixPrio2;
+    std::vector<std::vector<double>> visMat;
     bool isVisibilityMatrixEmpty(Cam* cam);
 
    // std::vector<std::pair<std::shared_ptr<SafetyZone,std::vector<int>>> visMatPerSafetyZone;

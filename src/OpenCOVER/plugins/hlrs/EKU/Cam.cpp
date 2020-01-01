@@ -819,27 +819,29 @@ void CamPosition::setSearchSpaceState(bool state)
 
 }
 
-/*void CamPosition::calcIntersection(std::vector<std::shared_ptr<SafetyZone>>& sz)
+void CamPosition::calcIntersection()
 {
    osg::Timer_t startTick = osg::Timer::instance()->tick();
-    //https://github.com/openscenegraph/OpenSceneGraph/blob/master/examples/osgintersection/osgintersection.cpp
-   visibilityMatrixPrio1.clear();
-   visibilityMatrixPrio2.clear();
-   visibilityMatrixPrio1.reserve(controlPointsPrio1.size());
-   visibilityMatrixPrio2.reserve(controlPointsPrio2.size());
-   std::vector<int> controlPoints(controlPointsPrio1,controlPointsPrio2);
+   visMat.clear();
    osg::ref_ptr<osgUtil::IntersectorGroup> intersectorGroup = new osgUtil::IntersectorGroup();
    osg::Vec3 start = this->getPosition();
-   for(const auto& end : controlPoints)
+   std::vector<double> nbrPointPerSZ;
+   for(const auto& x : EKU::safetyZones)
    {
-       osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector = new osgUtil::LineSegmentIntersector(start, end);
-       intersectorGroup->addIntersector( intersector.get() );
+       nbrPointPerSZ.push_back(x->getWorldPosOfAllObservationPoints().size());
+
+       for(const auto& end : x->getWorldPosOfAllObservationPoints())
+       {
+            osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector = new osgUtil::LineSegmentIntersector(start, end);
+            intersectorGroup->addIntersector( intersector.get() );
+       }
    }
 
   osgUtil::IntersectionVisitor visitor(intersectorGroup.get());
   cover->getObjectsRoot()->accept(visitor);
-  register int count =0;
-  const int endPrio1 = controlPointsPrio1.size();
+  register int count = 0;
+  register int counterSZ = 0;
+  std::vector<double> visMatForThisSafetyZone;
   osgUtil::IntersectorGroup::Intersectors& intersectors = intersectorGroup->getIntersectors();
   for(osgUtil::IntersectorGroup::Intersectors::iterator intersector_itr = intersectors.begin();
                   intersector_itr != intersectors.end();
@@ -860,34 +862,39 @@ void CamPosition::setSearchSpaceState(bool state)
                     ++numberOfNonRelevantObstacles;
         //        std::cout<<hitr->nodePath.back()->getName()<<" & ";
             }
-            if(count <= endPrio1){
-                if(hits.size()-numberOfNonRelevantObstacles>0)
-                    visibilityMatrixPrio1.push_back(0);
-                else
-                    visibilityMatrixPrio1.push_back(1);
-            }
-            else{
-                if(hits.size()-numberOfNonRelevantObstacles>0)
-                    visibilityMatrixPrio2.push_back(0);
-                else
-                    visibilityMatrixPrio2.push_back(1);
-            }
+            if(hits.size()-numberOfNonRelevantObstacles>0)
+                visMatForThisSafetyZone.push_back(0);
+            else
+                visMatForThisSafetyZone.push_back(1);
+
             count++;
+            if(count == nbrPointPerSZ.at(counterSZ))
+            {
+                count =0;
+                counterSZ++;
+                visMat.push_back(visMatForThisSafetyZone);
+                visMatForThisSafetyZone.clear();
+            }
+            std::cout <<count<<std::endl;
         }
 
     }
    osg::Timer_t endTick = osg::Timer::instance()->tick();
+   std::cout<<"nbr SZ: "<<visMat.size()<<std::endl;
    std::cout<<"Completed in "<<osg::Timer::instance()->delta_s(startTick,endTick)<<std::endl;
    std::cout<<"Prio1"<<std::endl;
-   for(const auto& x : visibilityMatrixPrio1)
-       std::cout<<x<<std::endl;
-   std::cout<<"Prio2"<<std::endl;
-   for(const auto& x : visibilityMatrixPrio2)
-       std::cout<<x<<std::endl;
+   for(const auto& x : visMat)
+   {
+       std::cout<<"Zone (size: "<<x.size()<<") :";
+       for(const auto& x1 : x)
+           std::cout<<x1<<", ";
+   std::cout<<" " <<std::endl;
+   }
+
 }
 
 
-*/
+
 
 /*void CamPosition::createCams(bool rotx, bool roty, bool rotz)
 {
