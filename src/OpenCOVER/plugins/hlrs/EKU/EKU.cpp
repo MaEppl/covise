@@ -256,8 +256,8 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
     //Rotation
     osg::Matrix rotate;
     osg::Quat xRot, yRot;
-    xRot.makeRotate(osg::DegreesToRadians(0.0),osg::X_AXIS);//90
-    yRot.makeRotate(osg::DegreesToRadians(0.0+rotZ),osg::Y_AXIS);//270
+    xRot.makeRotate(osg::DegreesToRadians(90.0),osg::X_AXIS);//90
+    yRot.makeRotate(osg::DegreesToRadians(270.0+rotZ),osg::Y_AXIS);//270
     osg::Quat fullRot = yRot*xRot;
     rotate.setRotate(fullRot);
     rotMat = new osg::MatrixTransform();
@@ -551,7 +551,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
 
     //draw Pumps:
-    std::unique_ptr<Pump> newPump(new Pump(allCamPositions,safetyZones,truck,truckSurfaceBox,truckCabine));
+ /*   std::unique_ptr<Pump> newPump(new Pump(allCamPositions,safetyZones,truck,truckSurfaceBox,truckCabine));
     allPumps.push_back(std::move(newPump));
 
   int cnt =0;
@@ -582,7 +582,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     doAddPRIO1(osg::Vec3(20,-10,0),40,45,2);
 
-
+*/
 
     //Create UI
     EKUMenu  = new ui::Menu("EKU", this);
@@ -641,25 +641,22 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         for(const auto& x : safetyZones)
             pointsToObserve.push_back(x->getPosition());
 */
-        std::vector<osg::Vec3> points;
-        for(const auto& x : EKU::safetyZones)
-        {
-            for(const auto&x1 : x->getWorldPosOfAllObservationPoints())
-            points.push_back(x1);
-        }
-        for(const auto& x : allCamPositions)
-        {
-            x->calcIntersection();
 
-        }
         for(const auto& x : allCamPositions)
         {
-            x->camDraw->cam->calcVisMat();
-            for(const auto& x1: x->allCameras)
-                x1->calcVisMat();
+            x->updateVisibleCam();
+            x->createCamsInSearchSpace();
+            std::cout<<x->getName()<<"nbrCams:"<<x->allCameras.size() ;
+            for(const auto &x1:x->allCameras)
+            {
+               std::cout<<" prio1: "<< x1->getVisMatPrio1().size();
+               std::cout<<" prio2: "<< x1->getVisMatPrio2().size()<<std::endl;
+            }
+            std::cout<<" "<<std::endl;
         }
+
         //show Points which are currently not visible
-        findNotVisiblePoints();
+       // findNotVisiblePoints();
 
         std::vector<osg::Matrix> finalCamMatrixes;
 
@@ -670,7 +667,6 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         {
 
             GA::nbrCamPositions=allCamPositions.size();
-            GA::nbrCamsPerCamPosition=allCamPositions.front()->allCameras.size();
             GA::nbrPoints = safetyZones.size();
 
             ga =new GA(allCamPositions,safetyZones);
@@ -740,13 +736,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             x->changeInteractorStatus(false);
         }
 
-        for(const auto& x : allCamPositions)
+    /*    for(const auto& x : allCamPositions)
         {
-            x->camDraw->cam->calcVisMat();
-            for(const auto& x1: x->allCameras)
-                x1->calcVisMat();
+            x->updateVisibleCam();
+        //    x->camDraw->cam->calcVisMat();
+        //    for(const auto& x1: x->allCameras)
+        //        x1->calcVisMat();
         }
-          //show Points which are currently not visible
+     */     //show Points which are currently not visible
           findNotVisiblePoints();
     });
 
@@ -958,10 +955,13 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 */
         for(const auto& x : allCamPositions)
         {
-            x->camDraw->cam->calcVisMat();
+            x->updateVisibleCam();
+          /*  x->camDraw->cam->calcVisMat();
             for(const auto& x1: x->allCameras)
                 x1->calcVisMat();
+                */
         }
+        findNotVisiblePoints();
     });
 
     //Modify scene
@@ -979,9 +979,9 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
          for(const auto& x : allCamPositions)
          {
-             x->camDraw->cam->calcVisMat();
-             for(const auto& x1: x->allCameras)
-                 x1->calcVisMat();
+             x->updateVisibleCam();
+             x->createCamsInSearchSpace();
+
          }
            //show Points which are currently not visible
            findNotVisiblePoints();

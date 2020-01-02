@@ -17,16 +17,18 @@
 
 #include "GA.hpp"
 
-int GA::nbrCamsPerCamPosition=16;
 int GA::nbrCamPositions=0;
 int GA::nbrPoints=0;
 double GA::weightingPRIO1 = 3;
 double GA::penalty =10;
 #if(1)
 
-std::shared_ptr<Cam> GA::getRandomCamera(int camPos, int index)
+std::shared_ptr<Cam> GA::getRandomCamera(int camPos, const std::function<double(void)> &rnd01)
 {
-    return camlist.at(camPos)->allCameras.at(index);
+    int nbrCams = camlist.at(camPos)->allCameras.size();
+   // if(nbrCams ==0)
+    int r = std::roundl(rnd01()*(nbrCams-1));
+    return camlist.at(camPos)->allCameras.at(r);
 }
 
 void GA::init_genes(MySolution& p,const std::function<double(void)> &rnd01)
@@ -34,8 +36,7 @@ void GA::init_genes(MySolution& p,const std::function<double(void)> &rnd01)
     int register count =0;
     for(auto & x:p.cameras)
     {
-        int r = std::roundl(rnd01()*(nbrCamsPerCamPosition-1));
-        x=getRandomCamera(count,r);
+        x=getRandomCamera(count,rnd01);
         count++;
       //  std::cout<<"random: "<<r<<st d::endl;
     }
@@ -67,6 +68,9 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
 
     for(const auto &x: p.cameras)
     {
+        std::cout<<"size visMat Prio1: "<<x->visMatPrio1.size()<<std::endl;
+        std::cout<<"size visMat Prio2: "<<x->visMatPrio2.size()<<std::endl;
+
         //not necessarry to add all elements, until 2 is enough
         std::transform(x->visMatPrio1.begin(),x->visMatPrio1.end(),visYesNo_prio1.begin(),visYesNo_prio1.begin(),std::plus<int>());
         std::transform(x->visMatPrio2.begin(),x->visMatPrio2.end(),visYesNo_prio2.begin(),visYesNo_prio2.begin(),std::plus<int>());
@@ -152,12 +156,11 @@ GA::MySolution GA:: mutate(const MySolution& X1,const std::function<double(void)
 {
     MySolution X_new=X1;
     int randCamPos = rnd01()*(nbrCamPositions-1);
-    int randCam = rnd01()*(nbrCamsPerCamPosition-1);
     int count = shrink_scale * nbrCamPositions;
     while( count !=0)
     {
         X_new.cameras.at(randCamPos).reset();
-        X_new.cameras.at(randCamPos) = getRandomCamera(randCamPos,randCam);
+        X_new.cameras.at(randCamPos) = getRandomCamera(randCamPos,rnd01);
         count--;
     }
 
@@ -230,7 +233,12 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     output_file.open(name);
     output_file<<"step"<<"\t"<<"cost_avg"<<"\t"<<"cost_best"<<"\t"<<"solution_best"<<"\n";
 
-    std::cout<<"GA: Number of cameras: "<< nbrCamsPerCamPosition*nbrCamPositions<<std::endl;
+    int possibleCameras=0;
+    for(const auto& x :camlist)
+    {
+        possibleCameras += x->allCameras.size();
+    }
+    std::cout<<"GA: Number of cameras: "<< possibleCameras<<std::endl;
     std::cout<<"GA: Number of points: "<< cam.at(0)->camDraw->cam->getVisMatPrio1().size() + cam.at(0)->camDraw->cam->getVisMatPrio2().size() <<std::endl;
     EA::Chronometer timer;
     timer.tic();

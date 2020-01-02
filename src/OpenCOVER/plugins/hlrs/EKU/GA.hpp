@@ -19,7 +19,6 @@ public:
     GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_ptr<SafetyZone>>& safetyZoneList);
     ~GA()=default;
     std::vector<std::shared_ptr<Cam> > getfinalCamPos() const;
-    static int nbrCamsPerCamPosition;
     static int nbrCamPositions;
     static int nbrPoints;
 
@@ -81,7 +80,7 @@ private:
     bool eval_solution(const MySolution& p, MyMiddleCost &c);
     double calculate_SO_total_fitness(const GA_Type::thisChromosomeType &X);
     void SO_report_generation(int generation_number,const EA::GenerationType<MySolution,MyMiddleCost> &last_generation,const MySolution& best_genes);
-    std::shared_ptr<Cam> getRandomCamera(int camPos, int index);
+    std::shared_ptr<Cam> getRandomCamera(int camPos,const std::function<double(void)> &rnd01);
 };
 #else
 class GA
