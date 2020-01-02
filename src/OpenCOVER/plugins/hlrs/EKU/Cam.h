@@ -35,6 +35,7 @@
 #include<osg/ShadeModel>
 #include <osg/LightModel>
 #include<osgFX/Scribe>
+#include<osg/Switch>
 
 #include<Sensor.h>
 #include<SafetyZone.h>
@@ -116,8 +117,8 @@ private:
 public:
     static size_t count;
     std::unique_ptr<Cam> cam;
-    osg::Geode* plotCam();
-    CamDrawable(coCoord& m,std::vector<std::vector<double>> visMat);
+    osg::Geode* plotCam(bool showLines);
+    CamDrawable(coCoord& m,std::vector<std::vector<double>> visMat,bool showLines);
     ~CamDrawable();
     bool _showRealSize=false;
 
@@ -147,7 +148,7 @@ public:
 
     ~CamPosition();
 
-    osg::ref_ptr<osg::MatrixTransform> getCamGeode()const{return localDCS;}
+    osg::ref_ptr<osg::Switch> getCamGeode()const{return switchNode;}
 
     osg::Vec3 getPosition(){
         return localDCS.get()->getMatrix().getTrans();}
@@ -171,6 +172,8 @@ public:
     void updateVisibleCam();
     std::vector<std::shared_ptr<Cam>> allCameras;
     std::unique_ptr<CamDrawable> camDraw;
+    std::unique_ptr<CamDrawable> searchSpaceDrawable;
+
     void activate();
     void disactivate();
 
@@ -188,6 +191,7 @@ private:
    // std::vector<std::pair<std::shared_ptr<SafetyZone,std::vector<int>>> visMatPerSafetyZone;
 
     coVR3DTransRotInteractor *viewpointInteractor;
+    osg::ref_ptr<osg::Switch> switchNode;
     osg::ref_ptr<osg::MatrixTransform> localDCS;
     osg::ref_ptr<osg::Group> searchSpaceGroup;
     std::vector<osg::ref_ptr<osg::MatrixTransform>> searchSpace;

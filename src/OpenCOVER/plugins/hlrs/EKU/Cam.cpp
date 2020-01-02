@@ -225,13 +225,13 @@ double Cam::calcPreferredDirectionFactor( osg::Vec3 directionOfSafetyZone)
 
 size_t CamDrawable::count=0;
 
-CamDrawable::CamDrawable(coCoord &m, std::vector<std::vector<double> > visMat)
+CamDrawable::CamDrawable(coCoord &m, std::vector<std::vector<double> > visMat,bool showLines)
 {
     count++;
 //    fprintf(stderr, "new CamDrawable from Point\n");
     cam = std::unique_ptr<Cam>(new Cam(m,visMat,"Original from CamDrawable"));
     //create pyramide
-    camGeode = plotCam();
+    camGeode = plotCam(showLines);
     camGeode->setName("CamDrawable"+std::to_string(CamDrawable::count));
     camGeode->setNodeMask(camGeode->getNodeMask() & (~Isect::Intersection) & (~Isect::Pick));
     //create interactor
@@ -271,7 +271,7 @@ CamDrawable::~CamDrawable()
     count--;
 }
 
-osg::Geode* CamDrawable::plotCam()
+osg::Geode* CamDrawable::plotCam(bool showLines)
 {
     // The Drawable geometry is held under Geode objects.
     osg::Geode* geode = new osg::Geode();
@@ -311,25 +311,51 @@ osg::Geode* CamDrawable::plotCam()
     face->push_back(0);
     geom->addPrimitiveSet(face);
 
-    osg::DrawElementsUInt* line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
-    line->push_back(4);
-    line->push_back(3);
-    geom->addPrimitiveSet(line);
+    if(showLines)
+    {
+        osg::DrawElementsUInt* line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+        line->push_back(4);
+        line->push_back(3);
+        geom->addPrimitiveSet(line);
 
-    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
-    line->push_back(4);
-    line->push_back(2);
-    geom->addPrimitiveSet(line);
+        line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+        line->push_back(4);
+        line->push_back(2);
+        geom->addPrimitiveSet(line);
 
-    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
-    line->push_back(4);
-    line->push_back(1);
-    geom->addPrimitiveSet(line);
+        line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+        line->push_back(4);
+        line->push_back(1);
+        geom->addPrimitiveSet(line);
 
-    line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
-    line->push_back(4);
-    line->push_back(0);
-    geom->addPrimitiveSet(line);
+        line = new osg::DrawElementsUInt(osg::PrimitiveSet::LINES, 0,2);
+        line->push_back(4);
+        line->push_back(0);
+        geom->addPrimitiveSet(line);
+
+        // Create a separate color for each face.
+        colors = new osg::Vec4Array; //magenta 1 1 0; cyan 0 1 1; black 0 0 0
+        colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 0.5f) ); // magenta - back
+        colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
+        colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
+        colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
+        colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // yellow  - base
+
+    }
+    else
+    {
+        // Create a separate color for each face.
+        colors = new osg::Vec4Array; //magenta 1 1 0; cyan 0 1 1; black 0 0 0
+        colors->push_back( osg::Vec4(1.0f, 1.0f, 0.0f, 0.5f) ); // magenta - back
+        colors->push_back( osg::Vec4(1.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
+        colors->push_back( osg::Vec4(1.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
+        colors->push_back( osg::Vec4(1.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
+        colors->push_back( osg::Vec4(1.0f, 1.0f, 0.0f, 1.0f) ); // yellow  - base
+    }
+    // Assign the color indices created above to the geometry and set the
+    // binding mode to _PER_PRIMITIVE_SET.
+    geom->setColorArray(colors);
+    geom->setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
 
     osg::Vec3Array* normals = new osg::Vec3Array();
     normals->push_back(osg::Vec3(-1.f ,-1.f, 0.f)); //left front
@@ -353,18 +379,6 @@ osg::Geode* CamDrawable::plotCam()
     stateset->setAttributeAndModes(material);
     stateset->setNestRenderBins(false);
 
-    // Create a separate color for each face.
-    colors = new osg::Vec4Array; //magenta 1 1 0; cyan 0 1 1; black 0 0 0
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 0.5f) ); // magenta - back
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // yellow  - base
-    // Assign the color indices created above to the geometry and set the
-    // binding mode to _PER_PRIMITIVE_SET.
-    geom->setColorArray(colors);
-    geom->setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
-    //geom->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
     //LineWidth
     LineWidth *lw = new LineWidth(2.0);
     stateset->setAttribute(lw);
@@ -450,7 +464,7 @@ void CamDrawable::resetSize()
         verts->at(3) = osg::Vec3( Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2)/scale; // 2 upper back  base
         verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
     }
-    verts->dirty();                       ;
+    verts->dirty();
 
 }
 
@@ -492,25 +506,31 @@ CamPosition::CamPosition(osg::Matrix m)
     //check Intersection of this Camposition with all points in SZ
     calcIntersection();
 
-    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable(mEuler,visMat));
+    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable(mEuler,visMat,true));
+    coCoord empty;
+    searchSpaceDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false));
 
     //create Interactors
     float _interSize = cover->getSceneSize() / 25;
     viewpointInteractor = new coVR3DTransRotInteractor(m, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
     viewpointInteractor->show();
     viewpointInteractor->enableIntersection();
-    osg::Matrix test = viewpointInteractor->getMatrix();
 
     localDCS->addChild(camDraw->getCamGeode());
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
-    localDCS->addChild(searchSpaceGroup.get());
+    searchSpaceGroup->addChild(searchSpaceDrawable->getCamGeode().get());
+
+    switchNode = new osg::Switch();
+    switchNode->setName("CamPosSwitch"+std::to_string(counter));
+    switchNode->addChild(localDCS.get(),true);
+    switchNode->addChild(searchSpaceGroup.get(),false);
 
     createCamsInSearchSpace();
-    searchSpaceGroup->setNodeMask(0);
     directionVec = calcDirectionVec(m);
-    updateCamMatrixes();
-    cover->getObjectsRoot()->addChild(localDCS.get());
+    //updateCamMatrixes();
+    cover->getObjectsRoot()->addChild(switchNode.get());
+
 
 
     
@@ -530,7 +550,9 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
     //check Intersection of this Camposition with all points in SZ
     calcIntersection();
 
-    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable(mEuler,visMat));
+    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable(mEuler,visMat,true));
+    coCoord empty;
+    searchSpaceDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false));
 
     //create Interactors
     float _interSize = cover->getSceneSize() / 25;
@@ -541,10 +563,14 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
 
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
-    localDCS->addChild(searchSpaceGroup.get());
+    searchSpaceGroup->addChild(searchSpaceDrawable->getCamGeode().get());
+
+    switchNode = new osg::Switch();
+    switchNode->setName("CamPosSwitch");
+    switchNode->addChild(localDCS.get(),true);
+    switchNode->addChild(searchSpaceGroup.get(),false);
 
     createCamsInSearchSpace();
-    searchSpaceGroup->setNodeMask(0);
     directionVec = calcDirectionVec(m);
    // updateCamMatrixes();
 }
@@ -588,6 +614,9 @@ void CamPosition::preFrame()
            osg::Matrix test = viewpointInteractor->getMatrix();
             testEuler = test;
             std::cout<<"START"<<std::endl;
+            allCameras.clear();
+            searchSpaceGroup->removeChildren(0,searchSpaceGroup.get()->getNumChildren());
+
         }
         if(viewpointInteractor->isRunning())
         {
@@ -608,7 +637,9 @@ void CamPosition::preFrame()
 
             osg::Matrix local = viewpointInteractor->getMatrix();
             directionVec = calcDirectionVec(local);
-            updateCamMatrixes();
+            //updateCamMatrixes();
+            calcIntersection();
+            createCamsInSearchSpace();
 
         }
 
@@ -658,18 +689,27 @@ void CamPosition::preFrame()
 */
 void CamPosition::createCamsInSearchSpace()
 {
+    auto before = searchSpaceGroup.get()->getNumChildren();
+
+    //first delete all available Cameras
+    if(!searchSpace.empty())
+        searchSpace.clear();
+    searchSpaceGroup->removeChildren(0,searchSpaceGroup.get()->getNumChildren());
+
+    auto after = searchSpaceGroup.get()->getNumChildren();
+
     //around z axis
     int zMax = 180;
     int stepSizeZ = 10; //in Degree
 
-    int xMax = 20;
+    int xMax = 30;
     int stepSizeX = 10; //in Degree
 
     int yMax = 180;
     int stepSizeY = 20; //in Degree
 
     osg::Matrix m = localDCS.get()->getMatrix();
-    coCoord coord=m;
+    coCoord coord;//=m;
     coCoord newCoordPlus,newCoordMinus;
     newCoordPlus.hpr[2] =0;
     newCoordMinus.hpr[2] =0;
@@ -737,12 +777,16 @@ void CamPosition::createCamsInSearchSpace()
 
                 }                    newCoordPlus.makeMat(m_new);
 
+                //convert coCoord to osg::Matrix
                 osg::Matrix newCoordPlusMatrix,newCoordMinusMatrix;
                 newCoordPlus.makeMat(newCoordPlusMatrix);
                 newCoordMinus.makeMat(newCoordMinusMatrix);
-                // the matrix of the cam is: actualmatrix*viewpointinteractor
-                std::shared_ptr<Cam> cPlus =std::make_shared<Cam>(newCoordPlusMatrix*viewpointInteractor->getMatrix(),visMat,"plus");
-                std::shared_ptr<Cam> cMinus =std::make_shared<Cam>(newCoordMinusMatrix*viewpointInteractor->getMatrix(),visMat,"minus");
+                // the matrix of the cam is: actualmatrix*viewpointinteractor(only Translation part)
+                osg::Matrix translationViewpoint;
+                translationViewpoint.setTrans(viewpointInteractor->getMatrix().getTrans());
+
+                std::shared_ptr<Cam> cPlus =std::make_shared<Cam>(newCoordPlusMatrix*translationViewpoint,visMat,"Plus");
+                std::shared_ptr<Cam> cMinus =std::make_shared<Cam>(newCoordMinusMatrix*translationViewpoint,visMat,"Minus");
 
                 if(!isVisibilityMatrixEmpty(cPlus))
                 {
@@ -750,9 +794,9 @@ void CamPosition::createCamsInSearchSpace()
                     allCameras.push_back(std::move(cPlus));
                     searchSpace.push_back(new osg::MatrixTransform );
                     searchSpaceGroup->addChild(searchSpace.back().get());
-                    searchSpace.back()->setMatrix(newCoordPlusMatrix);
+                    searchSpace.back()->setMatrix(newCoordPlusMatrix*translationViewpoint);
                     searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1])+ " Y:" +std::to_string( newCoordPlus.hpr[2]));
-                    searchSpace.back()->addChild(camDraw->getCamGeode().get());
+                    searchSpace.back()->addChild(searchSpaceDrawable->getCamGeode().get());
                 }
                 if(!isVisibilityMatrixEmpty(cMinus))
                 {
@@ -760,9 +804,9 @@ void CamPosition::createCamsInSearchSpace()
                     allCameras.push_back(std::move(cMinus));
                     searchSpace.push_back(new osg::MatrixTransform );
                     searchSpaceGroup->addChild(searchSpace.back().get());
-                    searchSpace.back()->setMatrix(newCoordMinusMatrix);
+                    searchSpace.back()->setMatrix(newCoordMinusMatrix*translationViewpoint);
                     searchSpace.back()->setName(std::to_string(nbrOfCameras)+"-MATRIX Z:" + std::to_string( newCoordMinus.hpr[0])+ " X:" +std::to_string( newCoordMinus.hpr[1])+ " Y:" +std::to_string( newCoordMinus.hpr[2]));
-                    searchSpace.back()->addChild(camDraw->getCamGeode().get());
+                    searchSpace.back()->addChild(searchSpaceDrawable->getCamGeode().get());
 
                 }
 
@@ -821,15 +865,10 @@ void CamPosition::updateVisibleCam()
 
 void CamPosition::setSearchSpaceState(bool state)
 {
-
-   // if(searchSpaceState == false)
-        //createCamsInSearchSpace();
-
     if(state)
-        searchSpaceGroup->setNodeMask(UINT_MAX);
+        switchNode->setChildValue(searchSpaceGroup.get(),true);
     else
-        searchSpaceGroup->setNodeMask(0);
-
+        switchNode->setChildValue(searchSpaceGroup.get(),false);
 }
 
 void CamPosition::calcIntersection()
