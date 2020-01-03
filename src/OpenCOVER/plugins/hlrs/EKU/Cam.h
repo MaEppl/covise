@@ -73,7 +73,7 @@ public:
     std::vector<double> distortionValuePrio2;
 
     std::string getName()const{return name;}
-    void setPosition(coCoord& m,std::vector<std::vector<double>> visMat);
+    void setPosition(coCoord& m, std::vector<std::vector<double>> visMatInput);
     osg::Matrix getMatrix(){
         coCoord euler = mat;
         //std::cout<<"Cam "<<count<<" :"<<euler.hpr[0]<<","<<euler.hpr[1]<<","<<euler.hpr[2]<<std::endl;
@@ -117,8 +117,8 @@ private:
 public:
     static size_t count;
     std::unique_ptr<Cam> cam;
-    osg::Geode* plotCam(bool showLines);
-    CamDrawable(coCoord& m,std::vector<std::vector<double>> visMat,bool showLines);
+    osg::Geode* plotCam(bool showLines, osg::Vec4 color);
+    CamDrawable(coCoord& m,std::vector<std::vector<double>> visMat,bool showLines,osg::Vec4 color);
     ~CamDrawable();
     bool _showRealSize=false;
 
@@ -129,8 +129,6 @@ public:
     void updateVisibility(float value);
     void showRealSize();
     void resetSize();
-    void updateColor();
-    void resetColor();
     void activate(){camGeode->setNodeMask(UINT_MAX);
                     camGeode->setNodeMask(camGeode->getNodeMask() & (~Isect::Intersection) & (~Isect::Pick));
                    }
@@ -161,8 +159,8 @@ public:
     {
         viewpointInteractor->updateTransform(matrix1);
         localDCS->setMatrix(matrix1);
-        calcIntersection();
-        updateCamMatrixes();
+        //updateCamMatrixes();
+        updateVisibleCam();
     }
 
     void preFrame();
@@ -173,6 +171,8 @@ public:
     std::vector<std::shared_ptr<Cam>> allCameras;
     std::unique_ptr<CamDrawable> camDraw;
     std::unique_ptr<CamDrawable> searchSpaceDrawable;
+    std::unique_ptr<CamDrawable> deletedOrientationsDrawable;
+
 
     void activate();
     void disactivate();
@@ -186,7 +186,6 @@ private:
     std::string name;
     Pump* myPump = nullptr;
     std::vector<std::vector<double>> visMat;
-    bool isVisibilityMatrixEmpty(std::shared_ptr<Cam>& cam);
 
    // std::vector<std::pair<std::shared_ptr<SafetyZone,std::vector<int>>> visMatPerSafetyZone;
 
@@ -195,8 +194,17 @@ private:
     osg::ref_ptr<osg::MatrixTransform> localDCS;
     osg::ref_ptr<osg::Group> searchSpaceGroup;
     std::vector<osg::ref_ptr<osg::MatrixTransform>> searchSpace;
+    std::vector<osg::ref_ptr<osg::MatrixTransform>> deletedOrientations;
+
     osg::Vec3 directionVec; // Direction Vector of camera (direction of arrow)
 
+    std::shared_ptr<Cam> createCamFromMatrix(coCoord& euler);
+    bool isVisibilityMatrixEmpty(const std::shared_ptr<Cam> &cam);
+    void compareCamsNew(std::shared_ptr<Cam> newCam, std::shared_ptr<Cam> oldCam);
+    void addCamToVec(std::shared_ptr<Cam> cam);
+    void removeCamFromVec(std::shared_ptr<Cam> cam);
+    void createDrawableForEachCamOrientation();
+    void createDrawableForEachDeletedCamOrientation();
 
 
 

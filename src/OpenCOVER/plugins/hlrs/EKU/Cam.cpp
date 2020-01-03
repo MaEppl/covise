@@ -46,14 +46,20 @@ Cam::~Cam()
 {
 
 }
-void Cam::setPosition(coCoord& m, std::vector<std::vector<double> > visMat)
+void Cam::setPosition(coCoord& m, std::vector<std::vector<double> > visMatInput)
 {
     pos = m.xyz;
     rot.set(m.hpr[0],m.hpr[1]);
     m.makeMat(mat);
     directionVec = calcDirectionVec(mat);
-    visMat = visMat;
+    visMat = visMatInput;
     calcVisMat();
+    for(const auto& x:visMat)
+    {std::cout<<"Cam"<< name <<": ";
+        for (const auto& x1 :x)
+            std::cout<<x1<<",";
+    }
+    std::cout<<" "<<std::endl;
    // viewpointInteractor->updateTransform(mat);
 }
 void Cam::preFrame()
@@ -225,13 +231,13 @@ double Cam::calcPreferredDirectionFactor( osg::Vec3 directionOfSafetyZone)
 
 size_t CamDrawable::count=0;
 
-CamDrawable::CamDrawable(coCoord &m, std::vector<std::vector<double> > visMat,bool showLines)
+CamDrawable::CamDrawable(coCoord &m, std::vector<std::vector<double> > visMat, bool showLines, Vec4 color)
 {
     count++;
 //    fprintf(stderr, "new CamDrawable from Point\n");
     cam = std::unique_ptr<Cam>(new Cam(m,visMat,"Original from CamDrawable"));
     //create pyramide
-    camGeode = plotCam(showLines);
+    camGeode = plotCam(showLines,color);
     camGeode->setName("CamDrawable"+std::to_string(CamDrawable::count));
     camGeode->setNodeMask(camGeode->getNodeMask() & (~Isect::Intersection) & (~Isect::Pick));
     //create interactor
@@ -271,7 +277,7 @@ CamDrawable::~CamDrawable()
     count--;
 }
 
-osg::Geode* CamDrawable::plotCam(bool showLines)
+osg::Geode* CamDrawable::plotCam(bool showLines,osg::Vec4 color)
 {
     // The Drawable geometry is held under Geode objects.
     osg::Geode* geode = new osg::Geode();
@@ -333,25 +339,18 @@ osg::Geode* CamDrawable::plotCam(bool showLines)
         line->push_back(0);
         geom->addPrimitiveSet(line);
 
-        // Create a separate color for each face.
-        colors = new osg::Vec4Array; //magenta 1 1 0; cyan 0 1 1; black 0 0 0
-        colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 0.5f) ); // magenta - back
-        colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
-        colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
-        colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
-        colors->push_back( osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f) ); // yellow  - base
+    }
 
-    }
-    else
-    {
         // Create a separate color for each face.
-        colors = new osg::Vec4Array; //magenta 1 1 0; cyan 0 1 1; black 0 0 0
-        colors->push_back( osg::Vec4(1.0f, 1.0f, 0.0f, 0.5f) ); // magenta - back
-        colors->push_back( osg::Vec4(1.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
-        colors->push_back( osg::Vec4(1.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
-        colors->push_back( osg::Vec4(1.0f, 1.0f, 0.0f, 1.0f) ); // magenta - back
-        colors->push_back( osg::Vec4(1.0f, 1.0f, 0.0f, 1.0f) ); // yellow  - base
-    }
+     colors = new osg::Vec4Array; //magenta 1 1 0; cyan 0 1 1; black 0 0 0
+     osg::Vec4 makeTransparent = color;
+     makeTransparent.set(color.x(),color.y(),color.z(),0.5);
+     colors->push_back( makeTransparent ); // magenta - back
+     colors->push_back( color ); // magenta - back
+     colors->push_back( color ); // magenta - back
+     colors->push_back( color ); // magenta - back
+     colors->push_back( color ); // yellow  - base
+
     // Assign the color indices created above to the geometry and set the
     // binding mode to _PER_PRIMITIVE_SET.
     geom->setColorArray(colors);
@@ -468,30 +467,6 @@ void CamDrawable::resetSize()
 
 }
 
-void CamDrawable::updateColor()
-{
-
-    colors->resize(0);
-    colors->push_back( osg::Vec4(1.0f, 0.0f, 1.0f, 0.5f) );
-    colors->push_back( osg::Vec4(1.0f, 0.0f, 1.0f, 0.5f) );
-    colors->push_back( osg::Vec4(1.0f, 0.0f, 1.0f, 0.5f) );
-    colors->push_back( osg::Vec4(1.0f, 0.0f, 1.0f, 0.5f) );
-    colors->push_back( osg::Vec4(1.0f, 0.0f, 1.0f, 0.5f) );
-    colors->dirty();
-}
-
-void CamDrawable::resetColor()
-{
-
-    colors->resize(0);
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // yellow  - base
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // cyan    - left
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // cyan    - right
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // magenta - front
-    colors->push_back( osg::Vec4(0.0f, 1.0f, 1.0f, 0.5f) ); // magenta - back
-    colors->dirty();
-}
-
 size_t CamPosition::counter =0;
 CamPosition::CamPosition(osg::Matrix m)
 {
@@ -506,9 +481,10 @@ CamPosition::CamPosition(osg::Matrix m)
     //check Intersection of this Camposition with all points in SZ
     calcIntersection();
 
-    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable(mEuler,visMat,true));
+    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable(mEuler,visMat,true,osg::Vec4(0.0f, 1.0f, 0.0f, 1.f)));
     coCoord empty;
-    searchSpaceDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false));
+    searchSpaceDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false,osg::Vec4(1.0f, 1.0f, 0.0f, 1.f)));
+    deletedOrientationsDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false,osg::Vec4(1.f, 0.0f, 0.0f, 1.f)));
 
     //create Interactors
     float _interSize = cover->getSceneSize() / 25;
@@ -520,6 +496,8 @@ CamPosition::CamPosition(osg::Matrix m)
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
     searchSpaceGroup->addChild(searchSpaceDrawable->getCamGeode().get());
+    searchSpaceGroup->addChild(deletedOrientationsDrawable->getCamGeode().get());
+
 
     switchNode = new osg::Switch();
     switchNode->setName("CamPosSwitch"+std::to_string(counter));
@@ -529,6 +507,7 @@ CamPosition::CamPosition(osg::Matrix m)
     createCamsInSearchSpace();
     directionVec = calcDirectionVec(m);
     //updateCamMatrixes();
+    updateVisibleCam();
     cover->getObjectsRoot()->addChild(switchNode.get());
 
 
@@ -550,9 +529,11 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
     //check Intersection of this Camposition with all points in SZ
     calcIntersection();
 
-    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable(mEuler,visMat,true));
+    camDraw = std::unique_ptr<CamDrawable>(new CamDrawable(mEuler,visMat,true,osg::Vec4(0.0f, 1.0f, 0.0f, 1.f)));
     coCoord empty;
-    searchSpaceDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false));
+    searchSpaceDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false,osg::Vec4(1.0f, 1.0f, 0.0f, 1.f)));
+    deletedOrientationsDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false,osg::Vec4(1.0f, 0.0f, 0.0f, 1.f)));
+
 
     //create Interactors
     float _interSize = cover->getSceneSize() / 25;
@@ -564,6 +545,8 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
     searchSpaceGroup->addChild(searchSpaceDrawable->getCamGeode().get());
+    searchSpaceGroup->addChild(deletedOrientationsDrawable->getCamGeode().get());
+
 
     switchNode = new osg::Switch();
     switchNode->setName("CamPosSwitch");
@@ -573,6 +556,7 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
     createCamsInSearchSpace();
     directionVec = calcDirectionVec(m);
    // updateCamMatrixes();
+    updateVisibleCam();
 }
 void CamPosition::activate()
 {
@@ -591,7 +575,7 @@ void CamPosition::disactivate()
 CamPosition::~CamPosition()
 {
 
-    localDCS->getParent(0)->removeChild(localDCS);
+    switchNode->getParent(0)->removeChild(switchNode.get());
      delete viewpointInteractor;
 
     std::cout<<"deleted Camposition: "<<name<<std::endl;
@@ -634,11 +618,11 @@ void CamPosition::preFrame()
         }
         if(viewpointInteractor->wasStopped())
         {
-
+            setPosition(viewpointInteractor->getMatrix());
             osg::Matrix local = viewpointInteractor->getMatrix();
             directionVec = calcDirectionVec(local);
-            //updateCamMatrixes();
-            calcIntersection();
+           // calcIntersection();
+            updateVisibleCam();
             createCamsInSearchSpace();
 
         }
@@ -694,6 +678,8 @@ void CamPosition::createCamsInSearchSpace()
     //first delete all available Cameras
     if(!searchSpace.empty())
         searchSpace.clear();
+    if(!allCameras.empty())
+        allCameras.clear();
     searchSpaceGroup->removeChildren(0,searchSpaceGroup.get()->getNumChildren());
 
     auto after = searchSpaceGroup.get()->getNumChildren();
@@ -702,11 +688,11 @@ void CamPosition::createCamsInSearchSpace()
     int zMax = 180;
     int stepSizeZ = 10; //in Degree
 
-    int xMax = 30;
+    int xMax = 20;
     int stepSizeX = 10; //in Degree
 
-    int yMax = 180;
-    int stepSizeY = 20; //in Degree
+    int yMax = 90;
+    int stepSizeY = 10; //in Degree
 
     osg::Matrix m = localDCS.get()->getMatrix();
     coCoord coord;//=m;
@@ -719,13 +705,13 @@ void CamPosition::createCamsInSearchSpace()
     int nbrOfCameras =0;
     osg::Matrix m_new;
 
-  //For debugging: only 1 cam in search space
-/*    newCoordPlus.makeMat(m_new);
+ /* //For debugging: only 1 cam in search space
+    newCoordPlus.makeMat(m_new);
     searchSpace.push_back(new osg::MatrixTransform );
     searchSpaceGroup->addChild(searchSpace.back().get());
     searchSpace.back()->setMatrix(m_new);
     searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1]));
-    searchSpace.back()->addChild(camDraw->getCamGeode().get());
+    searchSpace.back()->addChild(searchSpaceDrawable->getCamGeode().get());
 */
     int count =0;
     for(int cnt = 0 ; cnt<zMax/stepSizeZ; cnt++)//############## ===cnt = 0!!!!!!!!!!!muss hier hin
@@ -775,50 +761,197 @@ void CamPosition::createCamsInSearchSpace()
                     newCoordPlus.hpr[2] += stepSizeY;
                     newCoordMinus.hpr[2] += stepSizeY;
 
-                }                    newCoordPlus.makeMat(m_new);
-
-                //convert coCoord to osg::Matrix
-                osg::Matrix newCoordPlusMatrix,newCoordMinusMatrix;
-                newCoordPlus.makeMat(newCoordPlusMatrix);
-                newCoordMinus.makeMat(newCoordMinusMatrix);
-                // the matrix of the cam is: actualmatrix*viewpointinteractor(only Translation part)
-                osg::Matrix translationViewpoint;
-                translationViewpoint.setTrans(viewpointInteractor->getMatrix().getTrans());
-
-                std::shared_ptr<Cam> cPlus =std::make_shared<Cam>(newCoordPlusMatrix*translationViewpoint,visMat,"Plus");
-                std::shared_ptr<Cam> cMinus =std::make_shared<Cam>(newCoordMinusMatrix*translationViewpoint,visMat,"Minus");
-
-                if(!isVisibilityMatrixEmpty(cPlus))
-                {
-                    nbrOfCameras++;
-                    allCameras.push_back(std::move(cPlus));
-                    searchSpace.push_back(new osg::MatrixTransform );
-                    searchSpaceGroup->addChild(searchSpace.back().get());
-                    searchSpace.back()->setMatrix(newCoordPlusMatrix*translationViewpoint);
-                    searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1])+ " Y:" +std::to_string( newCoordPlus.hpr[2]));
-                    searchSpace.back()->addChild(searchSpaceDrawable->getCamGeode().get());
                 }
-                if(!isVisibilityMatrixEmpty(cMinus))
+
+                std::shared_ptr<Cam> camPlus = createCamFromMatrix(newCoordPlus);
+
+                if(!isVisibilityMatrixEmpty(camPlus))
                 {
-                    nbrOfCameras++;
-                    allCameras.push_back(std::move(cMinus));
-                    searchSpace.push_back(new osg::MatrixTransform );
-                    searchSpaceGroup->addChild(searchSpace.back().get());
-                    searchSpace.back()->setMatrix(newCoordMinusMatrix*translationViewpoint);
-                    searchSpace.back()->setName(std::to_string(nbrOfCameras)+"-MATRIX Z:" + std::to_string( newCoordMinus.hpr[0])+ " X:" +std::to_string( newCoordMinus.hpr[1])+ " Y:" +std::to_string( newCoordMinus.hpr[2]));
-                    searchSpace.back()->addChild(searchSpaceDrawable->getCamGeode().get());
+                    if(allCameras.empty())
+                        addCamToVec(camPlus);
+                    else
+                    {
+                       compareCamsNew(camPlus,allCameras.back());
+                    }
 
                 }
+                auto test = camPlus.use_count();
+                camPlus.reset();
+                auto test1 = camPlus.use_count();
 
                 countY++;
             }
 
         }
     }
+
+    createDrawableForEachCamOrientation();
+
+}
+std::shared_ptr<Cam> CamPosition::createCamFromMatrix(coCoord& euler)
+{
+    static int i =0;
+    osg::Matrix m;
+    euler.makeMat(m);
+    osg::Matrix translationViewpoint;
+    translationViewpoint.setTrans(viewpointInteractor->getMatrix().getTrans());
+    std::shared_ptr<Cam> cam =std::make_shared<Cam>(m*translationViewpoint,visMat,"cam"+std::to_string(i));
+    i++;
+    return cam;
+}
+bool CamPosition::isVisibilityMatrixEmpty(const std::shared_ptr<Cam>& cam)
+{
+    long refs = cam.use_count();
+
+    bool emptyPrio1 = std::all_of(cam->visMatPrio1.begin(), cam->visMatPrio1.end(), [](int i) { return i==0; });
+    bool emptyPrio2 = std::all_of(cam->visMatPrio2.begin(), cam->visMatPrio2.end(), [](int i) { return i==0; });
+    if(emptyPrio1 && emptyPrio2)
+        return true;
+    else
+        return false;
+}
+
+void CamPosition::compareCamsNew(std::shared_ptr<Cam> newCam,std::shared_ptr<Cam> oldCam)
+{
+    auto ItNewCam = newCam->visMatPrio1.begin();
+    auto ItOldCam = oldCam->visMatPrio1.begin();
+    int onlyInNewCam =0;
+    int onlyInOldCam =0;
+
+    while(ItNewCam != newCam->visMatPrio1.end() || ItOldCam != oldCam->visMatPrio1.end() )
+    {
+        if(*ItNewCam > *ItOldCam)
+            ++onlyInNewCam;
+        if(*ItNewCam < *ItOldCam)
+            ++onlyInOldCam;
+        if((onlyInNewCam && onlyInOldCam) !=0) //each camera can see points, which the other can't see --> keep both cameras!
+        {
+            addCamToVec(newCam);
+            return;
+        }
+
+        // Loop further
+        if(ItNewCam != newCam->visMatPrio1.end())
+        {
+            ++ItNewCam;
+        }
+        if(ItOldCam != oldCam->visMatPrio1.end())
+        {
+            ++ItOldCam;
+        }
+    }
+
+    if(onlyInNewCam != 0 && onlyInOldCam ==0)
+    {
+        removeCamFromVec(oldCam);
+        addCamToVec(newCam);
+        int a =1;
+    }
+    else if(onlyInNewCam ==0 && onlyInOldCam !=0)
+    {
+
+        //do nothing: OldCam stays in Vector new Cam is not added!
+    }
+    else if(onlyInNewCam ==0 && onlyInOldCam ==0)
+    {
+        //both cameras see exactly the same points --> other cam eigenschaften entscheiden
+        addCamToVec(newCam);
+    }
+}
+/*std::shared_ptr<Cam> CamPosition::compareCams(std::shared_ptr<Cam> &camA ,std::shared_ptr<Cam> &camB)
+{
+
+    auto ItA = camA->visMatPrio1.begin();
+    auto ItB = camB->visMatPrio1.begin();
+    Cam* betterCam = nullptr;
+    int onlyInA =0;
+    int onlyInB =0;
+    while(ItA != camA->visMatPrio1.end() || ItB != camB->visMatPrio1.end())
+    {
+        if(*itA > *itB)
+            ++onlyInA;
+        if(*itB > *itA)
+            ++onlyInB;
+
+        if((onlyInA && onlyInB) !=0) //each camera can see points, which the other can't see --> keep both cameras!
+            return nullptr;
+
+        if(ItA != camA->visMatPrio1.end())
+        {
+            ++ItA;
+        }
+        if(ItB != camB->visMatPrio1.end())
+        {
+            ++ItB;
+        }
+    }
+
+    if(onlyInA != 0 && onlyInB == 0)
+            betterCam = camA;
+    else if(onlyInB != 0 && onlyInA == 0)
+            betterCam = camB;
+    else if((onlyInA == 0) && (onlyInB == 0) )
+    {
+        //SRC && PDC
+    }
+
+   return betterCam;
+
+}
+*/
+
+void CamPosition::addCamToVec(std::shared_ptr<Cam> cam)
+{
+    long refs = cam.use_count();
+    osg::Matrix m = cam->getMatrix();
+    allCameras.push_back(std::move(cam));
+    auto test = allCameras.back()->getID();
+    int a =2;
+    //now cam is nullptr
+}
+void CamPosition::removeCamFromVec(std::shared_ptr<Cam> cam)
+{
+    auto test1 = cam.use_count();
+    deletedOrientations.push_back(new osg::MatrixTransform);
+    searchSpaceGroup->addChild(deletedOrientations.back().get());
+    deletedOrientations.back()->setMatrix(cam->getMatrix());
+    deletedOrientations.back()->addChild(deletedOrientationsDrawable->getCamGeode().get());
+    if(!allCameras.empty())
+    {
+        auto size = allCameras.size();
+        allCameras.erase(std::remove_if(allCameras.begin(),allCameras.end(),[&cam](std::shared_ptr<Cam>const& it){return cam == it;}));
+        auto size2 = allCameras.size();
+        int a =2;
+    }
+    auto test2 = cam.use_count();
+
+    int a =1;
+}
+void CamPosition::createDrawableForEachCamOrientation()
+{
+    for(const auto& x :allCameras)
+    {
+        searchSpace.push_back(new osg::MatrixTransform );
+        searchSpaceGroup->addChild(searchSpace.back().get());
+        searchSpace.back()->setMatrix(x->getMatrix());
+       // searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1])+ " Y:" +std::to_string( newCoordPlus.hpr[2]));
+        searchSpace.back()->addChild(searchSpaceDrawable->getCamGeode().get());
+    }
+}
+void CamPosition::createDrawableForEachDeletedCamOrientation()
+{
+    for(const auto& x :deletedOrientations)
+    {
+        deletedOrientations.push_back(new osg::MatrixTransform );
+        searchSpaceGroup->addChild(deletedOrientations.back().get());
+        deletedOrientations.back()->setMatrix(x->getMatrix());
+       // searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1])+ " Y:" +std::to_string( newCoordPlus.hpr[2]));
+        deletedOrientations.back()->addChild(deletedOrientationsDrawable->getCamGeode().get());
+    }
 }
 void CamPosition::updateCamMatrixes()
 {
-    std::cout<<"update cameras"<<std::endl;
+ /*   std::cout<<"update cameras"<<std::endl;
     if(allCameras.empty())
     {
         int count = 0;
@@ -851,15 +984,18 @@ void CamPosition::updateCamMatrixes()
         }
     }
 
-
+*/
 
 
     //std::cout<<"All cam positions are updated!"<<std::endl;
 }
 void CamPosition::updateVisibleCam()
 {
+
     //update pos of camDraw
     coCoord euler =localDCS->getMatrix();
+    //new intersection Test for this CamPos
+    calcIntersection();
     camDraw->cam->setPosition(euler,visMat);
 }
 
@@ -934,7 +1070,7 @@ void CamPosition::calcIntersection()
    osg::Timer_t endTick = osg::Timer::instance()->tick();
    std::cout<<"nbr SZ: "<<visMat.size()<<std::endl;
    std::cout<<"Completed in "<<osg::Timer::instance()->delta_s(startTick,endTick)<<std::endl;
-   std::cout<<"Prio1"<<std::endl;
+   std::cout<<"Camposition : "<<std::endl;
    for(const auto& x : visMat)
    {
        std::cout<<"Zone (size: "<<x.size()<<") :";
@@ -953,58 +1089,6 @@ void CamPosition::calcIntersection()
 
  //   calcVisibility();
 }
-*/
-bool CamPosition::isVisibilityMatrixEmpty(std::shared_ptr<Cam>& cam)
-{
-    bool emptyPrio1 = std::all_of(cam->visMatPrio1.begin(), cam->visMatPrio1.end(), [](int i) { return i==0; });
-    bool emptyPrio2 = std::all_of(cam->visMatPrio2.begin(), cam->visMatPrio2.end(), [](int i) { return i==0; });
-    if(emptyPrio1 && emptyPrio2)
-        return true;
-    else
-        return false;
-}
-
-/*Cam& CamPosition::compareCams(Cam &camA ,Cam &camB)
-{
-
-    auto ItA = camA->visMatPrio1.begin();
-    auto ItB = camB->visMatPrio1.begin();
-    Cam* betterCam = nullptr;
-    int onlyInA =0;
-    int onlyInB =0;
-    while(ItA != camA->visMatPrio1.end() || ItB != camB->visMatPrio1.end())
-    {
-        if(*itA > *itB)
-            ++onlyInA;
-        if(*itB > *itA)
-            ++onlyInB;
-
-        if((onlyInA && onlyInB) !=0) //each camera can see points, which the other can't see --> keep both cameras!
-            return nullptr;
-
-        if(ItA != camA->visMatPrio1.end())
-        {
-            ++ItA;
-        }
-        if(ItB != camB->visMatPrio1.end())
-        {
-            ++ItB;
-        }
-    }
-
-    if(onlyInA != 0 && onlyInB == 0)
-            betterCam = camA;
-    else if(onlyInB != 0 && onlyInA == 0)
-            betterCam = camB;
-    else if((onlyInA == 0) && (onlyInB == 0) )
-    {
-        //SRC && PDC
-    }
-
-   return betterCam;
-
-}
-
 */
 
 
