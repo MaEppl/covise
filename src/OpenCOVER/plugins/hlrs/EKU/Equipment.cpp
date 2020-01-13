@@ -134,6 +134,13 @@ void EquipmentWithCamera::preFrame()
         if (myinteractionA->isRunning()) //when interacting the Sphere will be moved
         {
             showOutline(true);
+            for(const auto& x:cameraPositions )
+            {
+              if(!x.expired())
+              {
+                  x.lock()->deleteSearchSpace();
+              }
+            }
             static osg::Matrix invStartHand;
             static osg::Matrix startPos;
             static std::vector<osg::Matrix> startPosCameras;

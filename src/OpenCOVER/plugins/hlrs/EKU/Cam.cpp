@@ -636,11 +636,8 @@ void CamPosition::preFrame()
         coCoord testEuler;
         if(viewpointInteractor->wasStarted())
         {
-           osg::Matrix test = viewpointInteractor->getMatrix();
-            testEuler = test;
-            std::cout<<"START"<<std::endl;
-            allCameras.clear();
-            searchSpaceGroup->removeChildren(0,searchSpaceGroup.get()->getNumChildren());
+
+            deleteSearchSpace();
 
         }
         if(viewpointInteractor->isRunning())
@@ -1018,6 +1015,12 @@ void CamPosition::createDrawableForEachDeletedCamOrientation()
         deletedOrientations.back()->addChild(deletedOrientationsDrawable->getCamGeode().get());
     }
 }
+void CamPosition::deleteSearchSpace()
+{
+    allCameras.clear();
+    searchSpaceGroup->removeChildren(0,searchSpaceGroup.get()->getNumChildren());
+}
+
 void CamPosition::updateCamMatrixes()
 {
  /*   std::cout<<"update cameras"<<std::endl;

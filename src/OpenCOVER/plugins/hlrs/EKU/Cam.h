@@ -176,7 +176,7 @@ public:
     std::unique_ptr<CamDrawable> camDraw;
     std::unique_ptr<CamDrawable> searchSpaceDrawable;
     std::unique_ptr<CamDrawable> deletedOrientationsDrawable;
-
+    void deleteSearchSpace();
 
     void activate();
     void disactivate();
