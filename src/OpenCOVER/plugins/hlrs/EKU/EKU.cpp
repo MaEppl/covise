@@ -441,6 +441,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         for(const auto &x : finalCamMatrixes)
         {
             allCamPositions.at(count)->setPosition(x);
+            allCamPositions.at(count)->updateVisibleCam();
             count ++;
         }
 

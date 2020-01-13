@@ -62,11 +62,11 @@ void Cam::setPosition(coCoord& m, std::vector<std::vector<double> > visMatInput)
     std::cout<<" "<<std::endl;
    */// viewpointInteractor->updateTransform(mat);
 }
-void Cam::preFrame()
+/*void Cam::preFrame()
 {
-  //  viewpointInteractor->preFrame();
+    viewpointInteractor->preFrame();
 }
-
+*/
 void Cam::calcVisMat()
 {   visMatPrio1.clear();
     visMatPrio2.clear();
@@ -267,9 +267,7 @@ void CamDrawable::setStateSet(osg::StateSet *stateSet)
     stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
     stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
 }
-void CamDrawable::preFrame()
-{
-}
+
 
 CamDrawable::~CamDrawable()
 {
@@ -626,9 +624,9 @@ CamPosition::~CamPosition()
 }
 void CamPosition::preFrame()
 {
-    for(const auto &x:allCameras)
+   /* for(const auto &x:allCameras)
         x->preFrame();
-
+    */
     viewpointInteractor->preFrame();
 
     //change positions of cameras
@@ -706,7 +704,6 @@ void CamPosition::preFrame()
 
         }
     }
-    //camDraw->preFrame();
 }
 
 /*void CamPosition::createCams(bool rotX=true, bool rotY=true, bool rotZ=true, double limitX=90, double limitY =90, double limitZ = 90)
@@ -1063,7 +1060,6 @@ void CamPosition::updateCamMatrixes()
 }
 void CamPosition::updateVisibleCam()
 {
-
     //update pos of camDraw
     coCoord euler =localDCS->getMatrix();
     //new intersection Test for this CamPos

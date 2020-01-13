@@ -79,7 +79,7 @@ public:
         //std::cout<<"Cam "<<count<<" :"<<euler.hpr[0]<<","<<euler.hpr[1]<<","<<euler.hpr[2]<<std::endl;
         return mat;}
     int getID(){return id;}
-    void preFrame();
+   // void preFrame();
 protected:
      std::string name;
 private:
@@ -128,7 +128,6 @@ public:
 
     osg::ref_ptr<osg::Geode> getCamGeode()const{return camGeode;}
 
-    void preFrame();
     void updateFOV(float value);
     void updateVisibility(float value);
     void showRealSize();
@@ -165,8 +164,7 @@ public:
     {
         viewpointInteractor->updateTransform(matrix1);
         localDCS->setMatrix(matrix1);
-        //updateCamMatrixes();
-        updateVisibleCam();
+      //  updateVisibleCam();
     }
 
     void preFrame();

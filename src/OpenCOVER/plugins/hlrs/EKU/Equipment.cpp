@@ -208,6 +208,14 @@ void EquipmentWithCamera::preFrame()
             interActingA = false; //unregister interaction
             showOutline(false);
 
+            for(const auto& x:cameraPositions )
+            {
+              if(!x.expired())
+              {
+                  x.lock()->updateVisibleCam();
+                  x.lock()->createCamsInSearchSpace();
+              }
+            }
 
         }
     }
