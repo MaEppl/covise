@@ -471,9 +471,19 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         if(ga != nullptr)
             ga->stopGA();
     });
+
+    //population size
+    penalty = new ui::Slider(Optimize , "PopulatioSize");
+    penalty->setText("Population size");
+    penalty->setBounds(50,6000);
+    penalty->setValue(GA::populationSize);
+    penalty->setCallback([this](int value, bool released){
+        GA::populationSize =value;
+    });
+
     //penalty
     penalty = new ui::Slider(Optimize , "penalty");
-    penalty->setText("penalty");
+    penalty->setText("Penalty");
     penalty->setBounds(1., 30.);
     penalty->setValue(GA::penalty);
     penalty->setCallback([this](double value, bool released){
@@ -481,12 +491,21 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     });
     //weight for Prio1
     weighting = new ui::Slider(Optimize , "weighting");
-    weighting->setText("weigthing PRIO1");
+    weighting->setText("Weigthing PRIO1");
     weighting->setBounds(1., 10.);
     weighting->setValue(GA::weightingPRIO1);
     weighting->setCallback([this](double value, bool released){
         GA::weightingPRIO1=value;
     });
+    //Dynamic threading
+    dynamicThreading = new ui::Button(Optimize , "dynamicThreading");
+    dynamicThreading->setText("Dynamic Threading");
+    dynamicThreading->setState(GA::dynamicThreading);
+    dynamicThreading->setCallback([this](bool state)
+    {
+       GA::dynamicThreading = state ;
+    });
+
 
 
     //Menu for Camera

@@ -119,9 +119,11 @@ private:
     ui::Label *Label = nullptr;
     ui::Button *ModifyScene = nullptr,*Delete =nullptr;//*MakeCamsInvisible = nullptr;
 
-
+    //Menu for Optimization parameters
     ui::Menu *Optimize = nullptr;
+    ui::Slider *populationSize = nullptr;
     ui::Slider *penalty = nullptr, *weighting = nullptr;
+    ui::Button *dynamicThreading = nullptr;
 
 
     ui::Menu *Camera = nullptr;

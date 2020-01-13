@@ -24,6 +24,8 @@ public:
 
     static double penalty;
     static double weightingPRIO1;
+    static int populationSize;
+    static bool dynamicThreading;
 
     void stopGA(){
         std::cout<<"Stop requested"<<std::endl;

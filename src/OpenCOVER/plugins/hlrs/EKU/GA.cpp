@@ -21,6 +21,8 @@ int GA::nbrCamPositions=0;
 int GA::nbrPoints=0;
 double GA::weightingPRIO1 = 3;
 double GA::penalty =10;
+int GA::populationSize = 2000;
+bool GA::dynamicThreading=false;
 #if(1)
 
 std::shared_ptr<Cam> GA::getRandomCamera(int camPos, const std::function<double(void)> &rnd01)
@@ -253,9 +255,9 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     ga_obj.problem_mode=EA::GA_MODE::SOGA;
     ga_obj.multi_threading=true;
     ga_obj.idle_delay_us=1;//10 // switch between threads quickly
-    ga_obj.dynamic_threading=true;
+    ga_obj.dynamic_threading=dynamicThreading;
     ga_obj.verbose=true;
-    ga_obj.population=3000;
+    ga_obj.population=populationSize;
     ga_obj.generation_max=1000;
     ga_obj.calculate_SO_total_fitness=std::bind( &GA::calculate_SO_total_fitness, this, _1);
     ga_obj.init_genes=std::bind( &GA::init_genes, this, _1,_2);
