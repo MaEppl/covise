@@ -93,6 +93,7 @@ private:
 
 
 };
+class EquipmentWithCamera;
 class mySensor;
 class CamPosition;
 class CamDrawable
@@ -101,7 +102,11 @@ private:
     osg::ref_ptr<osg::Vec3Array> verts;
     osg::ref_ptr<osg::Vec4Array> colors;
     osg::ref_ptr<osg::Geode> camGeode;
-    int scale = 15;
+
+ /*  osg::ref_ptr<osg::Vec3Array> vertsSRC;
+    osg::ref_ptr<osg::Vec4Array> colorsSRC;
+    osg::ref_ptr<osg::Geode> SRC;
+   */ int scale = 15;
    // osg::ref_ptr<osg::Geode> interactorGeode;
 
 
@@ -112,7 +117,6 @@ private:
     coSensorList sensorList;
     */
     void setStateSet(osg::StateSet *stateSet);
-
 
 public:
     static size_t count;
@@ -134,15 +138,17 @@ public:
                    }
     void disactivate(){camGeode->setNodeMask(0);}
 };
-
-class Pump;
+class EquipmentWithCam;
+//class Pump;
 class CamPosition
 {
 public:
     static size_t counter;
     bool searchSpaceState;
-    CamPosition(osg::Matrix m,Pump *pump);
     CamPosition(osg::Matrix m);
+    CamPosition(osg::Matrix m,EquipmentWithCamera *pump);
+
+
 
     ~CamPosition();
 
@@ -184,7 +190,7 @@ public:
 private:
     bool status;
     std::string name;
-    Pump* myPump = nullptr;
+
     std::vector<std::vector<double>> visMat;
 
    // std::vector<std::pair<std::shared_ptr<SafetyZone,std::vector<int>>> visMatPerSafetyZone;
@@ -205,7 +211,6 @@ private:
     void removeCamFromVec(std::shared_ptr<Cam> cam);
     void createDrawableForEachCamOrientation();
     void createDrawableForEachDeletedCamOrientation();
-
 
 
 

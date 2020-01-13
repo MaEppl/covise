@@ -95,8 +95,6 @@ public:
     std::weak_ptr<CamPosition> camLeft;
     std::weak_ptr<CamPosition> camRight;
 
-
-
     //User Interaction
     void preFrame();
 
@@ -146,7 +144,7 @@ public:
     EKU();
     ~EKU();
     bool init();
-    void doAddTruck();
+    void doAddTruck(osg::Matrix pos);
     void doRemoveTruck(std::unique_ptr<Pump> &t);
     void doAddCam();
     void doRemoveCam(std::shared_ptr<CamPosition> &c);
@@ -162,7 +160,7 @@ public:
     static std::vector<std::shared_ptr<CamPosition>> allCamPositions;
     static std::vector<std::unique_ptr<Pump>> allPumps;
     static std::vector<std::unique_ptr<Equipment>> equipment;
-
+    static std::vector<std::unique_ptr<EquipmentWithCamera>> equipmentWithCamera;
 
     //std::vector<Cam*> cameras;
     std::vector<CamDrawable*> finalCams;
@@ -172,6 +170,7 @@ public:
     static EKU *plugin;
     osg::ref_ptr<osg::Group> finalScene;
 private:
+    std::string path="/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/";
     //UI
     ui::Menu *EKUMenu  = nullptr;
     ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*RmvCam = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr, *RmvSafetyZone = nullptr,*StopGA = nullptr;
@@ -197,7 +196,7 @@ private:
     std::vector<mySensor*> userInteraction;
 
 
-     //Equipment
+    //Equipment
     void createScene();
     osg::ref_ptr<osg::Node> silo1;
     osg::ref_ptr<osg::Node> silo2;
@@ -206,13 +205,8 @@ private:
     osg::ref_ptr<osg::Node> manifold;
     osg::ref_ptr<osg::Node> blender;
     osg::ref_ptr<osg::Node> dataVan;
-
-
-
-
-
-
     osg::ref_ptr<osg::Node> truck;
+
     osg::ref_ptr<osg::Node> truckSurfaceBox;
     osg::ref_ptr<osg::Node> truckCabine;
 

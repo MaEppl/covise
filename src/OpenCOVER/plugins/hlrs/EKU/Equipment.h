@@ -11,11 +11,11 @@
 #include <string>
 
 #include<osg/Node>
-#include <osg/ShapeDrawable>
+#include<osg/ShapeDrawable>
 #include<osgFX/Outline>
 
 #include<EKU.h>
-//#include<Sensor.h>
+
 using namespace opencover;
 class Equipment
 {
@@ -23,15 +23,14 @@ public:
     Equipment(std::string name,osg::Matrix position,osg::ref_ptr<osg::Node> node);
     void preFrame();
     void showOutline(bool status);
+    osg::Matrix getPosition(){return matrix.get()->getMatrix();}
 
-private:
+protected:
     std::string name;
-    osg::Matrix pos;
-    osg::ref_ptr<osg::MatrixTransform> matrix;
+    osg::ref_ptr<osg::Group> group;
     osg::ref_ptr<osg::Switch> switchNode;
+    osg::ref_ptr<osg::MatrixTransform> matrix;
     osg::ref_ptr<osgFX::Outline> outline;
-
-
 
     //user Interaction
     mySensor *aSensor;
@@ -40,3 +39,17 @@ private:
     coSensorList sensorList;
 
 };
+
+class CamPosition;
+class EquipmentWithCamera: public Equipment
+{
+
+public:
+    EquipmentWithCamera(std::string name,osg::Matrix position,osg::ref_ptr<osg::Node> node,std::vector<osg::Matrix> camMatrixes);
+    void preFrame();
+private:
+    std::vector<std::weak_ptr<CamPosition>> cameraPositions;
+};
+
+
+

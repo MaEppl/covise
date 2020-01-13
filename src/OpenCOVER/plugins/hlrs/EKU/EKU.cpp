@@ -18,6 +18,8 @@ std::vector<std::shared_ptr<SafetyZone>> EKU::safetyZones;
 std::vector<std::shared_ptr<CamPosition>> EKU::allCamPositions;
 std::vector<std::unique_ptr<Pump>> EKU::allPumps;
 std::vector<std::unique_ptr<Equipment>> EKU::equipment;
+std::vector<std::unique_ptr<EquipmentWithCamera>> EKU::equipmentWithCamera;
+
 double getZvalueOfSZ()
 {
   //  for(const auto& x : saf)
@@ -107,7 +109,7 @@ void Pump::preFrame()
                    szRight.lock()->setPosition(transSZ2);
             */    if(!camLeft.expired())
                     camLeft.lock()->setPosition(transcamPosinterActor1);
-                if(!camRight.expired())
+                 if(!camRight.expired())
                     camRight.lock()->setPosition(transcamPosinterActor2);
 
 
@@ -115,7 +117,6 @@ void Pump::preFrame()
         }
         if (myinteractionA->wasStopped() && state == false)
         {
-
             interActingA = false; //unregister interaction
             switchBetween->setChildValue(upperGroup.get(),true);
             switchBetween->setChildValue(outline.get(),false);
@@ -190,6 +191,8 @@ void EKU::preFrame()
     {
         for(const auto &x : equipment)
             x->preFrame();
+        for(const auto &x : equipmentWithCamera)
+            x->preFrame();
     }
 
    // newSZ->preFrame();
@@ -203,6 +206,7 @@ void EKU::calcPercentageOfCoveredSafetyZones()
     std::cout<<"PRIO2 zones covered by at least 1 camera: " <<std::endl;
     std::cout<<"PRIO2 zones not covered: " <<std::endl;
 }
+#if 0
 size_t Pump::counter = 0;
 Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::shared_ptr<SafetyZone>> &allSZ,osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> truckSurface =nullptr, osg::ref_ptr<osg::Node> cabine =nullptr, osg::Vec3 pos =osg::Vec3(20,0,0), int rotationZ = 0):allCams(allCams),allSZ(allSZ),position(pos),truck(truck),truckSurfaceBox(truckSurface),rotZ(rotationZ),truckCabine(cabine)
 {
@@ -256,8 +260,8 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
     //Rotation
     osg::Matrix rotate;
     osg::Quat xRot, yRot;
-    xRot.makeRotate(osg::DegreesToRadians(90.0),osg::X_AXIS);//90
-    yRot.makeRotate(osg::DegreesToRadians(270.0+rotZ),osg::Y_AXIS);//270
+    xRot.makeRotate(osg::DegreesToRadians(180.0),osg::Y_AXIS);//90
+  //  yRot.makeRotate(osg::DegreesToRadians(270.0+rotZ),osg::Y_AXIS);//270
     osg::Quat fullRot = yRot*xRot;
     rotate.setRotate(fullRot);
     rotMat = new osg::MatrixTransform();
@@ -267,7 +271,7 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
     group->addChild(truck.get());
    group->addChild(truckSurfaceBox.get());
 
-   //Drivers Cabine
+ /*  //Drivers Cabine
    rotCabine = new osg::MatrixTransform();
    osg::Matrix rotate1;
    osg::Quat xRot1, yRot1;
@@ -287,7 +291,7 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
    transCabine->addChild(rotCabine.get());
 
    group->addChild(transCabine.get());
-   group1 = new osg::Group;
+ */  group1 = new osg::Group;
    group1->setName("bothTruckDrawables"+std::to_string(Pump::counter));
    group1->addChild(group.get());
 
@@ -300,7 +304,7 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
     //translate.setTrans(0,0,0);
     translate.setTrans(pos.x(),pos.y(),pos.z());
     transMat->setMatrix(translate);
-    //transMat->addChild(rotMat.get());
+    transMat->addChild(rotMat.get());
 
     osg::Matrix full;
     full=rotate*translate;
@@ -353,6 +357,7 @@ Pump::Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::s
 
      cover->getObjectsRoot()->addChild(switchBetween.get());
 }
+#endif
 Pump::~Pump()
 {
     if (sensorList.find(aSensor))
@@ -361,6 +366,7 @@ Pump::~Pump()
     std::cout<<"deleted Pump: "<<name<<std::endl;
     switchBetween->getParent(0)->removeChild(switchBetween);
 }
+
 void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
 {
     float height =2;
@@ -385,52 +391,132 @@ void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
 
 void EKU::createScene()
 {
+
+    truck = osgDB::readNodeFile(path + "PumpTruck.3ds");
+    if (!truck.valid())
+    {
+          osg::notify( osg::FATAL ) << "Unable to load truck data file. Exiting." << std::endl;
+    }
+    truck->setName("Pump Truck");
+    //draw Pumps:
+    osg::Matrix pos;
+    pos.setTrans(11,0,0);
+    doAddTruck(pos);
+    int cnt =0;
+    for(int i = 0;i<13;i++)
+    {
+        osg::Vec3 posOld=equipmentWithCamera.back()->getPosition().getTrans();
+        osg::Vec3 posNew;
+        if(cnt % 2 == 0)
+        {
+              posNew = {posOld.x()*-1,posOld.y(),posOld.z()};
+              osg::Matrix matrixNew;
+              matrixNew.setTrans(posNew);
+              osg::Quat q;
+              q.makeRotate(osg::DegreesToRadians(180.0),osg::Z_AXIS);
+              matrixNew.setRotate(q);
+
+              doAddTruck(matrixNew);
+        }else
+        {
+            posNew = {posOld.x()*-1,posOld.y()+4.5f,posOld.z()};//+5
+            osg::Matrix matrixNew;
+            matrixNew.setTrans(posNew);
+
+            doAddTruck(matrixNew);
+
+        }
+
+        cnt ++;
+    }
+
     //add manifold
     {
-        std::cout<<"Load Christmas Tree"<<std::endl;
-        //manifold = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/manifold.3ds");
-        manifold = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/manifold_simplified.3ds");
-
+        manifold = osgDB::readNodeFile(path +"manifold_simplified.3ds");
+        if (!manifold.valid())
+        {
+              osg::notify( osg::FATAL ) << "Unable to load Manifold data file. Exiting." << std::endl;
+        }
         std::string name = "Manifold";
         manifold->setName(name);
         osg::Quat q;
-        q.makeRotate(osg::DegreesToRadians(180.0),osg::X_AXIS);
+        q.makeRotate(osg::DegreesToRadians(90.0),osg::Z_AXIS);
         osg::Matrix m;
-        m.setTrans(0,0,0);
+        m.setTrans(0,10,0);
         m.setRotate(q);
-        m.scale(osg::Vec3(0.003,0.003,0.003));
         std::unique_ptr<Equipment> manifoldNew(new Equipment(name,m,manifold));
         equipment.push_back(std::move(manifoldNew));
 
-
     }
+    //add blender
+    {
+        blender = osgDB::readNodeFile(path +"Blender.3ds");
+        if (!truck.valid())
+        {
+              osg::notify( osg::FATAL ) << "Unable to load Data Van file. Exiting." << std::endl;
+        }
+        std::string name = "Blender";
+        blender->setName(name);
+        std::vector<osg::Matrix> vecOfCameras;
+        osg::Matrix matBlender;
+        matBlender.setTrans(0,-7,0);
+        osg::Matrix cam1,cam2;
+        cam1.setTrans(7,1.5,2.5);
+        cam2.setTrans(-3,1.5,2.5);
+        osg::Quat rotY,rotZ,rotX,rotLast1,rotLast2;
+        rotY.makeRotate(osg::DegreesToRadians(180.0),osg::Z_AXIS);
+        cam1.setRotate(rotY);
+        cam2.setRotate(rotY);
+        vecOfCameras.push_back(cam1);
+        vecOfCameras.push_back(cam2);
+        std::unique_ptr<EquipmentWithCamera> blenderDraw(new EquipmentWithCamera(name,matBlender,blender,vecOfCameras));
+        equipmentWithCamera.push_back(std::move(blenderDraw));
+    }
+    //add Data Van
+    {
+        dataVan = osgDB::readNodeFile(path +"dataVan.3ds");
+        std::string name = "Data Van";
+        dataVan->setName(name);
+        std::vector<osg::Matrix> vecOfCameras;
+        osg::Matrix matDataVan;
+        matDataVan.setTrans(10,50,0);
+        osg::Matrix cam1,cam2;
+        cam1.setTrans(0,-1.5,3.2);
+        cam2.setTrans(-4,-1.5,3.2);
+        osg::Quat rotY;
+        rotY.makeRotate(osg::DegreesToRadians(-20.0),osg::Z_AXIS);
+        matDataVan.setRotate(rotY);
+       // cam1.setRotate(rotY);
+       // cam2.setRotate(rotY);
+        vecOfCameras.push_back(cam1);
+        vecOfCameras.push_back(cam2);
+        std::unique_ptr<EquipmentWithCamera> dataVanDraw(new EquipmentWithCamera(name,matDataVan,dataVan,vecOfCameras));
+        equipmentWithCamera.push_back(std::move(dataVanDraw));
+    }
+
     //add Christmas Tree
     {
-        std::cout<<"Load Christmas Tree"<<std::endl;
-        christmasTree = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/xmas-tree-oil-and-gas-1.snapshot.4/ChristmasTree.ply");
-        christmasTree->setName("ChristmasTree");
-        osg::PositionAttitudeTransform* scale = new osg::PositionAttitudeTransform();
-        scale->setScale(osg::Vec3(0.003,0.003,0.003));
-        scale->addChild(christmasTree);
-        osg::PositionAttitudeTransform* rotate = new osg::PositionAttitudeTransform();
-        osg::Quat zRot;
-        zRot.makeRotate(osg::DegreesToRadians(90.0), osg::X_AXIS);
-        rotate->setAttitude(osg::Quat(zRot));
-        rotate->addChild(scale);
-        osg::PositionAttitudeTransform* move = new osg::PositionAttitudeTransform();
-        move->setPosition( osg::Vec3( -15.0f, 35.0f, -0.7f) );
-        move->addChild(rotate);
-        finalScene->addChild(move);
 
-        osg::PositionAttitudeTransform* move1 = new osg::PositionAttitudeTransform();
-        move1->setPosition( osg::Vec3( 10.0f, 0.0f, 0.f) );
-        move1->addChild(move);
-        finalScene->addChild(move1);
-
-        osg::PositionAttitudeTransform* move2 = new osg::PositionAttitudeTransform();
-        move2->setPosition( osg::Vec3( 20.0f, 0.0f, 0.f) );
-        move2->addChild(move);
-        finalScene->addChild(move2);
+        christmasTree = osgDB::readNodeFile(path +"ChristmasTree.ply");
+        if (!christmasTree.valid())
+        {
+              osg::notify( osg::FATAL ) << "Unable to load ChristmasTree data file. Exiting." << std::endl;
+        }
+        std::string name = "Christmas Tree";
+        christmasTree->setName(name);
+        osg::Quat q;
+        q.makeRotate(osg::DegreesToRadians(0.0),osg::Z_AXIS);
+        osg::Matrix m;
+        m.setTrans(0,40,0);
+        m.setRotate(q);
+        std::unique_ptr<Equipment> christmasTreeNew(new Equipment(name,m,christmasTree));
+        equipment.push_back(std::move(christmasTreeNew));
+        m.setTrans(-10,40,0);
+        std::unique_ptr<Equipment> christmasTreeNew1(new Equipment(name+"1",m,christmasTree));
+        equipment.push_back(std::move(christmasTreeNew1));
+        m.setTrans(10,40,0);
+        std::unique_ptr<Equipment> christmasTreeNew2(new Equipment(name+"2",m,christmasTree));
+        equipment.push_back(std::move(christmasTreeNew2));
     }
 
 
@@ -461,7 +547,7 @@ void EKU::createScene()
         move3->addChild(silo1);
         finalScene->addChild(move3);
 
-        silo2 = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Silo/Model_C0810A007/C0810A007.3ds");
+        silo2 = osgDB::readNodeFile(path+"silo/C0810A007.3ds");
         //"/home/AD.EKUPD.COM/matthias.epple/Downloads/terrain-map-edit-obj/terrain-map-edit.obj"  <-- das hat mal funktioniert !
         silo2->setName("Silo2");
         osg::PositionAttitudeTransform* move4 = new osg::PositionAttitudeTransform();
@@ -478,8 +564,8 @@ void EKU::createScene()
 
     //add container
     {
-        std::cout<<"Load container"<<std::endl;
-        container = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/ContainerBig/ContainerCargoN200418.3ds");
+     /*   std::cout<<"Load container"<<std::endl;
+        container = osgDB::readNodeFile(path + "container.3ds");
         container->setName("Container");
 
         osg::PositionAttitudeTransform* scale = new osg::PositionAttitudeTransform();
@@ -500,13 +586,9 @@ void EKU::createScene()
         move1->addChild(move);
         finalScene->addChild(move1);
 
-        osg::PositionAttitudeTransform* move2 = new osg::PositionAttitudeTransform();
-        move2->setPosition( osg::Vec3( -5.0f, 5.0f, 0.f) );
-        move2->addChild(move);
-        finalScene->addChild(move2);
 
         std::cout<<"Container loaded"<<std::endl;
-
+*/
     }
     cover->getObjectsRoot()->addChild(finalScene.get());
 }
@@ -522,75 +604,15 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     finalScene->setName("finalScene");
     createScene();
 
-
-    truck = coVRFileManager::instance()->loadFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/Truck_surface_box.osgt",NULL,finalScene);
-    if (!truck.valid())
-    {
-          osg::notify( osg::FATAL ) << "Unable to load truck data file. Exiting." << std::endl;
-    }
-    truck->setName("Truck");
-
-    //"/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/Truck_surface_box.osgt"
-    truckSurfaceBox = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/trailerWithWheels_simplified.3ds");
-    if (!truck.valid())
-    {
-          osg::notify( osg::FATAL ) << "Unable to load truck data file. Exiting." << std::endl;
-    }
-    truckSurfaceBox->setName("Surface");
-
-    truckCabine = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Truck/drivers_cab/AssetsvilleTruck/AssetVille.3ds");
-    if (!truckCabine.valid())
-    {
-          osg::notify( osg::FATAL ) << "Unable to load truck data cabine file. Exiting." << std::endl;
-    }
-    truckCabine->setName("TruckCabine");
-
-    // don't show the many vertices of the truck. Only use truck surface
-    disactivateDetailedRendering();
-
-
-
-    //draw Pumps:
- /*   std::unique_ptr<Pump> newPump(new Pump(allCamPositions,safetyZones,truck,truckSurfaceBox,truckCabine));
-    allPumps.push_back(std::move(newPump));
-
-  int cnt =0;
-    for(int i = 0;i<11;i++)
-    {
-        osg::Vec3 posOld=allPumps.back()->getPos();;
-        osg::Vec3 posNew;
-        int rotZ = allPumps.back()->getRot();
-        if(cnt % 2 == 0)
-        {
-              posNew = {posOld.x()*-1,posOld.y(),posOld.z()};
-              std::unique_ptr<Pump> newPump(new Pump(allCamPositions,safetyZones,truck,truckSurfaceBox,truckCabine,posNew,180));
-              allPumps.push_back(std::move(newPump));
-
-        }else
-        {
-             posNew = {posOld.x()*-1,posOld.y()+4,posOld.z()};//+5
-             std::unique_ptr<Pump> newPump(new Pump(allCamPositions,safetyZones ,truck,truckSurfaceBox,truckCabine,posNew));
-             allPumps.push_back(std::move(newPump));
-
-        }
-
-        cnt ++;
-    }
-
-    std::unique_ptr<Pump> blender(new Pump(allCamPositions,safetyZones,truck,truckSurfaceBox,truckCabine,osg::Vec3(7,-5,0)));
-    allPumps.push_back(std::move(blender));
-
-    doAddPRIO1(osg::Vec3(20,-10,0),40,45,2);
-
-*/
-
     //Create UI
     EKUMenu  = new ui::Menu("EKU", this);
 
     //Add Truck
     AddTruck = new ui::Action(EKUMenu , "addTruck");
     AddTruck->setCallback([this](){
-        doAddTruck();
+        osg::Matrix pos;
+        pos.setTrans(50,0,0);
+        doAddTruck(pos);
     });
 
     //Add Cam
@@ -747,84 +769,6 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
           findNotVisiblePoints();
     });
 
-    //Optimize nbr of cameras
-    OptNbrCams = new ui::Action(EKUMenu , "OptNbrCameras");
-    OptNbrCams->setCallback([this](){
-       osg::Matrix m;
-       m.setTrans(osg::Vec3(100,0,0));
-        allCamPositions.begin()->get()->setPosition(m);
-     /*   std::vector<osg::Vec3> pointsToObserve;
-        pointsToObserve.reserve(safetyZones.size());
-        for(const auto& x : safetyZones)
-            pointsToObserve.push_back(x->getPosition());
-
-        for(const auto& x : allCamPositions)
-        {
-            x->camDraw->cam->calcVisMat();
-            for(const auto& x1: x->allCameras)
-                x1->calcVisMat();
-        }
-
-        std::vector<std::shared_ptr<Cam>> c;
-        c.reserve(allCamPositions.size()*allCamPositions.at(1)->allCameras.size());
-
-        for(const auto &x: allCamPositions)
-        {
-            for (const auto &x1 : x->allCameras)
-                c.push_back(x1);
-        }
-        //if (coVRMSController::instance()->isMaster())
-        GA::nbrCamPositions=allCamPositions.size();
-        GA::nbrCamsPerCamPosition=allCamPositions.at(1)->allCameras.size();
-        GA::nbrPoints = safetyZones.size();
-        ga =new GA(c,safetyZones);
-        auto finalCamIndex = ga->getfinalCamPos();
-        delete this->ga;
-
-
-        //coVRMSController::instance()->syncData(&finalCamIndex, finalCamIndex.size());
-        size_t cnt2=0;
-        for(auto& x:finalCamIndex)
-        {
-            
-           // if(x==1){
-                   //finalCams.push_back(new CamDrawable(cameras.at(cnt2)));
-          //     }
-          // cnt2++;
-        }
-
-/*         //this is for GA with std::vector<std::array>
-         size_t cnt2=0;
-         for(const auto& x:finalCamIndex)
-         {
-            for(const auto& y : x)
-            {
-                if(y==1){
-                finalCams.push_back(new CamDrawable(cameras.at(cnt2)));
-                }
-                cnt2++;
-            }
-         }
-*/         //add User interaction to each final camera
-/*        for(const auto& x:finalCams)
-        {
-            cover->getObjectsRoot()->addChild(x->getCamGeode().get());
-            userInteraction.push_back(new mySensor(x->getCamGeode(), x->cam->getName(), myinteraction,x,&safetyZones,&finalCams));
-        }
-
-        //add User interaction to each safety zone
-        int cntsafetyZones =0;
-        for(const auto& x:safetyZones)
-        {
-            userInteraction.push_back(new mySensor(x->getSafetyZoneDrawable(),cntsafetyZones, "SafetyZone", myinteraction,x,&finalCams));
-            cntsafetyZones++;
-        }
-        // add sensors to sensorList
-        for(const auto& x : userInteraction)
-            sensorList.append(x);
-*/
-    });
-
     //StopGA
     StopGA = new ui::Action(Optimize , "StopOptimization");
     StopGA->setText("Stop Optimization");
@@ -893,7 +837,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     VisibilityRegulator->setBounds(10., 100.);
     VisibilityRegulator->setValue(Cam::depthView);
     VisibilityRegulator->setCallback([this](double value, bool released){
-        this->disactivateDetailedRendering();
+       // this->disactivateDetailedRendering();
         for(const auto& x :allCamPositions)
         {
 
@@ -908,7 +852,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     FOVRegulator->setBounds(30., 120.);
     FOVRegulator->setValue(Cam::fov);
     FOVRegulator->setCallback([this](double value, bool released){
-        this->disactivateDetailedRendering();
+       // this->disactivateDetailedRendering();
         for(const auto &x : allCamPositions)
         {
           x->camDraw->updateFOV(value);
@@ -1068,26 +1012,34 @@ void EKU::findNotVisiblePoints()
     }
 }
 
-void EKU::doAddTruck()
+void EKU::doAddTruck(osg::Matrix pos )
 {
-    if(!allPumps.empty())
-    {
-        std::unique_ptr<Pump> newPump(new Pump(allCamPositions,safetyZones ,truck,truckSurfaceBox,truckCabine,allPumps.back()->getPos()+osg::Vec3(20,20,0),30));
-        allPumps.push_back(std::move(newPump));
-    }
-    else
-    {
-        std::unique_ptr<Pump> newPump(new Pump(allCamPositions,safetyZones,truck,truckSurfaceBox,truckCabine));
-        allPumps.push_back(std::move(newPump));
 
-    }
+    std::vector<osg::Matrix> vecOfCameras;
+    osg::Matrix matTruck;
+    osg::Matrix cam1,cam2;
+    cam1.setTrans(10,1.6,2.5);
+    cam2.setTrans(10,-1.6,2.5);
+    osg::Quat rotY,rotZ,rotX,rotLast1,rotLast2;
+    rotY.makeRotate(osg::DegreesToRadians(-90.0),osg::Z_AXIS);
+    rotZ.makeRotate(osg::DegreesToRadians(90.0),osg::X_AXIS);
+    rotX.makeRotate(osg::DegreesToRadians(-15.0),osg::Y_AXIS);
+    rotLast1.makeRotate(osg::DegreesToRadians(10.0),osg::Z_AXIS);
+    rotLast2.makeRotate(osg::DegreesToRadians(-10.0),osg::Z_AXIS);
+    cam1.setRotate(rotY*rotZ*rotX*rotLast2);
+    cam2.setRotate(rotY*rotZ*rotX*rotLast1);
+    vecOfCameras.push_back(cam1);
+    vecOfCameras.push_back(cam2);
+    std::string name ="Pump";
+    std::unique_ptr<EquipmentWithCamera> pumpTruck(new EquipmentWithCamera(name,pos,truck,vecOfCameras));
+    equipmentWithCamera.push_back(std::move(pumpTruck));
 }
 
 
 void EKU::doRemoveTruck(std::unique_ptr<Pump> &truck)
 {
 
-
+/*
     if(!allPumps.empty())
     {
         std::cout<<"nbr of Trucks before"<<allPumps.size()<<std::endl;
@@ -1123,7 +1075,7 @@ void EKU::doRemoveTruck(std::unique_ptr<Pump> &truck)
     else
         std::cout<<"No trucks available"<<std::endl;
 
-
+*/
 }
 void EKU::doAddCam()
 {

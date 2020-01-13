@@ -54,13 +54,13 @@ void Cam::setPosition(coCoord& m, std::vector<std::vector<double> > visMatInput)
     directionVec = calcDirectionVec(mat);
     visMat = visMatInput;
     calcVisMat();
-    for(const auto& x:visMat)
+ /*   for(const auto& x:visMat)
     {std::cout<<"Cam"<< name <<": ";
         for (const auto& x1 :x)
             std::cout<<x1<<",";
     }
     std::cout<<" "<<std::endl;
-   // viewpointInteractor->updateTransform(mat);
+   */// viewpointInteractor->updateTransform(mat);
 }
 void Cam::preFrame()
 {
@@ -277,6 +277,46 @@ CamDrawable::~CamDrawable()
     count--;
 }
 
+/*osg::Vec3 calcPointOnPyramidAtSpecificDistance(double distance)
+{
+    double x = distance*std::tan(Cam::fov/2*osg::PI/180)/(2*scale);
+    double y = x/(Cam::imgWidthPixel/Cam::imgHeightPixel)/(2*scale);
+    osg::Vec3 point = {x,y,dof};
+    return point;
+}
+*/
+/*osg::Geode* CamDrawable::plotSRC()
+{
+    // The Drawable geometry is held under Geode objects.
+    osg::Geode* geode = new osg::Geode();
+    geode->setName("Pyramid");
+    osg::Geometry* geom = new osg::Geometry();
+    osg::StateSet *stateset = geode->getOrCreateStateSet();
+    //necessary for dynamic redraw (command:dirty)
+    geom->setDataVariance(osg::Object::DataVariance::DYNAMIC) ;
+    geom->setUseDisplayList(false);
+    geom->setUseVertexBufferObjects(true);
+    //stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+    //stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA ,GL_ONE_MINUS_SRC_ALPHA), osg::StateAttribute::ON);
+    // Associate the Geometry with the Geode.
+    geode->addDrawable(geom);
+    geode->getStateSet()->setMode( GL_BLEND, osg::StateAttribute::ON );
+    geode->getStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+
+
+    double TimgWidth = 2*Cam::depthView/2*std::tan(Cam::fov/2*osg::PI/180);
+    double TimgHeight = TimgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
+    verts->push_back(osg::Vec3(TimgWidth/2,-Cam::depthView/2,TimgHeight/2)/scale );
+    verts->push_back(osg::Vec3(-TimgWidth/2,-Cam::depthView/2,TimgHeight/2)/scale );
+
+    vertsSRC = new osg::Vec3Array;
+    verts->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale ); // 0 upper  front base
+    verts->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2 )/scale ); // 1 lower front base
+    verts->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2 )/scale ); // 3 lower  back  base
+    verts->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale ); // 2 upper back  base
+    verts->push_back( osg::Vec3( 0,  0,  0) ); // 4 peak
+}
+*/
 osg::Geode* CamDrawable::plotCam(bool showLines,osg::Vec4 color)
 {
     // The Drawable geometry is held under Geode objects.
@@ -338,7 +378,6 @@ osg::Geode* CamDrawable::plotCam(bool showLines,osg::Vec4 color)
         line->push_back(4);
         line->push_back(0);
         geom->addPrimitiveSet(line);
-
     }
 
         // Create a separate color for each face.
@@ -351,6 +390,7 @@ osg::Geode* CamDrawable::plotCam(bool showLines,osg::Vec4 color)
      colors->push_back( color ); // magenta - back
      colors->push_back( color ); // yellow  - base
 
+
     // Assign the color indices created above to the geometry and set the
     // binding mode to _PER_PRIMITIVE_SET.
     geom->setColorArray(colors);
@@ -362,6 +402,7 @@ osg::Geode* CamDrawable::plotCam(bool showLines,osg::Vec4 color)
     normals->push_back(osg::Vec3(1.f ,1.f, 0.f));//right back
     normals->push_back(osg::Vec3(-1.f ,1.f, 0.f));//left back
     normals->push_back(osg::Vec3(0.f ,0.f, 1.f));//peak
+
     geom->setNormalArray(normals);
    // geom->setNormalBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
      geom->setNormalBinding(osg::Geometry::BIND_OVERALL);
@@ -379,7 +420,7 @@ osg::Geode* CamDrawable::plotCam(bool showLines,osg::Vec4 color)
     stateset->setNestRenderBins(false);
 
     //LineWidth
-    LineWidth *lw = new LineWidth(2.0);
+    LineWidth *lw = new LineWidth(3.0);
     stateset->setAttribute(lw);
     // return the geode as the root of this geometry.
     return geode;
@@ -514,7 +555,8 @@ CamPosition::CamPosition(osg::Matrix m)
 
     
 }
-CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
+
+CamPosition::CamPosition(osg::Matrix m,EquipmentWithCamera *pump )
 {
   //  std::cout<<"The next CamPosition is created from a Truck"<<std::endl;
     status =true;
@@ -558,6 +600,7 @@ CamPosition::CamPosition(osg::Matrix m,Pump *pump ):myPump(pump)
    // updateCamMatrixes();
     updateVisibleCam();
 }
+
 void CamPosition::activate()
 {
     status = true;
@@ -671,6 +714,24 @@ void CamPosition::preFrame()
 
 };
 */
+
+/* void rotMatrix(coCoord& euler, int stepSize, osg::Vec3f& axis)
+ {
+     switch (axis) {
+     case osg::X_AXIS:
+         euler.hpr[1] +=stepSize;
+         break;
+     case osg::Y_AXIS:
+         euler.hpr[2] +=stepSize;
+         break;
+     case osg::Z_AXIS:
+         euler.hpr[0] +=stepSize;
+         break;
+     default:
+         break;
+     }
+ }
+ */
 void CamPosition::createCamsInSearchSpace()
 {
     auto before = searchSpaceGroup.get()->getNumChildren();
@@ -686,13 +747,13 @@ void CamPosition::createCamsInSearchSpace()
 
     //around z axis
     int zMax = 180;
-    int stepSizeZ = 10; //in Degree
+    int stepSizeZ = 5; //in Degree
 
-    int xMax = 20;
+    int xMax = 40;
     int stepSizeX = 10; //in Degree
 
     int yMax = 90;
-    int stepSizeY = 10; //in Degree
+    int stepSizeY = 45; //in Degree
 
     osg::Matrix m = localDCS.get()->getMatrix();
     coCoord coord;//=m;
@@ -764,6 +825,7 @@ void CamPosition::createCamsInSearchSpace()
                 }
 
                 std::shared_ptr<Cam> camPlus = createCamFromMatrix(newCoordPlus);
+                std::shared_ptr<Cam> camMinus = createCamFromMatrix(newCoordMinus);
 
                 if(!isVisibilityMatrixEmpty(camPlus))
                 {
@@ -775,9 +837,19 @@ void CamPosition::createCamsInSearchSpace()
                     }
 
                 }
-                auto test = camPlus.use_count();
                 camPlus.reset();
-                auto test1 = camPlus.use_count();
+
+                if(!isVisibilityMatrixEmpty(camMinus))
+                {
+                    if(allCameras.empty())
+                        addCamToVec(camMinus);
+                    else
+                    {
+                       compareCamsNew(camMinus,allCameras.back());
+                    }
+
+                }
+                camMinus.reset();
 
                 countY++;
             }
@@ -1063,12 +1135,12 @@ void CamPosition::calcIntersection()
                 visMat.push_back(visMatForThisSafetyZone);
                 visMatForThisSafetyZone.clear();
             }
-            std::cout <<count<<std::endl;
+          //  std::cout <<count<<std::endl;
         }
 
     }
    osg::Timer_t endTick = osg::Timer::instance()->tick();
-   std::cout<<"nbr SZ: "<<visMat.size()<<std::endl;
+/*   std::cout<<"nbr SZ: "<<visMat.size()<<std::endl;
    std::cout<<"Completed in "<<osg::Timer::instance()->delta_s(startTick,endTick)<<std::endl;
    std::cout<<"Camposition : "<<std::endl;
    for(const auto& x : visMat)
@@ -1078,6 +1150,7 @@ void CamPosition::calcIntersection()
            std::cout<<x1<<", ";
    std::cout<<" " <<std::endl;
    }
+*/
 }
 
 
