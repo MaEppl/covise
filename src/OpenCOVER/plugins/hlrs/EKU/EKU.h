@@ -73,66 +73,6 @@ using namespace opencover;
 double getZvalueOfSZ();
 void restrictMovement(osg::Matrix &mat);
 
-
-class Pump
-{
-public:
-    static size_t counter;
-
-    Pump(std::vector<std::shared_ptr<CamPosition>>& allCams,std::vector<std::shared_ptr<SafetyZone>> &allSZ,osg::ref_ptr<osg::Node> truck,osg::ref_ptr<osg::Node> PumptruckSurface, osg::ref_ptr<osg::Node> cabine, osg::Vec3 pos, int rotZ);
-    ~Pump();
-
-    //std::vector<CamPosition*> possibleCamLocations;
-    //std::vector<CamDrawable*> placedCameras;
-    //std::array<SafetyZone*,2> safetyZones;
-
-    osg::Vec3 getPos()const{return position;}
-    int getRot()const{return rotZ;}
-    osg::ref_ptr<osg::Group> getPumpDrawable()const{return upperGroup;}
-
-    std::weak_ptr<SafetyZone> szLeft;
-    std::weak_ptr<SafetyZone> szRight;
-    std::weak_ptr<CamPosition> camLeft;
-    std::weak_ptr<CamPosition> camRight;
-
-    //User Interaction
-    void preFrame();
-
-private:
-    std::string name;
-    osg::Vec3 position;
-    int rotZ;
-    osg::ref_ptr<osg::Node> truck;
-    osg::ref_ptr<osg::Node> truckSurfaceBox;
-    osg::ref_ptr<osg::Node> truckCabine;
-    osg::ref_ptr<osgFX::Outline> outline;
-
-    osg::ref_ptr<osg::MatrixTransform> transMat;
-    osg::ref_ptr<osg::MatrixTransform> rotMat;
-    osg::ref_ptr<osg::MatrixTransform> fullMat;
-    osg::ref_ptr<osg::MatrixTransform> transCabine;
-    osg::ref_ptr<osg::MatrixTransform> rotCabine;
-
-    osg::ref_ptr<osg::Group> group;
-    osg::ref_ptr<osg::Group> group1;
-    osg::ref_ptr<osg::Group> upperGroup;
-    osg::ref_ptr<osg::Switch> switchBetween;
-
-    std::vector<std::shared_ptr<CamPosition>> &allCams;
-    std::vector<std::shared_ptr<SafetyZone>> &allSZ;
-
-
-
-    //user Interaction
-    mySensor *aSensor;
-
-    vrui::coTrackerButtonInteraction *myinteractionA;
-    bool interActingA;
-    coSensorList sensorList;
-
-
-};
-
 class mySensor;
 class Equipment;
 class EKU: public opencover::coVRPlugin, public opencover::ui::Owner
@@ -145,7 +85,7 @@ public:
     ~EKU();
     bool init();
     void doAddTruck(osg::Matrix pos);
-    void doRemoveTruck(std::unique_ptr<Pump> &t);
+    void doRemoveTruck(std::unique_ptr<EquipmentWithCamera> &t);
     void doAddCam();
     void doRemoveCam(std::shared_ptr<CamPosition> &c);
     void doAddPRIO1(osg::Vec3 pos, double l, double w, double h);
@@ -158,7 +98,6 @@ public:
 
     static std::vector<std::shared_ptr<SafetyZone>> safetyZones;
     static std::vector<std::shared_ptr<CamPosition>> allCamPositions;
-    static std::vector<std::unique_ptr<Pump>> allPumps;
     static std::vector<std::unique_ptr<Equipment>> equipment;
     static std::vector<std::unique_ptr<EquipmentWithCamera>> equipmentWithCamera;
 
