@@ -40,17 +40,16 @@ void EKU::preFrame()
 {
     for(const auto &x: allCamPositions)
         x->preFrame();
-    for(const auto &x: safetyZones)
-        x->preFrame();
+
     if(modifyScene)
     {
+        for(const auto &x: safetyZones)
+            x->preFrame();
         for(const auto &x : equipment)
             x->preFrame();
         for(const auto &x : equipmentWithCamera)
             x->preFrame();
     }
-
-   // newSZ->preFrame();
 
 }
 void EKU::calcPercentageOfCoveredSafetyZones()
