@@ -25,10 +25,14 @@ double GA::penalty =10;
 
 std::shared_ptr<Cam> GA::getRandomCamera(int camPos, const std::function<double(void)> &rnd01)
 {
-    int nbrCams = camlist.at(camPos)->allCameras.size();
-   // if(nbrCams ==0)
-    int r = std::roundl(rnd01()*(nbrCams-1));
-    return camlist.at(camPos)->allCameras.at(r);
+    if(!camlist.at(camPos)->allCameras.empty())
+    {
+        int nbrCams = camlist.at(camPos)->allCameras.size();
+        int r = std::roundl(rnd01()*(nbrCams-1));
+        return camlist.at(camPos)->allCameras.at(r);
+    }
+    else
+        return camlist.at(camPos)->camDraw->cam;
 }
 
 void GA::init_genes(MySolution& p,const std::function<double(void)> &rnd01)
@@ -68,8 +72,8 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
 
     for(const auto &x: p.cameras)
     {
-        std::cout<<"size visMat Prio1: "<<x->visMatPrio1.size()<<std::endl;
-        std::cout<<"size visMat Prio2: "<<x->visMatPrio2.size()<<std::endl;
+      //  std::cout<<"size visMat Prio1: "<<x->visMatPrio1.size()<<std::endl;
+      //  std::cout<<"size visMat Prio2: "<<x->visMatPrio2.size()<<std::endl;
 
         //not necessarry to add all elements, until 2 is enough
         std::transform(x->visMatPrio1.begin(),x->visMatPrio1.end(),visYesNo_prio1.begin(),visYesNo_prio1.begin(),std::plus<int>());
@@ -229,17 +233,20 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     for(const auto x : safetyZoneList)
         priorityList.push_back(x->getPriority());
 
-    std::string name = "results_"+std::to_string(coVRMSController::instance()->getID())+".txt";
-    output_file.open(name);
-    output_file<<"step"<<"\t"<<"cost_avg"<<"\t"<<"cost_best"<<"\t"<<"solution_best"<<"\n";
-
     int possibleCameras=0;
     for(const auto& x :camlist)
     {
         possibleCameras += x->allCameras.size();
     }
-    std::cout<<"GA: Number of cameras: "<< possibleCameras<<std::endl;
-    std::cout<<"GA: Number of points: "<< cam.at(0)->camDraw->cam->getVisMatPrio1().size() + cam.at(0)->camDraw->cam->getVisMatPrio2().size() <<std::endl;
+    int numberOfPoints = cam.at(0)->camDraw->cam->getVisMatPrio1().size() + cam.at(0)->camDraw->cam->getVisMatPrio2().size();
+    std::string name = "results_"+std::to_string(coVRMSController::instance()->getID())+".txt";
+    output_file.open(name);
+    output_file<<"Nbr CamPos: "<<cam.size()<<"\t"<<"Nbr CamOrientations: "<<possibleCameras<<"Nbr points: "<<numberOfPoints<<"\n";
+    output_file<<"step"<<"\t"<<"cost_avg"<<"\t"<<"cost_best"<<"\t"<<"solution_best"<<"\n";
+
+
+    std::cout<<"GA: Number of camera orientations: "<< possibleCameras<<std::endl;
+    std::cout<<"GA: Number of points: "<< numberOfPoints <<std::endl;
     EA::Chronometer timer;
     timer.tic();
     using namespace std::placeholders;
@@ -248,7 +255,7 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     ga_obj.idle_delay_us=1;//10 // switch between threads quickly
     ga_obj.dynamic_threading=true;
     ga_obj.verbose=true;
-    ga_obj.population=300;
+    ga_obj.population=3000;
     ga_obj.generation_max=1000;
     ga_obj.calculate_SO_total_fitness=std::bind( &GA::calculate_SO_total_fitness, this, _1);
     ga_obj.init_genes=std::bind( &GA::init_genes, this, _1,_2);
@@ -265,6 +272,8 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     if(!user_stop)
         std::cout<<"The problem is optimized in "<<timer.toc()<<" seconds.###########################################"<<std::endl;
 
+    output_file
+        <<"solved in:"<<"\t"<<timer.toc()<<"\n";
     output_file.close();
 
 

@@ -120,7 +120,7 @@ private:
 
 public:
     static size_t count;
-    std::unique_ptr<Cam> cam;
+    std::shared_ptr<Cam> cam;
     osg::Geode* plotCam(bool showLines, osg::Vec4 color);
     CamDrawable(coCoord& m,std::vector<std::vector<double>> visMat,bool showLines,osg::Vec4 color);
     ~CamDrawable();

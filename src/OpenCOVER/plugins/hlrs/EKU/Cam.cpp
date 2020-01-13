@@ -235,7 +235,7 @@ CamDrawable::CamDrawable(coCoord &m, std::vector<std::vector<double> > visMat, b
 {
     count++;
 //    fprintf(stderr, "new CamDrawable from Point\n");
-    cam = std::unique_ptr<Cam>(new Cam(m,visMat,"Original from CamDrawable"));
+    cam = std::make_shared<Cam>(m,visMat,"Original from CamDrawable");
     //create pyramide
     camGeode = plotCam(showLines,color);
     camGeode->setName("CamDrawable"+std::to_string(CamDrawable::count));
