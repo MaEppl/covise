@@ -38,7 +38,6 @@ void restrictMovement(osg::Matrix &mat)
 
 void EKU::preFrame()
 {
-    sensorList.update();
     for(const auto &x: allCamPositions)
         x->preFrame();
     for(const auto &x: safetyZones)

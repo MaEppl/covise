@@ -126,12 +126,6 @@ EquipmentWithCamera::EquipmentWithCamera(std::string name,osg::Matrix position,o
 
 void EquipmentWithCamera::preFrame()
 {
-    for(const auto& x:cameraPositions )
-    {
-        if(!x.expired())
-            x.lock()->preFrame();
-    }
-
     if(EKU::modifyScene == true)
     {
         sensorList.update();

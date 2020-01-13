@@ -108,6 +108,8 @@ public:
     GA *ga =nullptr;
     static EKU *plugin;
     osg::ref_ptr<osg::Group> finalScene;
+
+
 private:
     std::string path="/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/";
     //UI
@@ -126,14 +128,6 @@ private:
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
     ui::Button  *ShowSearchSpace = nullptr,*ShowRealSize = nullptr;
     ui::Action *calcVisMat = nullptr;
-
-
-    osg::MatrixTransform *mymtf;
-    vrui::coTrackerButtonInteraction *myinteraction;
-    bool interActing;
-    coSensorList sensorList;
-    std::vector<mySensor*> userInteraction;
-
 
     //Equipment
     void createScene();
