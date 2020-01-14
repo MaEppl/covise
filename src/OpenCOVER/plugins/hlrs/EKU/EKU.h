@@ -128,7 +128,7 @@ private:
 
     ui::Menu *Camera = nullptr;
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
-    ui::Button  *ShowSearchSpace = nullptr,*ShowRealSize = nullptr;
+    ui::Button  *ShowSearchSpace = nullptr,*ShowDeletedSearchSpace = nullptr,*ShowRealSize = nullptr;
     ui::Action *calcVisMat = nullptr;
 
     //Equipment

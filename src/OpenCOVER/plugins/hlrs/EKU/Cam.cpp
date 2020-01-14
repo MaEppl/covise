@@ -1,4 +1,4 @@
- /* This file is part of COVISE.
+﻿ /* This file is part of COVISE.
 
    You can use it under the terms of the GNU Lesser General Public License
    version 2.1 or later, see lgpl-2.1.txt.
@@ -510,7 +510,6 @@ size_t CamPosition::counter =0;
 CamPosition::CamPosition(osg::Matrix m)
 {
     counter ++;
-    searchSpaceState = false;
     name = "CamPosition"+std::to_string(counter);
 
     coCoord mEuler= m;
@@ -530,18 +529,17 @@ CamPosition::CamPosition(osg::Matrix m)
     viewpointInteractor = new coVR3DTransRotInteractor(m, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
     viewpointInteractor->show();
     viewpointInteractor->enableIntersection();
-
     localDCS->addChild(camDraw->getCamGeode());
-    searchSpaceGroup = new osg::Group;
-    searchSpaceGroup->setName("SearchSpace");
-    searchSpaceGroup->addChild(searchSpaceDrawable->getCamGeode().get());
-    searchSpaceGroup->addChild(deletedOrientationsDrawable->getCamGeode().get());
+    searchSpaceGroupDeleted = new osg::Group;
+    searchSpaceGroupDeleted->setName("DeletedSearchSpace");
+    searchSpaceGroupDeleted->addChild(deletedOrientationsDrawable->getCamGeode().get());
 
 
     switchNode = new osg::Switch();
-    switchNode->setName("CamPosSwitch"+std::to_string(counter));
+    switchNode->setName("CamPosSwitch");
     switchNode->addChild(localDCS.get(),true);
     switchNode->addChild(searchSpaceGroup.get(),false);
+    switchNode->addChild(searchSpaceGroupDeleted.get(),false);
 
     createCamsInSearchSpace();
     directionVec = calcDirectionVec(m);
@@ -559,7 +557,6 @@ CamPosition::CamPosition(osg::Matrix m,EquipmentWithCamera *pump )
   //  std::cout<<"The next CamPosition is created from a Truck"<<std::endl;
     status =true;
     counter ++;
-    searchSpaceState = false;
     name = "CamPosition"+std::to_string(counter);
 
     coCoord mEuler= m;
@@ -585,13 +582,17 @@ CamPosition::CamPosition(osg::Matrix m,EquipmentWithCamera *pump )
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
     searchSpaceGroup->addChild(searchSpaceDrawable->getCamGeode().get());
-    searchSpaceGroup->addChild(deletedOrientationsDrawable->getCamGeode().get());
+
+    searchSpaceGroupDeleted = new osg::Group;
+    searchSpaceGroupDeleted->setName("DeletedSearchSpace");
+    searchSpaceGroupDeleted->addChild(deletedOrientationsDrawable->getCamGeode().get());
 
 
     switchNode = new osg::Switch();
     switchNode->setName("CamPosSwitch");
     switchNode->addChild(localDCS.get(),true);
     switchNode->addChild(searchSpaceGroup.get(),false);
+    switchNode->addChild(searchSpaceGroupDeleted.get(),false);
 
     createCamsInSearchSpace();
     directionVec = calcDirectionVec(m);
@@ -660,8 +661,15 @@ void CamPosition::preFrame()
             osg::Matrix local = viewpointInteractor->getMatrix();
             directionVec = calcDirectionVec(local);
            // calcIntersection();
+            countDeletedOrientation =0;
+
             updateVisibleCam();
             createCamsInSearchSpace();
+            std::cout<<"allCameras: "<< allCameras.size()<<"..."<<std::endl;
+            std::cout<<"searchSpaceDrawables: "<< searchSpace.size()<<std::endl;
+            std::cout<<"counter called delete Cam funtion: "<< countDeletedOrientation<<std::endl;
+            std::cout<<"deletedSearchSpaceDrawables: "<< deletedOrientations.size()<<std::endl;
+
 
         }
 
@@ -728,16 +736,7 @@ void CamPosition::preFrame()
  */
 void CamPosition::createCamsInSearchSpace()
 {
-    auto before = searchSpaceGroup.get()->getNumChildren();
-
-    //first delete all available Cameras
-    if(!searchSpace.empty())
-        searchSpace.clear();
-    if(!allCameras.empty())
-        allCameras.clear();
-    searchSpaceGroup->removeChildren(0,searchSpaceGroup.get()->getNumChildren());
-
-    auto after = searchSpaceGroup.get()->getNumChildren();
+    deleteSearchSpace();
 
     //around z axis
     int zMax = 180;
@@ -802,7 +801,7 @@ void CamPosition::createCamsInSearchSpace()
             countX++;
 
             //Rotation round Y
-            int countY =0;
+        /*    int countY =0;
             for(int cnt3 = 0; cnt3<yMax/stepSizeY; cnt3++)
             {
                 if(countY==0)
@@ -817,7 +816,7 @@ void CamPosition::createCamsInSearchSpace()
                     newCoordMinus.hpr[2] += stepSizeY;
 
                 }
-
+*/
                 std::shared_ptr<Cam> camPlus = createCamFromMatrix(newCoordPlus);
                 std::shared_ptr<Cam> camMinus = createCamFromMatrix(newCoordMinus);
 
@@ -827,7 +826,7 @@ void CamPosition::createCamsInSearchSpace()
                         addCamToVec(camPlus);
                     else
                     {
-                       compareCamsNew(camPlus,allCameras.back());
+                       compareCamsNew(camPlus);
                     }
 
                 }
@@ -839,14 +838,14 @@ void CamPosition::createCamsInSearchSpace()
                         addCamToVec(camMinus);
                     else
                     {
-                       compareCamsNew(camMinus,allCameras.back());
+                       compareCamsNew(camMinus);
                     }
 
                 }
                 camMinus.reset();
 
-                countY++;
-            }
+          //      countY++;
+           // }
 
         }
     }
@@ -877,53 +876,63 @@ bool CamPosition::isVisibilityMatrixEmpty(const std::shared_ptr<Cam>& cam)
         return false;
 }
 
-void CamPosition::compareCamsNew(std::shared_ptr<Cam> newCam,std::shared_ptr<Cam> oldCam)
+void CamPosition::compareCamsNew(std::shared_ptr<Cam> newCam)
 {
-    auto ItNewCam = newCam->visMatPrio1.begin();
-    auto ItOldCam = oldCam->visMatPrio1.begin();
-    int onlyInNewCam =0;
-    int onlyInOldCam =0;
 
-    while(ItNewCam != newCam->visMatPrio1.end() || ItOldCam != oldCam->visMatPrio1.end() )
+    auto it = allCameras.begin();
+    //for (auto it = allCameras.begin(); it != allCameras.end(); it++)
+    while(it != allCameras.end())
     {
-        if(*ItNewCam > *ItOldCam)
-            ++onlyInNewCam;
-        if(*ItNewCam < *ItOldCam)
-            ++onlyInOldCam;
-        if((onlyInNewCam && onlyInOldCam) !=0) //each camera can see points, which the other can't see --> keep both cameras!
-        {
-            addCamToVec(newCam);
-            return;
-        }
+        auto ItNewCam = newCam->visMatPrio1.begin();
+        auto ItOldCam = it->get()->visMatPrio1.begin();
+        int onlyInNewCam =0;
+        int onlyInOldCam =0;
+        while(ItNewCam != newCam->visMatPrio1.end() || ItOldCam != it->get()->visMatPrio1.end() )
+            {
 
-        // Loop further
-        if(ItNewCam != newCam->visMatPrio1.end())
-        {
-            ++ItNewCam;
-        }
-        if(ItOldCam != oldCam->visMatPrio1.end())
-        {
-            ++ItOldCam;
-        }
-    }
+                if(*ItNewCam > *ItOldCam)
+                    ++onlyInNewCam;
+                if(*ItNewCam < *ItOldCam)
+                    ++onlyInOldCam;
+                if((onlyInNewCam && onlyInOldCam) !=0) //each camera can see points, which the other can't see --> keep both cameras -->compare with next!
+                {
+                    break;
+                }
 
-    if(onlyInNewCam != 0 && onlyInOldCam ==0)
-    {
-        removeCamFromVec(oldCam);
-        addCamToVec(newCam);
-        int a =1;
-    }
-    else if(onlyInNewCam ==0 && onlyInOldCam !=0)
-    {
+                // Loop further
+                if(ItNewCam != newCam->visMatPrio1.end())
+                {
+                    ++ItNewCam;
+                }
+                if(ItOldCam != it->get()->visMatPrio1.end())
+                {
+                    ++ItOldCam;
+                }
+            }
+            if(onlyInNewCam != 0 && onlyInOldCam ==0)
+            {
+                int test = std::distance(allCameras.begin(),it);
+            //  elementsToRemove.push_back(std::distance(allCameras.begin(),it));
+              if(allCameras.size()>=2)
+                replaceCamWithLastElement(std::distance(allCameras.begin(),it));// element is replaced by last element & iterator is not incremented to check same element index again!
+              else
+                removeCamFromVec(*it);
 
-        //do nothing: OldCam stays in Vector new Cam is not added!
+              continue;
+
+            }
+            else if(onlyInNewCam ==0 && onlyInOldCam !=0)
+               return; //break out of function because there is already a better Cam available
+
+            else if(onlyInNewCam ==0 && onlyInOldCam ==0)
+            {
+               // if(newCamInVec == false)//both cameras see exactly the same points --> other cam eigenschaften entscheiden
+            }
+        ++it;
     }
-    else if(onlyInNewCam ==0 && onlyInOldCam ==0)
-    {
-        //both cameras see exactly the same points --> other cam eigenschaften entscheiden
-        addCamToVec(newCam);
-    }
+    addCamToVec(newCam);
 }
+
 /*std::shared_ptr<Cam> CamPosition::compareCams(std::shared_ptr<Cam> &camA ,std::shared_ptr<Cam> &camB)
 {
 
@@ -965,7 +974,7 @@ void CamPosition::compareCamsNew(std::shared_ptr<Cam> newCam,std::shared_ptr<Cam
 
 }
 */
-
+size_t CamPosition::countDeletedOrientation=0;
 void CamPosition::addCamToVec(std::shared_ptr<Cam> cam)
 {
     long refs = cam.use_count();
@@ -979,7 +988,7 @@ void CamPosition::removeCamFromVec(std::shared_ptr<Cam> cam)
 {
     auto test1 = cam.use_count();
     deletedOrientations.push_back(new osg::MatrixTransform);
-    searchSpaceGroup->addChild(deletedOrientations.back().get());
+    searchSpaceGroupDeleted->addChild(deletedOrientations.back().get());
     deletedOrientations.back()->setMatrix(cam->getMatrix());
     deletedOrientations.back()->addChild(deletedOrientationsDrawable->getCamGeode().get());
     if(!allCameras.empty())
@@ -992,7 +1001,22 @@ void CamPosition::removeCamFromVec(std::shared_ptr<Cam> cam)
     auto test2 = cam.use_count();
 
     int a =1;
+    countDeletedOrientation ++;
 }
+void CamPosition::replaceCamWithLastElement(int index)
+{
+    deletedOrientations.push_back(new osg::MatrixTransform);
+    searchSpaceGroupDeleted->addChild(deletedOrientations.back().get());
+    deletedOrientations.back()->setMatrix(allCameras.at(index).get()->getMatrix());
+    deletedOrientations.back()->addChild(deletedOrientationsDrawable->getCamGeode().get());
+    if(!allCameras.empty())
+    {
+        allCameras.at(index) = allCameras.back();
+        allCameras.pop_back();
+    }
+    countDeletedOrientation ++;
+}
+
 void CamPosition::createDrawableForEachCamOrientation()
 {
     for(const auto& x :allCameras)
@@ -1009,7 +1033,7 @@ void CamPosition::createDrawableForEachDeletedCamOrientation()
     for(const auto& x :deletedOrientations)
     {
         deletedOrientations.push_back(new osg::MatrixTransform );
-        searchSpaceGroup->addChild(deletedOrientations.back().get());
+        searchSpaceGroupDeleted->addChild(deletedOrientations.back().get());
         deletedOrientations.back()->setMatrix(x->getMatrix());
        // searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1])+ " Y:" +std::to_string( newCoordPlus.hpr[2]));
         deletedOrientations.back()->addChild(deletedOrientationsDrawable->getCamGeode().get());
@@ -1018,7 +1042,16 @@ void CamPosition::createDrawableForEachDeletedCamOrientation()
 void CamPosition::deleteSearchSpace()
 {
     allCameras.clear();
-    searchSpaceGroup->removeChildren(0,searchSpaceGroup.get()->getNumChildren());
+    auto i = searchSpaceGroup.get()->getNumChildren();
+    if(searchSpaceGroup.get()->getNumChildren() !=0)
+        searchSpaceGroup->removeChildren(0,searchSpaceGroup.get()->getNumChildren());
+    searchSpace.clear();
+
+    if(searchSpaceGroupDeleted.get()->getNumChildren() !=0)
+         searchSpaceGroupDeleted->removeChildren(0,searchSpaceGroupDeleted.get()->getNumChildren());
+    deletedOrientations.clear();
+
+
 }
 
 void CamPosition::updateCamMatrixes()
@@ -1076,6 +1109,13 @@ void CamPosition::setSearchSpaceState(bool state)
         switchNode->setChildValue(searchSpaceGroup.get(),true);
     else
         switchNode->setChildValue(searchSpaceGroup.get(),false);
+}
+void CamPosition::setDeletedSearchSpaceState(bool state)
+{
+    if(state)
+        switchNode->setChildValue(searchSpaceGroupDeleted.get(),true);
+    else
+        switchNode->setChildValue(searchSpaceGroupDeleted.get(),false);
 }
 
 void CamPosition::calcIntersection()

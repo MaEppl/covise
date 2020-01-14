@@ -143,7 +143,6 @@ class CamPosition
 {
 public:
     static size_t counter;
-    bool searchSpaceState;
     CamPosition(osg::Matrix m);
     CamPosition(osg::Matrix m,EquipmentWithCamera *pump);
 
@@ -170,6 +169,7 @@ public:
     void preFrame();
     void createCamsInSearchSpace();
     void setSearchSpaceState(bool state);
+    void setDeletedSearchSpaceState(bool state);
     void updateCamMatrixes();
     void updateVisibleCam();
     std::vector<std::shared_ptr<Cam>> allCameras;
@@ -197,6 +197,7 @@ private:
     osg::ref_ptr<osg::Switch> switchNode;
     osg::ref_ptr<osg::MatrixTransform> localDCS;
     osg::ref_ptr<osg::Group> searchSpaceGroup;
+    osg::ref_ptr<osg::Group> searchSpaceGroupDeleted;
     std::vector<osg::ref_ptr<osg::MatrixTransform>> searchSpace;
     std::vector<osg::ref_ptr<osg::MatrixTransform>> deletedOrientations;
 
@@ -204,14 +205,15 @@ private:
 
     std::shared_ptr<Cam> createCamFromMatrix(coCoord& euler);
     bool isVisibilityMatrixEmpty(const std::shared_ptr<Cam> &cam);
-    void compareCamsNew(std::shared_ptr<Cam> newCam, std::shared_ptr<Cam> oldCam);
+    void compareCamsNew(std::shared_ptr<Cam> newCam);
     void addCamToVec(std::shared_ptr<Cam> cam);
     void removeCamFromVec(std::shared_ptr<Cam> cam);
     void createDrawableForEachCamOrientation();
     void createDrawableForEachDeletedCamOrientation();
+    void replaceCamWithLastElement(int index);
 
 
-
+    static size_t countDeletedOrientation;
 
 
 };

@@ -95,7 +95,7 @@ void EKU::createScene()
     //draw Pumps:
     osg::Matrix pos;
     pos.setTrans(11,0,0);
-    doAddTruck(pos);
+  /*  doAddTruck(pos);
     int cnt =0;
     for(int i = 0;i<13;i++)
     {
@@ -187,7 +187,7 @@ void EKU::createScene()
         std::unique_ptr<EquipmentWithCamera> dataVanDraw(new EquipmentWithCamera(name,matDataVan,dataVan,vecOfCameras));
         equipmentWithCamera.push_back(std::move(dataVanDraw));
     }
-
+*/
     //add Christmas Tree
     {
 
@@ -534,7 +534,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     });
     //Show search space
     ShowSearchSpace = new ui::Button(Camera , "ShowSearchSpace");
-    ShowSearchSpace->setText("ShowSearchSpace");
+    ShowSearchSpace->setText("Search space");
     ShowSearchSpace->setState(false);
     ShowSearchSpace->setCallback([this](bool state){
 
@@ -542,6 +542,18 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
        {
             x->setSearchSpaceState(state);
             x->setSearchSpaceState(state);
+       }
+    });
+    //Show deleted search space
+    ShowDeletedSearchSpace = new ui::Button(Camera , "ShowDeletedSearchSpace");
+    ShowDeletedSearchSpace->setText("Deleted search space");
+    ShowDeletedSearchSpace->setState(false);
+    ShowDeletedSearchSpace->setCallback([this](bool state){
+
+       for(const auto &x :allCamPositions)
+       {
+            x->setDeletedSearchSpaceState(state);
+            x->setDeletedSearchSpaceState(state);
        }
     });
 
