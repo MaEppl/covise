@@ -111,7 +111,7 @@ public:
 
 
 private:
-    std::string path="/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/";
+    std::string path="/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/MA3dModels/";
     //UI
     ui::Menu *EKUMenu  = nullptr;
     ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*RmvCam = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr, *RmvSafetyZone = nullptr,*StopGA = nullptr;
