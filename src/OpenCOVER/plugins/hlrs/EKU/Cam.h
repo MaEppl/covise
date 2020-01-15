@@ -90,6 +90,10 @@ private:
     // sensor will gather the most relevant data only at a particular distance with gradually fading efficiency on either side of it
     double calcRangeDistortionFactor(const osg::Vec3d& point) const;
     double calcPreferredDirectionFactor(osg::Vec3 directionOfPoint);
+    double calcWidthDistortionFactor(const osg::Vec3d &point);
+    double calcHeightDistortionFactor(const osg::Vec3d &point);
+
+    double scale(double oldMin, double oldMax, double newMin, double newMax, double oldValue);//scale values to new range
 
 
 };

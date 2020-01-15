@@ -136,7 +136,9 @@ void Cam::calcVisMat()
                         {
                             visMatPrio1.push_back(1);
                             double SRC = calcRangeDistortionFactor(newPoint);
-                            distortionValuePrio1.push_back(SRC*PDC);
+                            double SWC = calcWidthDistortionFactor(newPoint);
+                            double SHC = calcHeightDistortionFactor(newPoint);
+                            distortionValuePrio1.push_back(SRC*SWC*SHC*PDC);
                            // std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
 
                         }
@@ -144,7 +146,9 @@ void Cam::calcVisMat()
                         {
                             visMatPrio2.push_back(1);
                             double SRC = calcRangeDistortionFactor(newPoint);
-                            distortionValuePrio2.push_back(SRC*PDC);
+                            double SWC = calcWidthDistortionFactor(newPoint);
+                            double SHC = calcHeightDistortionFactor(newPoint);
+                            distortionValuePrio2.push_back(SRC*SWC*SHC*PDC);
                             //std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
 
                         }
@@ -214,6 +218,31 @@ double Cam::calcRangeDistortionFactor(const osg::Vec3d &point) const
 
     return SRC;
 }
+double Cam::calcWidthDistortionFactor(const osg::Vec3d &point)
+{
+    double widthFOVatPoint = point.y()*std::tan(Cam::fov/2*osg::PI/180);
+    double x = std::abs(point.x()); //distance between point and sensor in width direction
+
+    double x_scaled = scale(0,widthFOVatPoint,0,1,x);
+    //SWC = Sensor Width Coefficient SWC = -x² +1
+    double SWC = - std::pow(x_scaled,2) + 1;
+
+    std::cout<<"SWC= "<<SWC<< std::endl;
+    return SWC;
+}
+double Cam::calcHeightDistortionFactor(const osg::Vec3d &point)
+{
+    double widthFOVatPoint = point.y()*std::tan(Cam::fov/2*osg::PI/180);
+    double heightFOVatPoint = widthFOVatPoint/(Cam::imgWidthPixel/Cam::imgHeightPixel);
+    double z = std::abs(point.z()); //distance between point and sensor in width direction
+
+    double z_scaled = scale(0,heightFOVatPoint,0,1,z);
+    //SWC = Sensor Width Coefficient SWC = -x² +1
+    double SHC = - std::pow(z_scaled,2) + 1;
+
+    std::cout<<"SHC= "<<SHC<< std::endl;
+    return SHC;
+}
 
 double Cam::calcPreferredDirectionFactor( osg::Vec3 directionOfSafetyZone)
 {
@@ -227,6 +256,13 @@ double Cam::calcPreferredDirectionFactor( osg::Vec3 directionOfSafetyZone)
          PDC = std::pow((directionVec.operator *(directionOfSafetyZone)/(directionVec.normalize()*directionOfSafetyZone.normalize())),2) + c;
   //  std::cout<<"PDC: "<<PDC<<std::endl;
     return PDC;
+}
+double Cam::scale(double oldMin, double oldMax, double newMin, double newMax, double oldValue)
+{
+    double oldRange = oldMax - oldMin;
+    double newRange = newMax - newMin;
+    double newValue = (((oldValue - oldMin) * newRange) / oldRange )+ newMin;
+    return newValue;
 }
 
 size_t CamDrawable::count=0;
@@ -759,14 +795,14 @@ void CamPosition::createCamsInSearchSpace()
     int nbrOfCameras =0;
     osg::Matrix m_new;
 
- /* //For debugging: only 1 cam in search space
+  //For debugging: only 1 cam in search space
     newCoordPlus.makeMat(m_new);
     searchSpace.push_back(new osg::MatrixTransform );
     searchSpaceGroup->addChild(searchSpace.back().get());
     searchSpace.back()->setMatrix(m_new);
     searchSpace.back()->setName(std::to_string(nbrOfCameras)+"+MATRIX Z:" + std::to_string( newCoordPlus.hpr[0])+ " X:" +std::to_string( newCoordPlus.hpr[1]));
     searchSpace.back()->addChild(searchSpaceDrawable->getCamGeode().get());
-*/
+
     int count =0;
     for(int cnt = 0 ; cnt<zMax/stepSizeZ; cnt++)//############## ===cnt = 0!!!!!!!!!!!muss hier hin
     {
@@ -847,7 +883,7 @@ void CamPosition::createCamsInSearchSpace()
           //      countY++;
            // }
 
-        }
+          }
     }
 
     createDrawableForEachCamOrientation();
