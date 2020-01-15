@@ -218,7 +218,4 @@ private:
     void replaceCamWithLastElement(int index);
     void drawRemovedCam(std::shared_ptr<Cam> cam);
 
-    static size_t countDeletedOrientation;
-
-
 };

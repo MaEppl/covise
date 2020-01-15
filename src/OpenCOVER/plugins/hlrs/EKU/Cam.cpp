@@ -73,109 +73,111 @@ void Cam::calcVisMat()
   //  visMat.clear(); do not clear anymore!
     distortionValuePrio1.clear();
     distortionValuePrio2.clear();
+    if(!visMat.empty()){
   //  visMat.reserve(EKU::safetyZones.size());
-    osg::Matrix T = osg::Matrix::translate(-pos);
-    osg::Matrix zRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.x()), osg::Z_AXIS);
-    osg::Matrix yRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.y()), osg::X_AXIS);
-    coCoord eulerTest = mat;
-    double test = eulerTest.hpr[2];
-    osg::Matrix testRot = osg::Matrix::rotate(-osg::DegreesToRadians(test), osg::Y_AXIS);
-    // BUGFIX: still problem at borders?
-    size_t countSZ=0;
-    for(const auto& p : EKU::safetyZones)
-    {
-       // std::vector<double> visMatForThisSafetyZone;
-       // visMatForThisSafetyZone.reserve(p->getWorldPosOfAllObservationPoints().size());
-
-        //Preferred Direction Coefficient is equal for whole safety zone
-        double PDC = calcPreferredDirectionFactor(p->getPreferredDirection());
-        size_t count=0;
-        for(const auto& p1 :p->getWorldPosOfAllObservationPoints())
+        osg::Matrix T = osg::Matrix::translate(-pos);
+        osg::Matrix zRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.x()), osg::Z_AXIS);
+        osg::Matrix yRot = osg::Matrix::rotate(-osg::DegreesToRadians(rot.y()), osg::X_AXIS);
+        coCoord eulerTest = mat;
+        double test = eulerTest.hpr[2];
+        osg::Matrix testRot = osg::Matrix::rotate(-osg::DegreesToRadians(test), osg::Y_AXIS);
+        // BUGFIX: still problem at borders?
+        size_t countSZ=0;
+        for(const auto& p : EKU::safetyZones)
         {
-            if(visMat.at(countSZ).at(count) == 0) // Point is not visible because of intersection test
+           // std::vector<double> visMatForThisSafetyZone;
+           // visMatForThisSafetyZone.reserve(p->getWorldPosOfAllObservationPoints().size());
+
+            //Preferred Direction Coefficient is equal for whole safety zone
+            double PDC = calcPreferredDirectionFactor(p->getPreferredDirection());
+            size_t count=0;
+            for(const auto& p1 :p->getWorldPosOfAllObservationPoints())
             {
-               // visMatForThisSafetyZone.push_back(0);
-                if(p->getPriority() == SafetyZone::PRIO1)
+                if(visMat.at(countSZ).at(count) == 0) // Point is not visible because of intersection test
                 {
-                    visMatPrio1.push_back(0);
-                    distortionValuePrio1.push_back(0);
-
-                }
-                else if(p->getPriority() ==SafetyZone::PRIO2)
-                {
-                    visMatPrio2.push_back(0);
-                    distortionValuePrio2.push_back(0);
-
-                }
-                //count++;
-            }
-            else{ //point is Visible from CamPos now check if it's in FOV
-                    osg::Vec3 newPoint = p1*T*zRot*yRot*testRot;
-                  // For Visualization of transfered Point
-                  /*  mySphere = new osg::Box(newPoint,2,2,2);
-                    osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
-                    mySphereDrawable->setColor(osg::Vec4(1., 1., 0., 1.0f));
-                    //red color
-                    mySphereDrawable->setColor(osg::Vec4(1., 0., 0., 1.0f));
-                    osg::Geode *myGeode = new osg::Geode();
-                    myGeode->addDrawable(mySphereDrawable);
-                    myGeode->setName("SafetyZone");
-                    cover->getObjectsRoot()->addChild(myGeode);
-                    std::cout<<"D: "<<newPoint.y()<<" <= "<<Cam::depthView<<" && "<<newPoint.y()<<" >= "<<0<<std::endl;
-                    std::cout<<"x: "<<std::abs(newPoint.x()) <<" <= "<<Cam::imgWidth/2 * newPoint.y()/Cam::depthView<<std::endl;
-                    std::cout<<"H: "<<std::abs(newPoint.z())<<" <= "<<Cam::imgHeight/2 * newPoint.y()/Cam::depthView<<std::endl;
-                    */
-                    newPoint.set(newPoint.x(),newPoint.y()*-1,newPoint.z());
-                    if((newPoint.y()<=Cam::depthView ) && (newPoint.y()>=0) &&
-                       (std::abs(newPoint.x()) <= Cam::imgWidth/2 * newPoint.y()/Cam::depthView) &&
-                       (std::abs(newPoint.z()) <=Cam::imgHeight/2 * newPoint.y()/Cam::depthView))
-                    {   //if point is in FOV
-                        //visMat.at(countSZ).at(count)=1; not necessary, it's already 1
-
-                        if(p->getPriority() == SafetyZone::PRIO1)
-                        {
-                            visMatPrio1.push_back(1);
-                            double SRC = calcRangeDistortionFactor(newPoint);
-                            double SWC = calcWidthDistortionFactor(newPoint);
-                            double SHC = calcHeightDistortionFactor(newPoint);
-                            distortionValuePrio1.push_back(SRC*SWC*SHC*PDC);
-                           // std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
-
-                        }
-                        else if(p->getPriority() ==SafetyZone::PRIO2)
-                        {
-                            visMatPrio2.push_back(1);
-                            double SRC = 1.0;//calcRangeDistortionFactor(newPoint);
-                            double SWC = calcWidthDistortionFactor(newPoint);
-                            double SHC = 1.0;//calcHeightDistortionFactor(newPoint);
-                            distortionValuePrio2.push_back(SRC*SWC*SHC*PDC);
-                            //std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
-
-                        }
-                     }
-                    else // not in FOV
+                   // visMatForThisSafetyZone.push_back(0);
+                    if(p->getPriority() == SafetyZone::PRIO1)
                     {
-                        visMat.at(countSZ).at(count)=0;
-                        if(p->getPriority() == SafetyZone::PRIO1)
-                        {
-                            visMatPrio1.push_back(0);
-                            distortionValuePrio1.push_back(0);
-                           // std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
+                        visMatPrio1.push_back(0);
+                        distortionValuePrio1.push_back(0);
 
-                        }
-                        else if(p->getPriority() ==SafetyZone::PRIO2)
-                        {
-                            visMatPrio2.push_back(0);
-                            distortionValuePrio2.push_back(0);
-                            //std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
-
-                        }
                     }
-                    //count ++;
-                }count++;
+                    else if(p->getPriority() ==SafetyZone::PRIO2)
+                    {
+                        visMatPrio2.push_back(0);
+                        distortionValuePrio2.push_back(0);
+
+                    }
+                    //count++;
+                }
+                else{ //point is Visible from CamPos now check if it's in FOV
+                        osg::Vec3 newPoint = p1*T*zRot*yRot*testRot;
+                      // For Visualization of transfered Point
+                      /*  mySphere = new osg::Box(newPoint,2,2,2);
+                        osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
+                        mySphereDrawable->setColor(osg::Vec4(1., 1., 0., 1.0f));
+                        //red color
+                        mySphereDrawable->setColor(osg::Vec4(1., 0., 0., 1.0f));
+                        osg::Geode *myGeode = new osg::Geode();
+                        myGeode->addDrawable(mySphereDrawable);
+                        myGeode->setName("SafetyZone");
+                        cover->getObjectsRoot()->addChild(myGeode);
+                        std::cout<<"D: "<<newPoint.y()<<" <= "<<Cam::depthView<<" && "<<newPoint.y()<<" >= "<<0<<std::endl;
+                        std::cout<<"x: "<<std::abs(newPoint.x()) <<" <= "<<Cam::imgWidth/2 * newPoint.y()/Cam::depthView<<std::endl;
+                        std::cout<<"H: "<<std::abs(newPoint.z())<<" <= "<<Cam::imgHeight/2 * newPoint.y()/Cam::depthView<<std::endl;
+                        */
+                        newPoint.set(newPoint.x(),newPoint.y()*-1,newPoint.z());
+                        if((newPoint.y()<=Cam::depthView ) && (newPoint.y()>=0) &&
+                           (std::abs(newPoint.x()) <= Cam::imgWidth/2 * newPoint.y()/Cam::depthView) &&
+                           (std::abs(newPoint.z()) <=Cam::imgHeight/2 * newPoint.y()/Cam::depthView))
+                        {   //if point is in FOV
+                            //visMat.at(countSZ).at(count)=1; not necessary, it's already 1
+
+                            if(p->getPriority() == SafetyZone::PRIO1)
+                            {
+                                visMatPrio1.push_back(1);
+                                double SRC = calcRangeDistortionFactor(newPoint);
+                                double SWC = calcWidthDistortionFactor(newPoint);
+                                double SHC = calcHeightDistortionFactor(newPoint);
+                                distortionValuePrio1.push_back(SRC*SWC*SHC*PDC);
+                               // std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
+
+                            }
+                            else if(p->getPriority() ==SafetyZone::PRIO2)
+                            {
+                                visMatPrio2.push_back(1);
+                                double SRC = 1.0;//calcRangeDistortionFactor(newPoint);
+                                double SWC = calcWidthDistortionFactor(newPoint);
+                                double SHC = 1.0;//calcHeightDistortionFactor(newPoint);
+                                distortionValuePrio2.push_back(SRC*SWC*SHC*PDC);
+                                //std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
+
+                            }
+                         }
+                        else // not in FOV
+                        {
+                            visMat.at(countSZ).at(count)=0;
+                            if(p->getPriority() == SafetyZone::PRIO1)
+                            {
+                                visMatPrio1.push_back(0);
+                                distortionValuePrio1.push_back(0);
+                               // std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
+
+                            }
+                            else if(p->getPriority() ==SafetyZone::PRIO2)
+                            {
+                                visMatPrio2.push_back(0);
+                                distortionValuePrio2.push_back(0);
+                                //std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
+
+                            }
+                        }
+                        //count ++;
+                    }count++;
+                }
+            countSZ++;
             }
-        countSZ++;
-        }
+    }
 }
 
 bool Cam::calcIntersection(const osg::Vec3d& end)
@@ -226,8 +228,6 @@ double Cam::calcWidthDistortionFactor(const osg::Vec3d &point)
     double x_scaled = scale(0,widthFOVatPoint,0,1,x);
     //SWC = Sensor Width Coefficient SWC = -x² +1
     double SWC = - std::pow(x_scaled,2) + 1;
-
-    std::cout<<"SWC= "<<SWC<< std::endl;
     return SWC;
 }
 double Cam::calcHeightDistortionFactor(const osg::Vec3d &point)
@@ -239,8 +239,6 @@ double Cam::calcHeightDistortionFactor(const osg::Vec3d &point)
     double z_scaled = scale(0,heightFOVatPoint,0,1,z);
     //SWC = Sensor Width Coefficient SWC = -x² +1
     double SHC = - std::pow(z_scaled,2) + 1;
-
-    std::cout<<"SHC= "<<SHC<< std::endl;
     return SHC;
 }
 
@@ -566,6 +564,11 @@ CamPosition::CamPosition(osg::Matrix m)
     viewpointInteractor->show();
     viewpointInteractor->enableIntersection();
     localDCS->addChild(camDraw->getCamGeode());
+
+    searchSpaceGroup = new osg::Group;
+    searchSpaceGroup->setName("SearchSpace");
+    searchSpaceGroup->addChild(searchSpaceDrawable->getCamGeode().get());
+
     searchSpaceGroupDeleted = new osg::Group;
     searchSpaceGroupDeleted->setName("DeletedSearchSpace");
     searchSpaceGroupDeleted->addChild(deletedOrientationsDrawable->getCamGeode().get());
@@ -697,7 +700,6 @@ void CamPosition::preFrame()
             osg::Matrix local = viewpointInteractor->getMatrix();
             directionVec = calcDirectionVec(local);
            // calcIntersection();
-            countDeletedOrientation =0;
 
             updateVisibleCam();
             createCamsInSearchSpace();
@@ -831,8 +833,8 @@ void CamPosition::createCamsInSearchSpace()
             countX++;
 
             //Rotation round Y
-        /*    int countY =0;
-            for(int cnt3 = 0; cnt3<yMax/stepSizeY; cnt3++)
+            int countY =0;
+            for(int cnt3 = 0; cnt3<=yMax/stepSizeY; cnt3++)
             {
                 if(countY==0)
                 {
@@ -846,7 +848,7 @@ void CamPosition::createCamsInSearchSpace()
                     newCoordMinus.hpr[2] += stepSizeY;
 
                 }
-*/
+
                 std::shared_ptr<Cam> camPlus = createCamFromMatrix(newCoordPlus);
                 std::shared_ptr<Cam> camMinus = createCamFromMatrix(newCoordMinus);
 
@@ -874,8 +876,8 @@ void CamPosition::createCamsInSearchSpace()
                 }
                 camMinus.reset();
 
-          //      countY++;
-           // }
+                countY++;
+            }
 
           }
     }
