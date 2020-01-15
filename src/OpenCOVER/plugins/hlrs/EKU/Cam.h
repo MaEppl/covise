@@ -80,6 +80,9 @@ public:
         return mat;}
     int getID(){return id;}
    // void preFrame();
+
+    bool operator>>(const Cam & other)const; // compare 2 Cam objects
+
 protected:
      std::string name;
 private:
@@ -92,7 +95,6 @@ private:
     double calcPreferredDirectionFactor(osg::Vec3 directionOfPoint);
     double calcWidthDistortionFactor(const osg::Vec3d &point);
     double calcHeightDistortionFactor(const osg::Vec3d &point);
-
     double scale(double oldMin, double oldMax, double newMin, double newMax, double oldValue);//scale values to new range
 
 
@@ -188,7 +190,6 @@ public:
     void calcIntersection();
     int calcVisibility(osg::Matrix cam,osg::Vec3 point);
 
-  //  Cam& CamPosition::compareCams(Cam &camA ,Cam &camB);
 private:
     bool status;
     std::string name;
@@ -209,13 +210,13 @@ private:
 
     std::shared_ptr<Cam> createCamFromMatrix(coCoord& euler);
     bool isVisibilityMatrixEmpty(const std::shared_ptr<Cam> &cam);
-    void compareCamsNew(std::shared_ptr<Cam> newCam);
+    void compareCams(std::shared_ptr<Cam> newCam);
     void addCamToVec(std::shared_ptr<Cam> cam);
     void removeCamFromVec(std::shared_ptr<Cam> cam);
     void createDrawableForEachCamOrientation();
     void createDrawableForEachDeletedCamOrientation();
     void replaceCamWithLastElement(int index);
-
+    void drawRemovedCam(std::shared_ptr<Cam> cam);
 
     static size_t countDeletedOrientation;
 
