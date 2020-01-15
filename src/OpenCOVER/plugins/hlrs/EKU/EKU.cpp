@@ -95,7 +95,7 @@ void EKU::createScene()
     //draw Pumps:
     osg::Matrix pos;
     pos.setTrans(11,0,0);
-  /*  doAddTruck(pos);
+    doAddTruck(pos);
     int cnt =0;
     for(int i = 0;i<13;i++)
     {
@@ -187,7 +187,7 @@ void EKU::createScene()
         std::unique_ptr<EquipmentWithCamera> dataVanDraw(new EquipmentWithCamera(name,matDataVan,dataVan,vecOfCameras));
         equipmentWithCamera.push_back(std::move(dataVanDraw));
     }
-*/
+
     //add Christmas Tree
     {
 
