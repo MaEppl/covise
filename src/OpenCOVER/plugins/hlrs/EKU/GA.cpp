@@ -72,6 +72,9 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
     std::vector<int> visYesNo_prio1(p.cameras.begin()->get()->visMatPrio1.size(),0);
     std::vector<int> visYesNo_prio2(p.cameras.begin()->get()->visMatPrio2.size(),0);
 
+    std::vector<double> coefficients_prio1(p.cameras.begin()->get()->distortionValuePrio1.size(),1);
+    std::vector<double> coefficients_prio2(p.cameras.begin()->get()->distortionValuePrio2.size(),1);
+
     for(const auto &x: p.cameras)
     {
       //  std::cout<<"size visMat Prio1: "<<x->visMatPrio1.size()<<std::endl;
@@ -80,66 +83,67 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
         //not necessarry to add all elements, until 2 is enough
         std::transform(x->visMatPrio1.begin(),x->visMatPrio1.end(),visYesNo_prio1.begin(),visYesNo_prio1.begin(),std::plus<int>());
         std::transform(x->visMatPrio2.begin(),x->visMatPrio2.end(),visYesNo_prio2.begin(),visYesNo_prio2.begin(),std::plus<int>());
+
+        std::transform(x->distortionValuePrio1.begin(),x->distortionValuePrio1.end(),coefficients_prio1.begin(),coefficients_prio1.begin(),std::multiplies<double>());
+        std::transform(x->distortionValuePrio2.begin(),x->distortionValuePrio2.end(),coefficients_prio2.begin(),coefficients_prio2.begin(),std::multiplies<double>());
+
     }
-    std::vector<int>visMatPrio1;
-    std::vector<int>visMatPrio2;
+    std::vector<int> percentageCalcultationPrio1;
+    std::vector<int> percentageCalcultationPrio2;
+
+    std::vector<double>visMatPrio1;
+    std::vector<double>visMatPrio2;
+    register int count1 =0;
+    register int count2 =0;
 
     for(const auto&x :visYesNo_prio1)
     {
         double value = x-SafetyZone::PRIO1;
         if(value < 0)
+        {
             value=value*penalty;
-        visMatPrio1.push_back(value);
-     /*   if(x>=SafetyZone::PRIO1)
-            visMatPrio1.push_back(1);
+            visMatPrio1.push_back(value);
+
+        }
         else
-            visMatPrio1.push_back(0);
-    */
+            visMatPrio1.push_back((value+1)*coefficients_prio1.at(count1));//plus 1 otherwise multiplication with zero!
+        if(x>=SafetyZone::PRIO1)
+            percentageCalcultationPrio1.push_back(1);
+        else
+           percentageCalcultationPrio1.push_back(0);
+
+        count1++;
     }
 
     for(const auto&x :visYesNo_prio2)
     {
         double value = x-SafetyZone::PRIO2;
         if(value < 0)
+        {
             value=value*penalty;
-        visMatPrio2.push_back(value);
+            visMatPrio2.push_back(value);
 
-      /*  if(x>=SafetyZone::PRIO2)
-            visMatPrio2.push_back(1);
+        }
         else
-            visMatPrio2.push_back(0);
- */
+            visMatPrio2.push_back((value+1)*coefficients_prio2.at(count2));
+
+        if(x>=SafetyZone::PRIO2)
+            percentageCalcultationPrio2.push_back(1);
+        else
+            percentageCalcultationPrio2.push_back(0);
+
+        count2++;
  }
 
     //Coverage [%]
-    double sum_observed_prio1 = std::accumulate(visMatPrio1.begin(),visMatPrio1.end(),0.0);
-    double sum_observed_prio2 = std::accumulate(visMatPrio2.begin(),visMatPrio2.end(),0.0);
-    c.coverage.prio1 =sum_observed_prio1 / visMatPrio1.size() *100;
-    c.coverage.prio2 =sum_observed_prio2 / visMatPrio2.size() *100;
-    c.coverage.total =(sum_observed_prio2 + sum_observed_prio1) / (visMatPrio1.size()+visMatPrio2.size()) *100;
+    double sum_observed_prio1 = std::accumulate(percentageCalcultationPrio1.begin(),percentageCalcultationPrio1.end(),0.0);
+    double sum_observed_prio2 = std::accumulate(percentageCalcultationPrio2.begin(),percentageCalcultationPrio2.end(),0.0);
+    c.coverage.prio1 =sum_observed_prio1 / percentageCalcultationPrio1.size() *100;
+    c.coverage.prio2 =sum_observed_prio2 / percentageCalcultationPrio2.size() *100;
+    c.coverage.total =(sum_observed_prio2 + sum_observed_prio1) / (percentageCalcultationPrio1.size()+percentageCalcultationPrio2.size()) *100;
 
     static size_t counter = 0;
-/*    if(!user_stop)
-    {
-        if(c.coverage.prio1 < minCoveragePrio1 || c.coverage.prio2 < minCoveragePrio2)
-        {
-            counter++;
-            if(counter == 800000 && user_stop ==false)
-            {
-                minCoveragePrio1 -= 10;
-                minCoveragePrio2 -= 10;
-                std::cout << "No camera network found, reducing MIN coverage values!"<<std::endl;
-                std::cout <<"New min coverage for PRIO1: " <<minCoveragePrio1<<std::endl;
-                std::cout <<"New min coverage for PRIO2: " <<minCoveragePrio2<<std::endl;
-                counter =0;
-                if(minCoveragePrio1 == 0 || minCoveragePrio2 == 0)
-                {
-                    user_stop=true;
-                }
-            }
-            return false;
-        }
-        else
+/*
         {   // if coverage is high enough then calc sum of PDC and RDC
             std::vector<double> visFactor_prio1(p.cameras.begin()->get()->distortionValuePrio1.size(),0);
             std::vector<double> visFactor_prio2(p.cameras.begin()->get()->distortionValuePrio2.size(),0);
@@ -214,6 +218,9 @@ void GA::SO_report_generation(int generation_number,const EA::GenerationType<MyS
         <<generation_number<<"\t"
         <<last_generation.average_cost<<"\t"
         <<last_generation.best_total_cost<<"\t"
+        <<last_generation.chromosomes.at(last_generation.best_chromosome_index).middle_costs.coverage.total<<"\t"
+        <<last_generation.chromosomes.at(last_generation.best_chromosome_index).middle_costs.coverage.prio1<<"\t"
+        <<last_generation.chromosomes.at(last_generation.best_chromosome_index).middle_costs.coverage.prio2<<"\t"
         <<best_genes.to_string()<<"\n";
 
     if(user_stop==true)
@@ -243,8 +250,8 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     int numberOfPoints = cam.at(0)->camDraw->cam->getVisMatPrio1().size() + cam.at(0)->camDraw->cam->getVisMatPrio2().size();
     std::string name = "results_"+std::to_string(coVRMSController::instance()->getID())+".txt";
     output_file.open(name);
-    output_file<<"Nbr CamPos: "<<cam.size()<<"\t"<<"Nbr CamOrientations: "<<possibleCameras<<"Nbr points: "<<numberOfPoints<<"\n";
-    output_file<<"step"<<"\t"<<"cost_avg"<<"\t"<<"cost_best"<<"\t"<<"solution_best"<<"\n";
+    output_file<<"Nbr CamPos: "<<cam.size()<<"\t"<<"Nbr CamOrientations: "<<possibleCameras<<"\t"<<"Nbr points: "<<numberOfPoints<<"\t"<<"Population size: "<<GA::populationSize<<"\n" ;
+    output_file<<"step"<<"\t"<<"cost_avg"<<"\t"<<"cost_best"<<"\t"<<"total_coverage[%]"<<"\t"<<"PRIO1_coverage[%]"<<"\t"<<"PRIO2_coverage[%]"<<"\t"<<"solution_best"<<"\n";
 
 
     std::cout<<"GA: Number of camera orientations: "<< possibleCameras<<std::endl;
@@ -272,13 +279,12 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     ga_obj.solve();
 
     if(!user_stop)
+    {
         std::cout<<"The problem is optimized in "<<timer.toc()<<" seconds.###########################################"<<std::endl;
-
+    }
     output_file
         <<"solved in:"<<"\t"<<timer.toc()<<"\n";
     output_file.close();
-
-
 }
 #else
 
