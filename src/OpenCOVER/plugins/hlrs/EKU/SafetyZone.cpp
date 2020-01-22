@@ -567,11 +567,6 @@ void SafetyZone::updateWorldPosOfAllObservationPoints()
         {
             osg::Vec3 pos = x1->getPos()*localDCS.get()->getMatrix();
             worldPosOfAllObservationPoints.push_back(pos);
-            double z = pos.z();
-            if(z > highestZvalue)
-                highestZvalue = z;
-           // std::cout<< "Point World Coordinates: " << pos.x() <<" | "<< pos.y()<<" | "<< pos.z()<<std::endl;
-            std::cout<<"zValue"<<z<<std::endl;
         }
 
     }
@@ -672,7 +667,7 @@ Point::Point(osg::Vec3 pos,osg::Vec4 color):color(color),visibleForEnoughCameras
     localDCS = new osg::MatrixTransform();
     localDCS->setMatrix(local);
     localDCS->setName("Translation");
-    sphere = new osg::Sphere(osg::Vec3(0,0,0), 0.5);
+    sphere = new osg::Sphere(osg::Vec3(0,0,0), 0.35);
     sphereDrawable = new osg::ShapeDrawable(sphere);
     //red color
     sphereDrawable->setColor(color);

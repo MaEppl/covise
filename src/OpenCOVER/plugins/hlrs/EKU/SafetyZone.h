@@ -58,7 +58,6 @@ public:
         localDCS->setMatrix(matrix1);
         updateWorldPosOfAllObservationPoints();
     }
-    double getHighestZvalue(){return highestZvalue;}
     osg::Matrix getMatrix(){return localDCS.get()->getMatrix();}
     std::vector<osg::Vec3>& getWorldPosOfAllObservationPoints(){return worldPosOfAllObservationPoints;}
     osg::Vec3 &getPreferredDirection(){return preferredDirection;}
@@ -74,9 +73,8 @@ private:
     float length = 2;
     float width = 2;
     float height = 8;
-    const double distance =4.0; //distance between Points
+    const double distance =3; //distance between Points
     const int priority;
-    double highestZvalue =0; // highest Zvalue of a point --> used to calculate search space
     osg::Vec3 preferredDirection;//Direction from which SZ should be observed (x,y,z)
     std::string name;
     std::vector<osg::Vec3> worldPosOfAllObservationPoints;
