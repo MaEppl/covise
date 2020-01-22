@@ -10,15 +10,16 @@
 #include <cover/coVRFileManager.h>
 #include <osg/ShapeDrawable>
 #include <osg/Material>
+#include<osg/LineWidth>
+#include<osg/LightModel>
 #include <osg/Vec4>
 #include<osgText/Font>
 #include<osgText/Text>
 
-#include<Sensor.h>
 using namespace opencover;
 using namespace osg;
 osg::Vec3 calcDirectionVec(osg::Matrix& m); //returns direction Vector of coVR3DTransRotInteractor
-
+//class EKU;
 class Point;
 class SafetyZone
 {   /* Coordinate System is at 6
@@ -31,7 +32,6 @@ class SafetyZone
      *  |    |
      * 1*----*2
      */
-    friend class mySensor;
 public:
 
     osg::Box *zone;
@@ -61,6 +61,7 @@ public:
     osg::Matrix getMatrix(){return localDCS.get()->getMatrix();}
     std::vector<osg::Vec3>& getWorldPosOfAllObservationPoints(){return worldPosOfAllObservationPoints;}
     osg::Vec3 &getPreferredDirection(){return preferredDirection;}
+    int getNbrControlPoints(){return nbrControlPoints;}const
 
     std::string &getName(){return name;}
 
@@ -75,6 +76,7 @@ private:
     float height = 8;
     const double distance =3; //distance between Points
     const int priority;
+    int nbrControlPoints;
     osg::Vec3 preferredDirection;//Direction from which SZ should be observed (x,y,z)
     std::string name;
     std::vector<osg::Vec3> worldPosOfAllObservationPoints;

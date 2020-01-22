@@ -1,5 +1,5 @@
 #include <SafetyZone.h>
-
+#include <EKU.h>
 using namespace opencover;
 #include <algorithm>
 
@@ -561,15 +561,18 @@ SafetyZone::~SafetyZone()
 void SafetyZone::updateWorldPosOfAllObservationPoints()
 {
     worldPosOfAllObservationPoints.clear();
+    nbrControlPoints =0;
     for(const auto& x : points )
     {
+        nbrControlPoints += x.size();
         for(const auto& x1 :x)
         {
             osg::Vec3 pos = x1->getPos()*localDCS.get()->getMatrix();
             worldPosOfAllObservationPoints.push_back(pos);
         }
-
     }
+
+    EKU::updateNbrPoints();
 }
 void SafetyZone::updateColor(const std::vector<double>& update)const
 {
@@ -681,7 +684,6 @@ Point::Point(osg::Vec3 pos,osg::Vec4 color):color(color),visibleForEnoughCameras
 }
 Point::~Point()
 {
-    std::cout<<"Point destructor called"<<std::endl;
 
 }
 void Point::setStateSet(osg::StateSet *stateSet)

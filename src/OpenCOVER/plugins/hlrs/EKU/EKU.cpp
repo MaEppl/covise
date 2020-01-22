@@ -632,6 +632,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
                 */
         }
         findNotVisiblePoints();
+
     });
 
     //Modify scene
@@ -673,6 +674,22 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     Delete->setCallback([this](bool state){
         deleteObjects = state;
     });
+
+
+    //Menu for Optimization
+    results = new ui::Menu(EKUMenu, "Results");
+    results->setText("Results");
+
+    r_totalCoverage = new ui::Label(results,"totalCoverage");
+    r_prio1Coverage = new ui::Label(results,"prio1Coverage");
+    r_prio2Coverage = new ui::Label(results,"prio2Coverage");
+    r_fitness = new ui::Label(results,"fitness");
+    r_nbrCams = new ui::Label(results,"nbrCams");
+    r_nbrOrientations = new ui::Label(results,"nbrOrientations");
+    r_nbrControlPoints = new ui::Label(results,"nbrControlPoints");
+
+
+
 }
 
 EKU::~EKU()
@@ -872,8 +889,17 @@ void EKU::doRemovePRIOZone(std::shared_ptr<SafetyZone>& s)
         std::cout<<"No SZ available"<<std::endl;
 
     std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
+    updateNbrPoints();
 
 }
+void EKU::updateNbrPoints()
+{
+    int nbrPoints=0;
+    for(const auto& x:safetyZones)
+        nbrPoints += x->getNbrControlPoints();
 
+    plugin->r_nbrControlPoints->setText("Control points: "+std::to_string(nbrPoints) );
+    std::cout<<nbrPoints<<std::endl;
+}
 
 COVERPLUGIN(EKU)

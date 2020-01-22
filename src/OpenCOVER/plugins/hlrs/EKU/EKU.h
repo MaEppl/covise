@@ -69,8 +69,6 @@ class Action;
 
 using namespace opencover;
 
-//returns the highest z value of a safetyZone
-double getZvalueOfSZ();
 void restrictMovement(osg::Matrix &mat);
 
 class mySensor;
@@ -109,6 +107,10 @@ public:
     static EKU *plugin;
     osg::ref_ptr<osg::Group> finalScene;
 
+    static void updateCoverage();
+    static void updateNbrCams();
+    static void updateNbrPoints();
+    static void updateOptimizationResults();
 
 private:
     std::string path="/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/MA3dModels/";
@@ -125,6 +127,15 @@ private:
     ui::Slider *penalty = nullptr, *weighting = nullptr;
     ui::Button *dynamicThreading = nullptr;
 
+    //Menu for optimization results
+    ui::Menu *results = nullptr;
+    ui::Label *r_totalCoverage = nullptr;
+    ui::Label *r_prio1Coverage = nullptr;
+    ui::Label *r_prio2Coverage = nullptr;
+    ui::Label *r_fitness = nullptr;
+    ui::Label *r_nbrCams = nullptr;
+    ui::Label *r_nbrOrientations = nullptr;
+    ui::Label *r_nbrControlPoints = nullptr;
 
     ui::Menu *Camera = nullptr;
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
