@@ -883,6 +883,7 @@ void CamPosition::createCamsInSearchSpace()
     }
 
     createDrawableForEachCamOrientation();
+    EKU::updateNbrCams();
 
 }
 std::shared_ptr<Cam> CamPosition::createCamFromMatrix(coCoord& euler)

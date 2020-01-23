@@ -107,10 +107,11 @@ public:
     static EKU *plugin;
     osg::ref_ptr<osg::Group> finalScene;
 
-    static void updateCoverage();
+    static void updateCoverage(float totalCoverage, float prio1Coverage, float prio2Coverage);
     static void updateNbrCams();
     static void updateNbrPoints();
-    static void updateOptimizationResults();
+    static void updateOptimizationResults(float totalCoverage, float prio1Coverage, float prio2Coverage, float fitness, float time);
+
 
 private:
     std::string path="/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/MA3dModels/";
@@ -129,13 +130,7 @@ private:
 
     //Menu for optimization results
     ui::Menu *results = nullptr;
-    ui::Label *r_totalCoverage = nullptr;
-    ui::Label *r_prio1Coverage = nullptr;
-    ui::Label *r_prio2Coverage = nullptr;
-    ui::Label *r_fitness = nullptr;
-    ui::Label *r_nbrCams = nullptr;
-    ui::Label *r_nbrOrientations = nullptr;
-    ui::Label *r_nbrControlPoints = nullptr;
+    ui::Label *r_totalCoverage = nullptr, *r_prio1Coverage = nullptr,*r_prio2Coverage = nullptr,*r_fitness = nullptr,*r_nbrCams = nullptr,*r_nbrControlPoints = nullptr,*r_optimizationTime = nullptr;//*r_nbrOrientations = nullptr;
 
     ui::Menu *Camera = nullptr;
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
@@ -145,7 +140,6 @@ private:
     //Equipment
     void createScene();
     osg::ref_ptr<osg::Node> silo1;
-    osg::ref_ptr<osg::Node> silo2;
     osg::ref_ptr<osg::Node> container;
     osg::ref_ptr<osg::Node> christmasTree;
     osg::ref_ptr<osg::Node> manifold;

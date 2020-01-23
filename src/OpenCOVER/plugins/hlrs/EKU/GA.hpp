@@ -11,7 +11,6 @@
 #include<SafetyZone.h>
 #include <cover/coVRPlugin.h>
 #include <cover/coVRMSController.h>
-//8:384 , 9:423 ,current: 192
 #if(1)
 class GA
 {
@@ -30,6 +29,12 @@ public:
     void stopGA(){
         std::cout<<"Stop requested"<<std::endl;
         user_stop=true;}
+
+    float finalTotalCoverage = 0.0f;
+    float finalPrio1Coverage = 0.0f;
+    float finalPrio2Coverage = 0.0f;
+    float optimizationTime = 0.0f;
+    float fitness =0.0f;
 
 private:
     std::ofstream output_file;                          //store result of GA

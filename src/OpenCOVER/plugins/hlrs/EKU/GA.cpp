@@ -214,13 +214,18 @@ void GA::SO_report_generation(int generation_number,const EA::GenerationType<MyS
         <<"Exe_time="<<last_generation.exe_time
         <<std::endl;
 
+    finalTotalCoverage = last_generation.chromosomes.at(last_generation.best_chromosome_index).middle_costs.coverage.total;
+    finalPrio1Coverage = last_generation.chromosomes.at(last_generation.best_chromosome_index).middle_costs.coverage.prio1;
+    finalPrio2Coverage = last_generation.chromosomes.at(last_generation.best_chromosome_index).middle_costs.coverage.prio2;
+    fitness = last_generation.best_total_cost;
+
     output_file
         <<generation_number<<"\t"
         <<last_generation.average_cost<<"\t"
         <<last_generation.best_total_cost<<"\t"
-        <<last_generation.chromosomes.at(last_generation.best_chromosome_index).middle_costs.coverage.total<<"\t"
-        <<last_generation.chromosomes.at(last_generation.best_chromosome_index).middle_costs.coverage.prio1<<"\t"
-        <<last_generation.chromosomes.at(last_generation.best_chromosome_index).middle_costs.coverage.prio2<<"\t"
+        <<"%.2f"<<finalTotalCoverage<<"\t"
+        <<finalPrio1Coverage<<"\t"
+        <<finalPrio2Coverage<<"\t"
         <<best_genes.to_string()<<"\n";
 
     if(user_stop==true)
@@ -236,6 +241,7 @@ std::vector<std::shared_ptr<Cam>> GA::getfinalCamPos() const
    std::vector<std::shared_ptr<Cam>>result= ga_obj.last_generation.chromosomes.at(ga_obj.last_generation.best_chromosome_index).genes.cameras;
    return result ;
 }
+
 GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_ptr<SafetyZone> > &safetyZoneList):camlist(cam)
 {
 
@@ -282,8 +288,9 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     {
         std::cout<<"The problem is optimized in "<<timer.toc()<<" seconds.###########################################"<<std::endl;
     }
+    optimizationTime = timer.toc();
     output_file
-        <<"solved in:"<<"\t"<<timer.toc()<<"\n";
+        <<"solved in:"<<"\t"<<optimizationTime<<"\n";
     output_file.close();
 }
 #else

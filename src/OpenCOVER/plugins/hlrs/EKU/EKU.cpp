@@ -218,40 +218,41 @@ void EKU::createScene()
     //add silo
     {
         std::cout<<"Load silo"<<std::endl;
-        silo1 = osgDB::readNodeFile("/home/AD.EKUPD.COM/matthias.epple/data/EKU/World/Silo/Model_C0810A007/C0810A007.3ds");
+        silo1 = osgDB::readNodeFile(path+"silo/C0810A007.3ds");
         silo1->setName("Silo1");
+        osg::PositionAttitudeTransform* scale = new osg::PositionAttitudeTransform();
+        scale->setScale(osg::Vec3(100.0,100.0,100.0));
+        scale->addChild(silo1);
+
 
         osg::PositionAttitudeTransform* move = new osg::PositionAttitudeTransform();
         move->setPosition( osg::Vec3( -35.0f, 0.0f, 3.f) );
-        move->addChild(silo1);
+        move->addChild(scale);
         finalScene->addChild(move);
 
         osg::PositionAttitudeTransform* move1 = new osg::PositionAttitudeTransform();
         move1->setPosition( osg::Vec3( -35.0f, 5.0f, 3.f) );
-        move1->addChild(silo1);
+        move1->addChild(scale);
         finalScene->addChild(move1);
 
         osg::PositionAttitudeTransform* move2 = new osg::PositionAttitudeTransform();
         move2->setPosition( osg::Vec3( -35.0f, 10.0f, 3.f) );
-        move2->addChild(silo1);
+        move2->addChild(scale);
         finalScene->addChild(move2);
 
         osg::PositionAttitudeTransform* move3 = new osg::PositionAttitudeTransform();
         move3->setPosition( osg::Vec3( -35.0f, 15.0f, 3.f) );
-        move3->addChild(silo1);
+        move3->addChild(scale);
         finalScene->addChild(move3);
 
-        silo2 = osgDB::readNodeFile(path+"silo/C0810A007.3ds");
-        //"/home/AD.EKUPD.COM/matthias.epple/Downloads/terrain-map-edit-obj/terrain-map-edit.obj"  <-- das hat mal funktioniert !
-        silo2->setName("Silo2");
         osg::PositionAttitudeTransform* move4 = new osg::PositionAttitudeTransform();
         move4->setPosition( osg::Vec3( +35.0f, -10.0f, 3.f) );
-        move4->addChild(silo2);
+        move4->addChild(scale);
         finalScene->addChild(move4);
 
         osg::PositionAttitudeTransform* move5 = new osg::PositionAttitudeTransform();
         move5->setPosition( osg::Vec3( +35.0f, -5.0f, 3.f) );
-        move5->addChild(silo2);
+        move5->addChild(scale);
         finalScene->addChild(move5);
         std::cout<<"silo loaded"<<std::endl;
  }
@@ -294,9 +295,6 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     plugin = this;
     fprintf(stderr, "EKUplugin::EKUplugin\n");
-    finalScene = new osg::Group;
-    finalScene->setName("finalScene");
-    createScene();
 
     //Create UI
     EKUMenu  = new ui::Menu("EKU", this);
@@ -352,11 +350,6 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //Optimize orientation
     OptOrient = new ui::Action(EKUMenu, "OpOrient");
     OptOrient->setCallback([this](){
-    /*   std::vector<osg::Vec3> pointsToObserve;
-        pointsToObserve.reserve(safetyZones.size());
-        for(const auto& x : safetyZones)
-            pointsToObserve.push_back(x->getPosition());
-*/
 
         for(const auto& x : allCamPositions)
         {
@@ -371,10 +364,12 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             std::cout<<" "<<std::endl;
         }
 
-        //show Points which are currently not visible
-       // findNotVisiblePoints();
-
         std::vector<osg::Matrix> finalCamMatrixes;
+        float totalCoverage = 0.0f;
+        float prio1Coverage = 0.0f;
+        float prio2Coverage = 0.0f;
+        float fitness =0.0f;
+        float time = 0.0f;
 
         /*Optimization is only done on master. Problem with random generator and multithreading on Slaves
         ->get different results on each slave!
@@ -386,12 +381,17 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             GA::nbrPoints = safetyZones.size();
 
             ga =new GA(allCamPositions,safetyZones);
-
             std::vector<std::shared_ptr<Cam>>result = ga->getfinalCamPos();
             for(const auto &x : result)
             {
                 finalCamMatrixes.push_back(x->getMatrix());
             }
+
+            totalCoverage = ga->finalTotalCoverage;
+            prio1Coverage = ga->finalPrio1Coverage;
+            prio2Coverage = ga->finalPrio2Coverage;
+            fitness = ga->fitness;
+            time = ga->optimizationTime;
 
             delete this->ga;
 
@@ -402,7 +402,13 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         }
 
         coVRMSController::instance()->syncData(finalCamMatrixes.data(),sizeof(osg::Matrix)*allCamPositions.size());
+        coVRMSController::instance()->syncFloat(totalCoverage);
+        coVRMSController::instance()->syncFloat(prio1Coverage);
+        coVRMSController::instance()->syncFloat(prio2Coverage);
+        coVRMSController::instance()->syncFloat(fitness);
+        coVRMSController::instance()->syncFloat(time);
 
+        updateOptimizationResults(totalCoverage,prio1Coverage,prio2Coverage,time,fitness);
         {// test if sync is successfull between Master and Slave
         /*    if(!coVRMSController::instance()->isMaster())
             {
@@ -453,14 +459,8 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             x->changeInteractorStatus(false);
         }
 
-    /*    for(const auto& x : allCamPositions)
-        {
-            x->updateVisibleCam();
-        //    x->camDraw->cam->calcVisMat();
-        //    for(const auto& x1: x->allCameras)
-        //        x1->calcVisMat();
-        }
-     */     //show Points which are currently not visible
+
+          //show Points which are currently not visible
           findNotVisiblePoints();
     });
 
@@ -681,14 +681,24 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     results->setText("Results");
 
     r_totalCoverage = new ui::Label(results,"totalCoverage");
+    r_totalCoverage->setText("Total:");
     r_prio1Coverage = new ui::Label(results,"prio1Coverage");
+    r_prio1Coverage->setText("PRIO 1: ");
     r_prio2Coverage = new ui::Label(results,"prio2Coverage");
+    r_prio2Coverage->setText("PRIO 2: ");
     r_fitness = new ui::Label(results,"fitness");
+    r_fitness->setText("Fitness :");
     r_nbrCams = new ui::Label(results,"nbrCams");
-    r_nbrOrientations = new ui::Label(results,"nbrOrientations");
+    r_nbrCams->setText("Cameras: ");
     r_nbrControlPoints = new ui::Label(results,"nbrControlPoints");
+    r_nbrControlPoints->setText("Control points: ");
+    r_optimizationTime = new ui::Label(results,"optTime");
+    r_optimizationTime->setText("Time: ");
+   // r_nbrOrientations = new ui::Label(results,"nbrOrientations");
 
-
+    finalScene = new osg::Group;
+    finalScene->setName("finalScene");
+    createScene();
 
 }
 
@@ -831,6 +841,9 @@ void EKU::doAddCam()
     localInteractor.setRotate(rotInteractor*rotInteractor2);
     std::shared_ptr<CamPosition> c1 =std::make_shared<CamPosition>(localInteractor);
     allCamPositions.push_back(std::move(c1));
+
+    updateNbrCams();
+
 }
 void EKU::doRemoveCam(std::shared_ptr<CamPosition> &camera)
 {
@@ -845,6 +858,8 @@ void EKU::doRemoveCam(std::shared_ptr<CamPosition> &camera)
     }
     else
         std::cout<<"No cameras available"<<std::endl;
+
+    updateNbrCams();
 }
 
 void EKU::doAddPRIO1(osg::Vec3 pos, double l,double w,double h )
@@ -857,7 +872,7 @@ void EKU::doAddPRIO1(osg::Vec3 pos, double l,double w,double h )
     cover->getObjectsRoot()->addChild(safetyZones.back()->getSZ());
 
     std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
-
+    updateNbrPoints();
 
 }
 void EKU::doAddPRIO2(osg::Vec3 pos,double l,double w,double h)
@@ -872,7 +887,7 @@ void EKU::doAddPRIO2(osg::Vec3 pos,double l,double w,double h)
     cover->getObjectsRoot()->addChild(safetyZones.back()->getSZ());
 
     std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
-
+    updateNbrPoints();
 
 }
 void EKU::doRemovePRIOZone(std::shared_ptr<SafetyZone>& s)
@@ -896,10 +911,50 @@ void EKU::updateNbrPoints()
 {
     int nbrPoints=0;
     for(const auto& x:safetyZones)
-        nbrPoints += x->getNbrControlPoints();
+        nbrPoints +=x->getNbrControlPoints();
 
     plugin->r_nbrControlPoints->setText("Control points: "+std::to_string(nbrPoints) );
-    std::cout<<nbrPoints<<std::endl;
 }
+void EKU::updateNbrCams()
+{
+    int nbrCams=0;
+    int nbrOrientations =0;
+    /*for(const auto& x:allCamPositions)
+    {
+        nbrOrientations += x->allCameras.size();
+    }
+    */
+    nbrCams = allCamPositions.size();
+    plugin->r_nbrCams->setText("Cameras: " + std::to_string(nbrCams));
+  //  plugin->r_nbrOrientations->setText("Orientations: " + std::to_string(nbrOrientations));
+
+}
+void EKU::updateCoverage(float totalCoverage, float prio1Coverage, float prio2Coverage)
+{
+    std::stringstream s1,s2,s3;
+    s1 << std::fixed << std::setprecision(1) << totalCoverage;
+    s2 << std::fixed << std::setprecision(1) << prio1Coverage;
+    s3 << std::fixed << std::setprecision(1) << prio2Coverage;
+
+    std::string total = s1.str();
+    std::string prio1 = s2.str();
+    std::string prio2 = s3.str();
+    plugin->r_totalCoverage->setText("Total: "+total+"%");
+    plugin->r_prio1Coverage->setText("PRIO 1: "+prio1+"%");
+    plugin->r_prio2Coverage->setText("PRIO 2: "+prio2+"%");
+}
+void EKU::updateOptimizationResults(float totalCoverage, float prio1Coverage, float prio2Coverage,float fitness,float time)
+{
+    updateCoverage(totalCoverage, prio1Coverage,prio2Coverage);
+
+    std::stringstream s1,s2;
+    s1 << std::fixed << std::setprecision(1) << time;
+    s2 << std::fixed << std::setprecision(2) << fitness;
+    std::string str_fitness = s1.str();
+    std::string str_time = s2.str();
+    plugin->r_fitness->setText("Fitness :" + str_fitness);
+    plugin->r_optimizationTime->setText("Time :" +str_time);
+}
+
 
 COVERPLUGIN(EKU)
