@@ -578,8 +578,9 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     VisibilityRegulator->setCallback([this](double value, bool released){
         for(const auto& x :allCamPositions)
         {
-
           x->camDraw->updateVisibility(value);
+          x->searchSpaceDrawable->updateVisibility(value);
+          x->deletedOrientationsDrawable->updateVisibility(value);
         }
     });
 
@@ -592,12 +593,9 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         for(const auto &x : allCamPositions)
         {
           x->camDraw->updateFOV(value);
-          //x->cam->calcVisMat(observationPoints);
+          x->searchSpaceDrawable->updateFOV(value);
+          x->deletedOrientationsDrawable->updateFOV(value);
         }
-      //  if(released)
-            //update visMat
-
-
     });
 
 
