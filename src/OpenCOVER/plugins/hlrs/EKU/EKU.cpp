@@ -351,10 +351,24 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     RmvCam->setCallback([this](){
             doRemoveCam(allCamPositions.back());
     });
+    //Remove all Cameras
+    rmvAllCameras = new ui::Action(EKUMenu , "removeAllCam");
+    rmvAllCameras->setText("Delete all cameras");
+    rmvAllCameras->setCallback([this](){
+            doRemoveAllCams();
+    });
+
     //Remove Safety Zone
     RmvSafetyZone = new ui::Action(EKUMenu , "removeSafetyZone");
     RmvSafetyZone->setCallback([this](){
             doRemovePRIOZone(safetyZones.back());
+    });
+
+    //Remove all Safety Zones
+    rmvAllSafetyZones = new ui::Action(EKUMenu , "removeAllSafetyZone");
+    rmvAllSafetyZones->setText("Delete all zones");
+    rmvAllSafetyZones->setCallback([this](){
+            doRemoveAllPRIOzones();
     });
 
     //Menu for Optimization
@@ -846,6 +860,17 @@ void EKU::doRemoveCam(std::shared_ptr<CamPosition> &camera)
 
     updateNbrCams();
 }
+void EKU::doRemoveAllCams()
+{
+    if(!allCamPositions.empty())
+    {
+        allCamPositions.erase(allCamPositions.begin(), allCamPositions.end());
+    }
+    else
+        std::cout<<"No cameras available"<<std::endl;
+
+    updateNbrCams();
+}
 
 void EKU::doAddPRIO1(osg::Vec3 pos, double l,double w,double h )
 {
@@ -895,6 +920,17 @@ void EKU::doRemovePRIOZone(std::shared_ptr<SafetyZone>& s)
     std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
     updateNbrPoints();
 
+}
+void EKU::doRemoveAllPRIOzones()
+{
+    if(!safetyZones.empty())
+    {
+        safetyZones.erase(safetyZones.begin(), safetyZones.end());
+    }
+    else
+        std::cout<<"No SZ available"<<std::endl;
+
+    updateNbrPoints();
 }
 void EKU::updateNbrPoints()
 {

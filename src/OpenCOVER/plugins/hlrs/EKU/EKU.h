@@ -86,9 +86,12 @@ public:
     void doRemoveTruck(std::unique_ptr<EquipmentWithCamera> &t);
     void doAddCam();
     void doRemoveCam(std::shared_ptr<CamPosition> &c);
+    void doRemoveAllCams();
     void doAddPRIO1(osg::Vec3 pos, double l, double w, double h);
     void doAddPRIO2(osg::Vec3 pos, double l, double w, double h);
     void doRemovePRIOZone(std::shared_ptr<SafetyZone> &s);
+    void doRemoveAllPRIOzones();
+
     void doCalcVisMat();
     void findNotVisiblePoints();
 
@@ -117,7 +120,9 @@ private:
     std::string path="/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/MA3dModels/";
     //UI
     ui::Menu *EKUMenu  = nullptr;
-    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*RmvCam = nullptr, *AddCam = nullptr,*OptOrient = nullptr,*OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr, *RmvSafetyZone = nullptr,*StopGA = nullptr;
+    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*RmvCam = nullptr, *AddCam = nullptr,*OptOrient = nullptr,
+    *OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr, *RmvSafetyZone = nullptr,*StopGA = nullptr,
+            *rmvAllSafetyZones = nullptr, *rmvAllCameras = nullptr;
     ui::Group *Frame = nullptr;
     ui::Label *Label = nullptr;
     ui::Button *ModifyScene = nullptr,*Delete =nullptr;//*MakeCamsInvisible = nullptr;
