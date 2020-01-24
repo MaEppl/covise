@@ -67,23 +67,11 @@ void Equipment::preFrame()
         {
             //calc the tranformation matrix when interacting is running and mouse button was pressed
             osg::Matrix trans =invStartHand * (cover->getPointerMat() * cover->getInvBaseMat());
-            //trans.setTrans(osg::Vec3(0,0,0));//For rotation
             restrictMovement(trans);
             trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),0);//set z trans to zero
             trans.orthoNormalize(trans);//remove scale
-            osg::Matrix newTrans =  startPos * osg::Matrix::translate(trans.getTrans());//newTrans is translation only
+            osg::Matrix newTrans =  startPos * trans;
 
-           /* For Rotation:
-            osg::Matrix newRot = startPos *trans;//newRot is rotation only
-            osg::Matrix rotcamPosinterActor1 = startPoscamPosinterActor1 * trans;
-            osg::Matrix rotcamPosinterActor2 = startPoscamPosinterActor2 * trans;
-            osg::Matrix rotSZ1 = startPosSZ1 * trans;
-            osg::Matrix rotSZ2 = startPosSZ2 * trans;
-
-            fullMat->setMatrix(newRot);
-
-*/
-            // For Translation:
             matrix->setMatrix(newTrans);
         }
     }
@@ -174,28 +162,14 @@ void EquipmentWithCamera::preFrame()
                 trans.setTrans(trans.getTrans().x(),trans.getTrans().y(),0);//set z trans to zero
                 trans.orthoNormalize(trans);//remove scale
 
-                osg::Matrix newTrans =  startPos * osg::Matrix::translate(trans.getTrans());//newTrans is translation only
+                osg::Matrix newTrans =  startPos * trans;
                 std::vector<osg::Matrix> transInteractor;
                 for(const auto & x:startPosCameras)
                 {
                     osg::Matrix transCam = x * osg::Matrix::translate(trans.getTrans());
                     transInteractor.push_back(transCam);
                 }
-             //   osg::Matrix transcamPosinterActor1 = startPoscamPosinterActor1 *  osg::Matrix::translate(trans.getTrans());
-             //   osg::Matrix transcamPosinterActor2 = startPoscamPosinterActor2 * osg::Matrix::translate(trans.getTrans());
 
-               /* For Rotation:
-                osg::Matrix newRot = startPos *trans;//newRot is rotation only
-                osg::Matrix rotcamPosinterActor1 = startPoscamPosinterActor1 * trans;
-                osg::Matrix rotcamPosinterActor2 = startPoscamPosinterActor2 * trans;
-
-
-                fullMat->setMatrix(newRot);
-                //update possitions of childs:
-                possibleCamLocations[0]->setPosition(rotcamPosinterActor1);
-                possibleCamLocations[1]->setPosition(rotcamPosinterActor2);
-
-    */
                 // For Translation:
                 matrix->setMatrix(newTrans);
                 //update possitions of childs:
