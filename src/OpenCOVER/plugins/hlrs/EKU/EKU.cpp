@@ -329,14 +329,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //Add PRIO1
     AddPRIO1 = new ui::Action(EKUMenu , "addPRIO1");
     AddPRIO1->setCallback([this](){
-        osg::Vec3 pos(50.0,0.0,0.8);
+        osg::Vec3 pos(50.0,0.0,1.2);
         doAddPRIO1(pos,10.0,10.0,2.0);
     });
 
     //Add PRIO2
     AddPRIO2 = new ui::Action(EKUMenu , "addPRIO2");
     AddPRIO2->setCallback([this](){
-        osg::Vec3 pos(50.0,0.0,0.8);
+        osg::Vec3 pos(50.0,0.0,1.2);
         doAddPRIO2(pos,10.0,10.0,2.0);
     });
 
