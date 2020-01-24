@@ -150,6 +150,8 @@ private:
     osg::ref_ptr<osg::Node> truckSurfaceBox;
     osg::ref_ptr<osg::Node> truckCabine;
 
+    osg::ref_ptr<osg::Node> landscape;
+
 
     void createSafetyZone(float xpos,float ypos,SafetyZone::Priority prio);
 

@@ -85,6 +85,14 @@ void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
 
 void EKU::createScene()
 {
+    std::cout<<"Load landscape"<<std::endl;
+    landscape= osgDB::readNodeFile(path+"terrain/valley.obj");
+    if (!landscape.valid())
+    {
+          osg::notify( osg::FATAL ) << "Unable to load landscape data file. Exiting." << std::endl;
+    }
+    landscape->setName("Landscape");
+    finalScene->addChild(landscape);
 
     truck = osgDB::readNodeFile(path + "PumpTruck.3ds");
     if (!truck.valid())
@@ -94,7 +102,7 @@ void EKU::createScene()
     truck->setName("Pump Truck");
     //draw Pumps:
     osg::Matrix pos;
-    pos.setTrans(11,0,0);
+    pos.setTrans(11,-10,0);
     doAddTruck(pos);
     int cnt =0;
     for(int i = 0;i<13;i++)
@@ -136,10 +144,15 @@ void EKU::createScene()
         osg::Quat q;
         q.makeRotate(osg::DegreesToRadians(90.0),osg::Z_AXIS);
         osg::Matrix m;
-        m.setTrans(0,10,0);
+        m.setTrans(0,-4,0);
         m.setRotate(q);
         std::unique_ptr<Equipment> manifoldNew(new Equipment(name,m,manifold));
         equipment.push_back(std::move(manifoldNew));
+
+        std::string name2 = "Manifol1d2";
+        m.setTrans(0,11,0);
+        std::unique_ptr<Equipment> manifoldNew2(new Equipment(name2,m,manifold));
+        equipment.push_back(std::move(manifoldNew2));
 
     }
     //add blender
@@ -153,7 +166,7 @@ void EKU::createScene()
         blender->setName(name);
         std::vector<osg::Matrix> vecOfCameras;
         osg::Matrix matBlender;
-        matBlender.setTrans(0,-7,0);
+        matBlender.setTrans(0,-17,0);
         osg::Matrix cam1,cam2;
         cam1.setTrans(7,1.5,2.5);
         cam2.setTrans(-3,1.5,2.5);
@@ -173,7 +186,7 @@ void EKU::createScene()
         dataVan->setName(name);
         std::vector<osg::Matrix> vecOfCameras;
         osg::Matrix matDataVan;
-        matDataVan.setTrans(10,50,0);
+        matDataVan.setTrans(10,40,0);
         osg::Matrix cam1,cam2;
         cam1.setTrans(0,-1.5,3.2);
         cam2.setTrans(-4,-1.5,3.2);
@@ -201,14 +214,14 @@ void EKU::createScene()
         osg::Quat q;
         q.makeRotate(osg::DegreesToRadians(0.0),osg::Z_AXIS);
         osg::Matrix m;
-        m.setTrans(0,40,0);
+        m.setTrans(0,30,0);
         m.setRotate(q);
         std::unique_ptr<Equipment> christmasTreeNew(new Equipment(name,m,christmasTree));
         equipment.push_back(std::move(christmasTreeNew));
-        m.setTrans(-10,40,0);
+        m.setTrans(-10,30,0);
         std::unique_ptr<Equipment> christmasTreeNew1(new Equipment(name+"1",m,christmasTree));
         equipment.push_back(std::move(christmasTreeNew1));
-        m.setTrans(10,40,0);
+        m.setTrans(10,30,0);
         std::unique_ptr<Equipment> christmasTreeNew2(new Equipment(name+"2",m,christmasTree));
         equipment.push_back(std::move(christmasTreeNew2));
     }
@@ -226,32 +239,32 @@ void EKU::createScene()
 
 
         osg::PositionAttitudeTransform* move = new osg::PositionAttitudeTransform();
-        move->setPosition( osg::Vec3( -35.0f, 0.0f, 3.f) );
+        move->setPosition( osg::Vec3( -35.0f, 0.0f, 0.f) );
         move->addChild(scale);
         finalScene->addChild(move);
 
         osg::PositionAttitudeTransform* move1 = new osg::PositionAttitudeTransform();
-        move1->setPosition( osg::Vec3( -35.0f, 5.0f, 3.f) );
+        move1->setPosition( osg::Vec3( -35.0f, 5.0f, 0.f) );
         move1->addChild(scale);
         finalScene->addChild(move1);
 
         osg::PositionAttitudeTransform* move2 = new osg::PositionAttitudeTransform();
-        move2->setPosition( osg::Vec3( -35.0f, 10.0f, 3.f) );
+        move2->setPosition( osg::Vec3( -35.0f, 10.0f, 0.f) );
         move2->addChild(scale);
         finalScene->addChild(move2);
 
         osg::PositionAttitudeTransform* move3 = new osg::PositionAttitudeTransform();
-        move3->setPosition( osg::Vec3( -35.0f, 15.0f, 3.f) );
+        move3->setPosition( osg::Vec3( -35.0f, 15.0f, 0.f) );
         move3->addChild(scale);
         finalScene->addChild(move3);
 
         osg::PositionAttitudeTransform* move4 = new osg::PositionAttitudeTransform();
-        move4->setPosition( osg::Vec3( +35.0f, -10.0f, 3.f) );
+        move4->setPosition( osg::Vec3( +35.0f, -10.0f, 0.f) );
         move4->addChild(scale);
         finalScene->addChild(move4);
 
         osg::PositionAttitudeTransform* move5 = new osg::PositionAttitudeTransform();
-        move5->setPosition( osg::Vec3( +35.0f, -5.0f, 3.f) );
+        move5->setPosition( osg::Vec3( +35.0f, -5.0f, 0.f) );
         move5->addChild(scale);
         finalScene->addChild(move5);
         std::cout<<"silo loaded"<<std::endl;
@@ -316,14 +329,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //Add PRIO1
     AddPRIO1 = new ui::Action(EKUMenu , "addPRIO1");
     AddPRIO1->setCallback([this](){
-        osg::Vec3 pos(0.0,-20.0,0.5);
+        osg::Vec3 pos(50.0,0.0,0.8);
         doAddPRIO1(pos,10.0,10.0,2.0);
     });
 
     //Add PRIO2
     AddPRIO2 = new ui::Action(EKUMenu , "addPRIO2");
     AddPRIO2->setCallback([this](){
-        osg::Vec3 pos(10.0,-20.0,0.5);
+        osg::Vec3 pos(50.0,0.0,0.8);
         doAddPRIO2(pos,10.0,10.0,2.0);
     });
 
@@ -837,7 +850,7 @@ void EKU::doAddCam()
     rotInteractor.makeRotate(osg::DegreesToRadians(180.0),osg::Z_AXIS);
    // rotInteractor2.makeRotate(osg::DegreesToRadians(45.0),osg::X_AXIS);
 
-  //  localInteractor.setTrans(osg::Vec3(0,-30,5));
+    localInteractor.setTrans(osg::Vec3(50,0,10));
     localInteractor.setRotate(rotInteractor*rotInteractor2);
     std::shared_ptr<CamPosition> c1 =std::make_shared<CamPosition>(localInteractor);
     allCamPositions.push_back(std::move(c1));

@@ -670,7 +670,7 @@ Point::Point(osg::Vec3 pos,osg::Vec4 color):color(color),visibleForEnoughCameras
     localDCS = new osg::MatrixTransform();
     localDCS->setMatrix(local);
     localDCS->setName("Translation");
-    sphere = new osg::Sphere(osg::Vec3(0,0,0), 0.35);
+    sphere = new osg::Sphere(osg::Vec3(0,0,0), 0.45);
     sphereDrawable = new osg::ShapeDrawable(sphere);
     //red color
     sphereDrawable->setColor(color);
