@@ -77,7 +77,7 @@ osg::Geode* SafetyZone::plotSafetyZone()
 {
     osg::Geode* geode = new osg::Geode();
     geode->setName("Wireframe");
-    osg::Geometry* geom = new osg::Geometry();
+    geom = new osg::Geometry();
     osg::StateSet *stateset = geode->getOrCreateStateSet();
     setStateSet(stateset);
     //necessary for dynamic redraw (command:dirty)
@@ -195,7 +195,9 @@ void SafetyZone::setStateSet(osg::StateSet *stateSet)
     defaultLm->setTwoSided(true);
     defaultLm->setColorControl(osg::LightModel::SINGLE_COLOR);
     stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
-     stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
+    stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
+    stateSet->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+
 
 }
 void SafetyZone::createPoints()
@@ -531,6 +533,7 @@ void SafetyZone::updateGeometryY(double y)
      verts->at(7) =osg::Vec3(verts->at(7).x(),y,verts->at(7).z());
      verts->at(0) =osg::Vec3(verts->at(0).x(),y,verts->at(0).z());
      verts->dirty();
+     geom->dirtyBound();
      width = std::abs(verts->at(7).y()-verts->at(6).y());
 
 }
@@ -541,6 +544,7 @@ void SafetyZone::updateGeometryX(double x)
     verts->at(5) =osg::Vec3(x,verts->at(5).y(),verts->at(5).z());
     verts->at(1) =osg::Vec3(x,verts->at(1).y(),verts->at(1).z());
     verts->dirty();
+    geom->dirtyBound();
     length= std::abs(verts->at(5).x()-verts->at(6).x());
 }
 

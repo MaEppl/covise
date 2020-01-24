@@ -108,6 +108,7 @@ private:
     osg::ref_ptr<osg::Vec3Array> verts;
     osg::ref_ptr<osg::Vec4Array> colors;
     osg::ref_ptr<osg::Geode> camGeode;
+    osg::ref_ptr<osg::Geometry> geom;
 
  /*  osg::ref_ptr<osg::Vec3Array> vertsSRC;
     osg::ref_ptr<osg::Vec4Array> colorsSRC;

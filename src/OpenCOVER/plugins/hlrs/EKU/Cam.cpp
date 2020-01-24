@@ -300,6 +300,7 @@ void CamDrawable::setStateSet(osg::StateSet *stateSet)
     defaultLm->setColorControl(osg::LightModel::SINGLE_COLOR);
     stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
     stateSet->setAttributeAndModes(defaultLm, osg::StateAttribute::ON);
+    stateSet->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
 }
 
 
@@ -354,7 +355,7 @@ osg::Geode* CamDrawable::plotCam(bool showLines,osg::Vec4 color)
     // The Drawable geometry is held under Geode objects.
     osg::Geode* geode = new osg::Geode();
     geode->setName("Pyramid");
-    osg::Geometry* geom = new osg::Geometry();
+    geom = new osg::Geometry();
     osg::StateSet *stateset = geode->getOrCreateStateSet();
     //necessary for dynamic redraw (command:dirty)
     geom->setDataVariance(osg::Object::DataVariance::DYNAMIC) ;
@@ -481,6 +482,7 @@ void CamDrawable::updateFOV(float value)
         verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
     }
     verts->dirty();
+    geom->dirtyBound();
 
 }
 
@@ -507,6 +509,7 @@ void CamDrawable::updateVisibility(float value)
         verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
     }
     verts->dirty();
+    geom->dirtyBound();
 }
 void CamDrawable::showRealSize()
 {
@@ -517,6 +520,7 @@ void CamDrawable::showRealSize()
     verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak                             ;
 
     verts->dirty();
+    geom->dirtyBound();
 }
 void CamDrawable::resetSize()
 {
@@ -537,6 +541,7 @@ void CamDrawable::resetSize()
         verts->at(4) = osg::Vec3( 0,  0,  0); // 4 peak
     }
     verts->dirty();
+    geom->dirtyBound();
 
 }
 

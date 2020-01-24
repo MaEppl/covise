@@ -84,6 +84,7 @@ private:
     osg::Vec4 color;
     osg::ref_ptr<osg::Geode> safetyZoneGeode;
     osg::ref_ptr<osg::Vec3Array> verts;
+    osg::ref_ptr<osg::Geometry> geom;
     std::vector<std::vector<std::unique_ptr<Point>>> points; //vector of control points
 
 
