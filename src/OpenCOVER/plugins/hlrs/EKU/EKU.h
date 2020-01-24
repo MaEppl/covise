@@ -146,29 +146,14 @@ private:
     osg::ref_ptr<osg::Node> blender;
     osg::ref_ptr<osg::Node> dataVan;
     osg::ref_ptr<osg::Node> truck;
-
     osg::ref_ptr<osg::Node> truckSurfaceBox;
     osg::ref_ptr<osg::Node> truckCabine;
-
     osg::ref_ptr<osg::Node> landscape;
 
 
     void createSafetyZone(float xpos,float ypos,SafetyZone::Priority prio);
-
-    //Raycasting for intersection calculation is too slow with many vertices
-    void disactivateDetailedRendering(){
-         truck->setNodeMask(0);
-         truckSurfaceBox->setNodeMask(UINT_MAX);
-    }
-    void activateDetailedRendering(){
-         truck->setNodeMask(UINT_MAX);
-         truckSurfaceBox->setNodeMask(0);
-    }
-
     void calcPercentageOfCoveredSafetyZones();
-
-    CamPosition *testCam;
-
+    void changeStatusOfInteractors(bool status);
 
 };
 

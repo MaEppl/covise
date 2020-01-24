@@ -576,13 +576,11 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     VisibilityRegulator->setBounds(10., 100.);
     VisibilityRegulator->setValue(Cam::depthView);
     VisibilityRegulator->setCallback([this](double value, bool released){
-       // this->disactivateDetailedRendering();
         for(const auto& x :allCamPositions)
         {
 
           x->camDraw->updateVisibility(value);
         }
-      //  this-> activateDetailedRendering();
     });
 
     //FOV
@@ -591,7 +589,6 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     FOVRegulator->setBounds(30., 120.);
     FOVRegulator->setValue(Cam::fov);
     FOVRegulator->setCallback([this](double value, bool released){
-       // this->disactivateDetailedRendering();
         for(const auto &x : allCamPositions)
         {
           x->camDraw->updateFOV(value);
@@ -600,7 +597,6 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
       //  if(released)
             //update visMat
 
-        //  this-> activateDetailedRendering();
 
     });
 
@@ -653,31 +649,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     ModifyScene->setText("ModifyScene");
     ModifyScene->setState(true);
     ModifyScene->setCallback([this](bool state){
-       modifyScene = state;
-       if(modifyScene == false)
-       {
-         for(const auto& x : safetyZones)
-         {
-             x->changeInteractorStatus(false);
-         }
-
-         for(const auto& x : allCamPositions)
-         {
-             x->updateVisibleCam();
-             x->createCamsInSearchSpace();
-
-         }
-           //show Points which are currently not visible
-           findNotVisiblePoints();
-       }
-       else
-       {
-           for(const auto& x : safetyZones)
-           {
-               x->changeInteractorStatus(true);
-           }
-
-       }
+       changeStatusOfInteractors(state);
     });
 
     //Delete Selected Objects
@@ -799,6 +771,7 @@ void EKU::doAddTruck(osg::Matrix pos )
     std::string name ="Pump";
     std::unique_ptr<EquipmentWithCamera> pumpTruck(new EquipmentWithCamera(name,pos,truck,vecOfCameras));
     equipmentWithCamera.push_back(std::move(pumpTruck));
+    changeStatusOfInteractors(true);
 }
 
 
@@ -856,6 +829,7 @@ void EKU::doAddCam()
     allCamPositions.push_back(std::move(c1));
 
     updateNbrCams();
+    changeStatusOfInteractors(true);
 
 }
 void EKU::doRemoveCam(std::shared_ptr<CamPosition> &camera)
@@ -886,6 +860,8 @@ void EKU::doAddPRIO1(osg::Vec3 pos, double l,double w,double h )
 
     std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
     updateNbrPoints();
+    changeStatusOfInteractors(true);
+
 
 }
 void EKU::doAddPRIO2(osg::Vec3 pos,double l,double w,double h)
@@ -901,6 +877,8 @@ void EKU::doAddPRIO2(osg::Vec3 pos,double l,double w,double h)
 
     std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
     updateNbrPoints();
+    changeStatusOfInteractors(true);
+
 
 }
 void EKU::doRemovePRIOZone(std::shared_ptr<SafetyZone>& s)
@@ -968,6 +946,36 @@ void EKU::updateOptimizationResults(float totalCoverage, float prio1Coverage, fl
     plugin->r_fitness->setText("Fitness :" + str_fitness);
     plugin->r_optimizationTime->setText("Time :" +str_time);
 }
+void EKU::changeStatusOfInteractors(bool status)
+{
+    ModifyScene->setState(status);
+    modifyScene = status;
+    if(modifyScene == false)
+    {
+      for(const auto& x : safetyZones)
+      {
+          x->changeInteractorStatus(false);
+      }
+
+      for(const auto& x : allCamPositions)
+      {
+          x->updateVisibleCam();
+          x->createCamsInSearchSpace();
+
+      }
+        //show Points which are currently not visible
+        findNotVisiblePoints();
+    }
+    else
+    {
+        for(const auto& x : safetyZones)
+        {
+            x->changeInteractorStatus(true);
+        }
+
+    }
+}
+
 
 
 COVERPLUGIN(EKU)
