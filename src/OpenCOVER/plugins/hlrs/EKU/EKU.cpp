@@ -392,12 +392,6 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         }
 
         std::vector<osg::Matrix> finalCamMatrixes;
-        float totalCoverage = 0.0f;
-        float prio1Coverage = 0.0f;
-        float prio2Coverage = 0.0f;
-        float fitness =0.0f;
-        float time = 0.0f;
-
         /*Optimization is only done on master. Problem with random generator and multithreading on Slaves
         ->get different results on each slave!
         */
@@ -414,13 +408,16 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
                 finalCamMatrixes.push_back(x->getMatrix());
             }
 
-            totalCoverage = ga->finalTotalCoverage;
-            prio1Coverage = ga->finalPrio1Coverage;
-            prio2Coverage = ga->finalPrio2Coverage;
-            fitness = ga->fitness;
-            time = ga->optimizationTime;
+            //only master has optimization results in memory, slaves not synced !
+            float totalCoverage = ga->finalTotalCoverage;
+            float prio1Coverage = ga->finalPrio1Coverage;
+            float prio2Coverage = ga->finalPrio2Coverage;
+            float fitness = ga->fitness;
+            float time = ga->optimizationTime;
+            updateOptimizationResults(totalCoverage,prio1Coverage,prio2Coverage,time,fitness);
 
             delete this->ga;
+
 
          }
         if(!coVRMSController::instance()->isMaster())
@@ -429,13 +426,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         }
 
         coVRMSController::instance()->syncData(finalCamMatrixes.data(),sizeof(osg::Matrix)*allCamPositions.size());
-        coVRMSController::instance()->syncFloat(totalCoverage);
-        coVRMSController::instance()->syncFloat(prio1Coverage);
-        coVRMSController::instance()->syncFloat(prio2Coverage);
-        coVRMSController::instance()->syncFloat(fitness);
-        coVRMSController::instance()->syncFloat(time);
 
-        updateOptimizationResults(totalCoverage,prio1Coverage,prio2Coverage,time,fitness);
         {// test if sync is successfull between Master and Slave
         /*    if(!coVRMSController::instance()->isMaster())
             {
