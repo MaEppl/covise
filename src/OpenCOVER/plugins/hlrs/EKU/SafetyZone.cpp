@@ -278,7 +278,7 @@ void SafetyZone::createPoints()
     std::cout<<"number of elements in vetor: "<<points.back().size()<<std::endl;
 }
 
-void SafetyZone::preFrame()
+bool SafetyZone::preFrame()
 {
     interactor->preFrame();
     sizeYInteractor->preFrame();
@@ -290,6 +290,8 @@ void SafetyZone::preFrame()
     static osg::Vec3 startPos_Interactor_o, startPos_YInteractor_o, startPos_XInteractor_o,startPos_PDInteractor_o;
     if(interactor->wasStarted())
     {
+        if(EKU::deleteObjects)
+            return false;
 
         osg::Matrix interactor_to_w = interactor->getMatrix();
         startPos_YInteractor_w = sizeYInteractor->getPos();
@@ -521,6 +523,7 @@ void SafetyZone::preFrame()
       //  std::cout<<"PD: "<<preferredDirection.x()<<" "<<preferredDirection.y()<<" "<<preferredDirection.z()<<std::endl;
     }
 
+    return true;
 }
 
 

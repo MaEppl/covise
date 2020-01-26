@@ -44,7 +44,14 @@ void EKU::preFrame()
     if(modifyScene)
     {
         for(const auto &x: safetyZones)
-            x->preFrame();
+        {
+            bool status = x->preFrame();
+            if(!status)
+            {
+                doRemovePRIOZone(x);
+                return;
+            }
+        }
         for(const auto &x : equipment)
             x->preFrame();
         for(const auto &x : equipmentWithCamera)
@@ -904,13 +911,13 @@ void EKU::doAddPRIO2(osg::Vec3 pos,double l,double w,double h)
     safetyZones.push_back(std::move(sz));
     cover->getObjectsRoot()->addChild(safetyZones.back()->getSZ());
 
-    std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
+    std::cout<<"new nbr of SZ: "<<safetyZones.size()<<std::endl;
     updateNbrPoints();
     changeStatusOfInteractors(true);
 
 
 }
-void EKU::doRemovePRIOZone(std::shared_ptr<SafetyZone>& s)
+void EKU::doRemovePRIOZone(std::shared_ptr<SafetyZone>const& s)
 {
     if(!safetyZones.empty())
     {
@@ -923,7 +930,6 @@ void EKU::doRemovePRIOZone(std::shared_ptr<SafetyZone>& s)
     else
         std::cout<<"No SZ available"<<std::endl;
 
-    std::cout<<"nbr of SZ: "<<safetyZones.size()<<std::endl;
     updateNbrPoints();
 
 }

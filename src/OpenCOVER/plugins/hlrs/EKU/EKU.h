@@ -78,7 +78,7 @@ class EKU: public opencover::coVRPlugin, public opencover::ui::Owner
     friend class mySensor;
 public:
     static bool modifyScene;
-    static bool deleteObjects;
+    static bool deleteObjects;//delete selected objects
     EKU();
     ~EKU();
     bool init();
@@ -89,7 +89,7 @@ public:
     void doRemoveAllCams();
     void doAddPRIO1(osg::Vec3 pos, double l, double w, double h);
     void doAddPRIO2(osg::Vec3 pos, double l, double w, double h);
-    void doRemovePRIOZone(std::shared_ptr<SafetyZone> &s);
+    void doRemovePRIOZone(const std::shared_ptr<SafetyZone> &s);
     void doRemoveAllPRIOzones();
 
     void doCalcVisMat();

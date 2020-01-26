@@ -63,7 +63,7 @@ public:
     void setPointDistance(double dist);
     std::string &getName(){return name;}
 
-    void preFrame();
+    bool preFrame();
     osg::ref_ptr<osg::MatrixTransform> localDCS;
     osg::ref_ptr<osg::MatrixTransform> getSZ()const{return localDCS.get();}
 
