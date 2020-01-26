@@ -60,16 +60,16 @@ SafetyZone::SafetyZone(osg::Matrix m, Priority priority, float length = 2, float
     local.setTrans(startPosPreferredDirection);
     local.setRotate(q);
     preferredDirectionInteractor = new coVR3DTransRotInteractor(local,_interSize/3,vrui::coInteraction::ButtonA, "hand", "preferredDirectionInteractor", vrui::coInteraction::Medium);
-    preferredDirectionInteractor->show();
-    preferredDirectionInteractor->enableIntersection();
+    preferredDirectionInteractor->hide();
+    preferredDirectionInteractor->disableIntersection();
     preferredDirection =  calcDirectionVec(local);
 
     osg::Quat q2;
     q2.makeRotate(osg::DegreesToRadians(90.0),osg::X_AXIS);
     local.setRotate(q2);
     preferredDirectionInteractor2 = new coVR3DTransRotInteractor(local,_interSize/3,vrui::coInteraction::ButtonA, "hand", "preferredDirectionInteractor2", vrui::coInteraction::Medium);
-    preferredDirectionInteractor2->show();
-    preferredDirectionInteractor2->enableIntersection();
+    preferredDirectionInteractor2->hide();
+    preferredDirectionInteractor2->disableIntersection();
 
     updateWorldPosOfAllObservationPoints();
 }
