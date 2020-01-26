@@ -35,7 +35,6 @@ class SafetyZone
 public:
 
     osg::Box *zone;
-
     enum Priority{
         PRIO2 = 1, // must be observed with at least 1 camera
         PRIO1 = 2, //must be observed with at least 2 cameras
@@ -50,7 +49,6 @@ public:
     void resetColor(const std::vector<double> &reset)const;
     void changeInteractorStatus(bool status);
     void pointsVisibleForEnoughCameras(const std::vector<double>& update)const;
-   // osg::Vec3 getPosition(){return mat.getTrans();}
     int getPriority(){return priority;}
     void setPosition( osg::Matrix matrix1)
     {
@@ -61,20 +59,19 @@ public:
     osg::Matrix getMatrix(){return localDCS.get()->getMatrix();}
     std::vector<osg::Vec3>& getWorldPosOfAllObservationPoints(){return worldPosOfAllObservationPoints;}
     osg::Vec3 &getPreferredDirection(){return preferredDirection;}
-    int getNbrControlPoints(){return nbrControlPoints;}const
-
+    int getNbrControlPoints()const{return nbrControlPoints;}
+    void setPointDistance(double dist);
     std::string &getName(){return name;}
 
     void preFrame();
     osg::ref_ptr<osg::MatrixTransform> localDCS;
     osg::ref_ptr<osg::MatrixTransform> getSZ()const{return localDCS.get();}
-   // osg::ref_ptr<osg::Geode> getSZ()const{return safetyZoneGeode.get();}
 
 private:
     float length = 2;
     float width = 2;
     float height = 8;
-    const double distance =3; //distance between Points
+    double distance = 3; //distance between Points
     const int priority;
     int nbrControlPoints;
     osg::Vec3 preferredDirection;//Direction from which SZ should be observed (x,y,z)

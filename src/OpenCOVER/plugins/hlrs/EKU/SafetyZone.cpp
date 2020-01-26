@@ -548,6 +548,24 @@ void SafetyZone::updateGeometryX(double x)
     length= std::abs(verts->at(5).x()-verts->at(6).x());
 }
 
+
+void SafetyZone::setPointDistance(double dist)
+{
+    //remove all points
+    for(const auto& x : points )
+    {
+        for(const auto& x1 :x)
+            localDCS->removeChild(x1->getPoint());
+
+    }
+    points.clear();
+
+    distance = dist;
+
+    createPoints();
+    updateWorldPosOfAllObservationPoints();
+
+}
 SafetyZone::~SafetyZone()
 {
     delete interactor;

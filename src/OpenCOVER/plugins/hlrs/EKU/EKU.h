@@ -142,6 +142,10 @@ private:
     ui::Button  *ShowSearchSpace = nullptr,*ShowDeletedSearchSpace = nullptr,*ShowRealSize = nullptr;
     ui::Action *calcVisMat = nullptr;
 
+    //Menu for safety zones
+    ui::Menu *safetyZoneMenu = nullptr;
+    ui::Slider *distanceControlPoints = nullptr;
+
     //Equipment
     void createScene();
     osg::ref_ptr<osg::Node> silo1;

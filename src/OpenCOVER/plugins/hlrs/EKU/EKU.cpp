@@ -684,6 +684,21 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     r_optimizationTime->setText("Time: ");
    // r_nbrOrientations = new ui::Label(results,"nbrOrientations");
 
+    //Menu for Safety zones
+    safetyZoneMenu = new ui::Menu(EKUMenu, "SafetyZones");
+    safetyZoneMenu->setText("Safety zones");
+    distanceControlPoints = new ui::Slider(safetyZoneMenu , "distance");
+    distanceControlPoints->setText("Distance");
+    distanceControlPoints->setBounds(2., 6.);
+    distanceControlPoints->setValue(3.);
+    distanceControlPoints->setCallback([this](double value, bool released){
+
+    for(const auto& x : safetyZones)
+         x->setPointDistance(value);
+
+    });
+
+
     finalScene = new osg::Group;
     finalScene->setName("finalScene");
     createScene();
