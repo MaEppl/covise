@@ -146,9 +146,9 @@ void Cam::calcVisMat()
                             else if(p->getPriority() ==SafetyZone::PRIO2)
                             {
                                 visMatPrio2.push_back(1);
-                                double SRC = 1.0;//calcRangeDistortionFactor(newPoint);
+                                double SRC = calcRangeDistortionFactor(newPoint);
                                 double SWC = calcWidthDistortionFactor(newPoint);
-                                double SHC = 1.0;//calcHeightDistortionFactor(newPoint);
+                                double SHC = calcHeightDistortionFactor(newPoint);
                                 distortionValuePrio2.push_back(SRC*SWC*SHC*PDC);
                                 //std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
 
