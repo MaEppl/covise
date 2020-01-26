@@ -166,7 +166,7 @@ void EquipmentWithCamera::preFrame()
                 std::vector<osg::Matrix> transInteractor;
                 for(const auto & x:startPosCameras)
                 {
-                    osg::Matrix transCam = x * osg::Matrix::translate(trans.getTrans());
+                    osg::Matrix transCam = x * trans;
                     transInteractor.push_back(transCam);
                 }
 
