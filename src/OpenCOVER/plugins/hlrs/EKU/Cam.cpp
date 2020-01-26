@@ -89,7 +89,7 @@ void Cam::calcVisMat()
            // visMatForThisSafetyZone.reserve(p->getWorldPosOfAllObservationPoints().size());
 
             //Preferred Direction Coefficient is equal for whole safety zone
-            double PDC = calcPreferredDirectionFactor(p->getPreferredDirection());
+            double PDC = 1.0;//calcPreferredDirectionFactor(p->getPreferredDirection()); // not using PDC
             size_t count=0;
             for(const auto& p1 :p->getWorldPosOfAllObservationPoints())
             {
