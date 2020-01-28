@@ -306,7 +306,6 @@ void CamDrawable::setStateSet(osg::StateSet *stateSet)
 
 CamDrawable::~CamDrawable()
 {
-    std::cout<<"deleted CamDrawable"<<std::endl;
     count--;
 }
 
@@ -663,8 +662,6 @@ CamPosition::~CamPosition()
 
     switchNode->getParent(0)->removeChild(switchNode.get());
      delete viewpointInteractor;
-
-    std::cout<<"deleted Camposition: "<<name<<std::endl;
 
 }
 void CamPosition::preFrame()

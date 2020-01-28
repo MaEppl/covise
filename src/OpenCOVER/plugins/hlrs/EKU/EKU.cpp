@@ -714,7 +714,11 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
 EKU::~EKU()
 {
-    fprintf(stderr, "BorePlugin::~BorePlugin\n");
+    safetyZones.clear();
+    equipment.clear();
+    equipmentWithCamera.clear();
+    allCamPositions.clear();
+    fprintf(stderr, "closed EKU Plugin\n");
 
 }
 bool EKU::init()
