@@ -972,12 +972,23 @@ bool Cam::operator>>(const Cam& other)const
        return false;
     else if(onlyInThisCam ==0 && onlyInOtherCam ==0) //both cameras see exactly the same points --> check other Cam characteristics
     {
-        double coefThis = std::accumulate(distortionValuePrio1.begin(),distortionValuePrio1.end(),0.0) + std::accumulate(distortionValuePrio2.begin(),distortionValuePrio2.end(),0.0);
-        double coefOther = std::accumulate(other.distortionValuePrio1.begin(),other.distortionValuePrio1.end(),0.0) + std::accumulate(other.distortionValuePrio2.begin(),other.distortionValuePrio2.end(),0.0);
-        if(coefOther > coefThis)
+        coCoord eulerThis = mat;
+        double angleThis = eulerThis.hpr[2];
+        coCoord eulerOther = other.mat;
+        double angleOther = eulerOther.hpr[2];
+        if(angleThis ==0 && angleOther != 0) //rotation around own axis not wanted, because it's unrealistic
+            return true;
+        else if(angleOther ==0 && angleThis != 0)
             return false;
         else
-            return true;
+        {
+            double coefThis = std::accumulate(distortionValuePrio1.begin(),distortionValuePrio1.end(),0.0) + std::accumulate(distortionValuePrio2.begin(),distortionValuePrio2.end(),0.0);
+            double coefOther = std::accumulate(other.distortionValuePrio1.begin(),other.distortionValuePrio1.end(),0.0) + std::accumulate(other.distortionValuePrio2.begin(),other.distortionValuePrio2.end(),0.0);
+            if(coefOther > coefThis)
+                return false;
+            else
+                return true;
+        }
     }
 
 }
