@@ -319,68 +319,6 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //Create UI
     EKUMenu  = new ui::Menu("EKU", this);
 
-    //Add Truck
-    AddTruck = new ui::Action(EKUMenu , "addTruck");
-    AddTruck->setCallback([this](){
-        osg::Matrix pos;
-        pos.setTrans(50,0,0);
-        doAddTruck(pos);
-    });
-
-    //Add Cam
-    AddCam = new ui::Action(EKUMenu , "addCam");
-    AddCam->setCallback([this](){
-        doAddCam();
-    });
-
-    //Add PRIO1
-    AddPRIO1 = new ui::Action(EKUMenu , "addPRIO1");
-    AddPRIO1->setCallback([this](){
-        osg::Vec3 pos(50.0,0.0,1.2);
-        doAddPRIO1(pos,10.0,10.0,2.0);
-    });
-
-    //Add PRIO2
-    AddPRIO2 = new ui::Action(EKUMenu , "addPRIO2");
-    AddPRIO2->setCallback([this](){
-        osg::Vec3 pos(50.0,0.0,1.2);
-        doAddPRIO2(pos,10.0,10.0,2.0);
-    });
-
-    //Remove Truck
-    RmvTruck = new ui::Action(EKUMenu , "removeTruck");
-    RmvTruck->setCallback([this](){
-            doRemoveTruck(equipmentWithCamera.back());
-    });
-
-    //Remove Cam
-    RmvCam = new ui::Action(EKUMenu , "removeCam");
-    RmvCam->setCallback([this](){
-            doRemoveCam(allCamPositions.back());
-    });
-    //Remove all Cameras
-    rmvAllCameras = new ui::Action(EKUMenu , "removeAllCam");
-    rmvAllCameras->setText("Delete all cameras");
-    rmvAllCameras->setCallback([this](){
-            doRemoveAllCams();
-    });
-
-    //Remove Safety Zone
-    RmvSafetyZone = new ui::Action(EKUMenu , "removeSafetyZone");
-    RmvSafetyZone->setCallback([this](){
-            doRemovePRIOZone(safetyZones.back());
-    });
-
-    //Remove all Safety Zones
-    rmvAllSafetyZones = new ui::Action(EKUMenu , "removeAllSafetyZone");
-    rmvAllSafetyZones->setText("Delete all zones");
-    rmvAllSafetyZones->setCallback([this](){
-            doRemoveAllPRIOzones();
-    });
-
-    //Menu for Optimization
-    Optimize = new ui::Menu(EKUMenu, "Optimize");
-    Optimize->setText("Optimize");
     //Optimize orientation
     OptOrient = new ui::Action(EKUMenu, "OpOrient");
     OptOrient->setCallback([this](){
@@ -488,15 +426,108 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
           //show Points which are currently not visible
           findNotVisiblePoints();
     });
+    //Calc VisMat
+    calcVisMat = new ui::Action(EKUMenu , "calcVisMat");
+    calcVisMat->setCallback([this](){
+    /*    std::vector<osg::Vec3> pointsToObserve;
+        pointsToObserve.reserve(safetyZones.size());
+        for(const auto& x : safetyZones)
+            pointsToObserve.push_back(x->getPosition());
+*/
+        for(const auto& x : allCamPositions)
+        {
+            x->updateVisibleCam();
+          /*  x->camDraw->cam->calcVisMat();
+            for(const auto& x1: x->allCameras)
+                x1->calcVisMat();
+                */
+        }
+        findNotVisiblePoints();
+
+    });
+    world = new ui::Menu(EKUMenu,"World");
+    world->setText("World");
+
+    //Add Cam
+    AddCam = new ui::Action(world , "addCam");
+    AddCam->setCallback([this](){
+        doAddCam();
+    });
+
+    //Add PRIO1
+    AddPRIO1 = new ui::Action(world , "addPRIO1");
+    AddPRIO1->setCallback([this](){
+        osg::Vec3 pos(50.0,0.0,1.2);
+        doAddPRIO1(pos,10.0,10.0,2.0);
+    });
+
+    //Add PRIO2
+    AddPRIO2 = new ui::Action(world , "addPRIO2");
+    AddPRIO2->setCallback([this](){
+        osg::Vec3 pos(50.0,0.0,1.2);
+        doAddPRIO2(pos,10.0,10.0,2.0);
+    });
+
+    //Add Truck
+    AddTruck = new ui::Action(world , "addTruck");
+    AddTruck->setCallback([this](){
+        osg::Matrix pos;
+        pos.setTrans(50,0,0);
+        doAddTruck(pos);
+    });
+
+    //Delete Selected Objects
+    Delete = new ui::Button(world , "Delete");
+    Delete->setText("Delete Selected Objects");
+    Delete->setState(false);
+    Delete->setCallback([this](bool state){
+        deleteObjects = state;
+    });
+
+    //Remove Safety Zone
+    RmvSafetyZone = new ui::Action(world , "removeSafetyZone");
+    RmvSafetyZone->setCallback([this](){
+            doRemovePRIOZone(safetyZones.back());
+    });
+    //Remove Truck
+    RmvTruck = new ui::Action(world , "removeTruck");
+    RmvTruck->setCallback([this](){
+            doRemoveTruck(equipmentWithCamera.back());
+    });
+
+    //Remove Cam
+    RmvCam = new ui::Action(world , "removeCam");
+    RmvCam->setCallback([this](){
+            doRemoveCam(allCamPositions.back());
+    });
+    //Remove all Cameras
+    rmvAllCameras = new ui::Action(world , "removeAllCam");
+    rmvAllCameras->setText("Delete all cameras");
+    rmvAllCameras->setCallback([this](){
+            doRemoveAllCams();
+    });
+
+
+    //Remove all Safety Zones
+    rmvAllSafetyZones = new ui::Action(world , "removeAllSafetyZone");
+    rmvAllSafetyZones->setText("Delete all zones");
+    rmvAllSafetyZones->setCallback([this](){
+            doRemoveAllPRIOzones();
+    });
+
+    //Menu for Optimization
+    Optimize = new ui::Menu(EKUMenu, "Optimize");
+    Optimize->setText("Optimize");
+
 
     //StopGA
-    StopGA = new ui::Action(Optimize , "StopOptimization");
+  /*  StopGA = new ui::Action(Optimize , "StopOptimization");
     StopGA->setText("Stop Optimization");
     StopGA->setCallback([this](){
         if(ga != nullptr)
             ga->stopGA();
     });
-
+*/
     //population size
     penalty = new ui::Slider(Optimize , "PopulatioSize");
     penalty->setText("Population size");
@@ -631,67 +662,20 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     });
 
 
- /*  //Make Cameras invisible
-    MakeCamsInvisible = new ui::Button(EKUMenu , "CamerasVisible");
-    MakeCamsInvisible->setText("Cameras Visible");
-    MakeCamsInvisible->setState(true);
-    MakeCamsInvisible->setCallback([this](bool state){
-        if(!state)
-        {
-            for(const auto &x :allCamPositions)
-            {
-              x->camDraw->disactivate();
-            }
-           // MakeCamsInvisible->setState(false);
-        }
-        else
-        {
-            for(const auto &x :allCamPositions)
-            {
-              x->camDraw->activate();
-            }
-        }
-    });
-*/
+    //Menu for Safety zones
+    safetyZoneMenu = new ui::Menu(EKUMenu, "SafetyZones");
+    safetyZoneMenu->setText("Safety zones");
+    distanceControlPoints = new ui::Slider(safetyZoneMenu , "distance");
+    distanceControlPoints->setText("Distance");
+    distanceControlPoints->setBounds(2., 6.);
+    distanceControlPoints->setValue(3.);
+    distanceControlPoints->setCallback([this](double value, bool released){
 
-    //Calc VisMat
-    calcVisMat = new ui::Action(Camera , "calcVisMat");
-    calcVisMat->setCallback([this](){
-    /*    std::vector<osg::Vec3> pointsToObserve;
-        pointsToObserve.reserve(safetyZones.size());
-        for(const auto& x : safetyZones)
-            pointsToObserve.push_back(x->getPosition());
-*/
-        for(const auto& x : allCamPositions)
-        {
-            x->updateVisibleCam();
-          /*  x->camDraw->cam->calcVisMat();
-            for(const auto& x1: x->allCameras)
-                x1->calcVisMat();
-                */
-        }
-        findNotVisiblePoints();
+    for(const auto& x : safetyZones)
+         x->setPointDistance(value);
 
     });
-
-    //Modify scene
-    ModifyScene = new ui::Button(EKUMenu , "ModifyScene");
-    ModifyScene->setText("ModifyScene");
-    ModifyScene->setState(true);
-    ModifyScene->setCallback([this](bool state){
-       changeStatusOfInteractors(state);
-    });
-
-    //Delete Selected Objects
-    Delete = new ui::Button(EKUMenu , "Delete");
-    Delete->setText("Delete Selected Objects");
-    Delete->setState(false);
-    Delete->setCallback([this](bool state){
-        deleteObjects = state;
-    });
-
-
-    //Menu for Optimization
+    //Menu for Results
     results = new ui::Menu(EKUMenu, "Results");
     results->setText("Results");
 
@@ -711,18 +695,12 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     r_optimizationTime->setText("Time: ");
    // r_nbrOrientations = new ui::Label(results,"nbrOrientations");
 
-    //Menu for Safety zones
-    safetyZoneMenu = new ui::Menu(EKUMenu, "SafetyZones");
-    safetyZoneMenu->setText("Safety zones");
-    distanceControlPoints = new ui::Slider(safetyZoneMenu , "distance");
-    distanceControlPoints->setText("Distance");
-    distanceControlPoints->setBounds(2., 6.);
-    distanceControlPoints->setValue(3.);
-    distanceControlPoints->setCallback([this](double value, bool released){
-
-    for(const auto& x : safetyZones)
-         x->setPointDistance(value);
-
+    //Modify scene
+    ModifyScene = new ui::Button(EKUMenu , "ModifyScene");
+    ModifyScene->setText("ModifyScene");
+    ModifyScene->setState(true);
+    ModifyScene->setCallback([this](bool state){
+       changeStatusOfInteractors(state);
     });
 
 

@@ -120,9 +120,10 @@ private:
     std::string path="/home/AD.EKUPD.COM/matthias.epple/Schreibtisch/MA3dModels/";
     //UI
     ui::Menu *EKUMenu  = nullptr;
+    ui::Menu *world = nullptr;
     ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*RmvCam = nullptr, *AddCam = nullptr,*OptOrient = nullptr,
-    *OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr, *RmvSafetyZone = nullptr,*StopGA = nullptr,
-            *rmvAllSafetyZones = nullptr, *rmvAllCameras = nullptr;
+    *OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr, *RmvSafetyZone = nullptr,
+            *rmvAllSafetyZones = nullptr, *rmvAllCameras = nullptr;//*StopGA = nullptr,
     ui::Group *Frame = nullptr;
     ui::Label *Label = nullptr;
     ui::Button *ModifyScene = nullptr,*Delete =nullptr;//*MakeCamsInvisible = nullptr;
