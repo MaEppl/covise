@@ -24,6 +24,8 @@ public:
     static double penalty;
     static double weightingPRIO1;
     static int populationSize;
+    static double mutationRate;
+    static double crossoverRate;
     static bool dynamicThreading;
 
     void stopGA(){

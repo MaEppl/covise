@@ -522,6 +522,26 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     weighting->setCallback([this](double value, bool released){
         GA::weightingPRIO1=value;
     });
+    //mutation rate
+    mutationRate = new ui::Slider(Optimize , "MutationRate");
+    mutationRate->setText("Mutation fraction");
+    mutationRate->setBounds(0.0,0.9);
+    mutationRate->setValue(0.3);
+    mutationRate->setCallback([this](double value, bool released){
+        GA::mutationRate = value;
+        GA::crossoverRate= 1.0-value;
+        crossoverRate->setValue(1.0-value);
+    });
+    //crossover rate
+    crossoverRate = new ui::Slider(Optimize , "CrossoverRate");
+    crossoverRate->setText("Crossover fraction");
+    crossoverRate->setBounds(0.1,1.0);
+    crossoverRate->setValue(0.7);
+    crossoverRate->setCallback([this](double value, bool released){
+        GA::crossoverRate=value;
+        GA::mutationRate= 1.0-value;
+        mutationRate->setValue(1.0-value);
+    });
     //Dynamic threading
     dynamicThreading = new ui::Button(Optimize , "dynamicThreading");
     dynamicThreading->setText("Dynamic Threading");

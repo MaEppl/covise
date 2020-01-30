@@ -21,6 +21,8 @@ int GA::nbrCamPositions=0;
 int GA::nbrPoints=0;
 double GA::weightingPRIO1 = 3;
 double GA::penalty =10;
+double GA::mutationRate=0.3;
+double GA::crossoverRate=0.7;
 int GA::populationSize = 2000;
 bool GA::dynamicThreading=false;
 #if(1)
@@ -278,8 +280,8 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     ga_obj.mutate=std::bind( &GA::mutate, this, _1,_2,_3 );
     ga_obj.crossover=std::bind( &GA::crossover, this, _1,_2,_3 );
     ga_obj.SO_report_generation=std::bind( &GA::SO_report_generation, this, _1,_2,_3 );
-    ga_obj.crossover_fraction=0.7;
-    ga_obj.mutation_rate=0.3;
+    ga_obj.crossover_fraction=crossoverRate;
+    ga_obj.mutation_rate=mutationRate;
     ga_obj.best_stall_max=10;
     ga_obj.elite_count=ga_obj.population/ 100 * 6; //6% of population size;
     ga_obj.solve();

@@ -136,6 +136,7 @@ private:
     //Menu for optimization results
     ui::Menu *results = nullptr;
     ui::Label *r_totalCoverage = nullptr, *r_prio1Coverage = nullptr,*r_prio2Coverage = nullptr,*r_fitness = nullptr,*r_nbrCams = nullptr,*r_nbrControlPoints = nullptr,*r_optimizationTime = nullptr;//*r_nbrOrientations = nullptr;
+    ui::Slider *mutationRate = nullptr,*crossoverRate = nullptr;
 
     ui::Menu *Camera = nullptr;
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
