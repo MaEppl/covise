@@ -776,10 +776,10 @@ void CamPosition::createCamsInSearchSpace()
     int zMax = 180;
     int stepSizeZ = 5; //in Degree
 
-    int xMax = 40;
+    int xMax = 80;
     int stepSizeX = 10; //in Degree
 
-    int yMax = 90;
+    int yMax = 135;
     int stepSizeY = 45; //in Degree
 
     osg::Matrix m = localDCS.get()->getMatrix();
