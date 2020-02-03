@@ -83,11 +83,43 @@ void EKU::preFrame()
 }
 void EKU::calcPercentageOfCoveredSafetyZones()
 {
-    std::cout<<"PRIO1 zones covered by 2 cameras: " <<std::endl;
-    std::cout<<"PRIO1 zones covered by 1 camera: " <<std::endl;
-    std::cout<<"PRIO1 zones not covered: " <<std::endl;
-    std::cout<<"PRIO2 zones covered by at least 1 camera: " <<std::endl;
-    std::cout<<"PRIO2 zones not covered: " <<std::endl;
+    if(!allCamPositions.empty())
+    {
+        std::vector<int> visYesNo_prio1(allCamPositions.begin()->get()->camDraw.get()->cam->visMatPrio1.size(),0);
+        std::vector<int> visYesNo_prio2(allCamPositions.begin()->get()->camDraw.get()->cam->visMatPrio2.size(),0);
+
+        for(const auto& x : allCamPositions)
+        {
+            std::transform(x->camDraw.get()->cam->visMatPrio1.begin(),x->camDraw.get()->cam->visMatPrio1.end(),visYesNo_prio1.begin(),visYesNo_prio1.begin(),std::plus<int>());
+            std::transform(x->camDraw.get()->cam->visMatPrio2.begin(),x->camDraw.get()->cam->visMatPrio2.end(),visYesNo_prio2.begin(),visYesNo_prio2.begin(),std::plus<int>());
+        }
+
+        std::vector<int> percentageCalcultationPrio1;
+        std::vector<int> percentageCalcultationPrio2;
+
+        for(const auto&x :visYesNo_prio1)
+        {
+            if(x>=SafetyZone::PRIO1)
+                percentageCalcultationPrio1.push_back(1);
+            else
+               percentageCalcultationPrio1.push_back(0);
+        }
+        for(const auto&x :visYesNo_prio2)
+        {
+            if(x>=SafetyZone::PRIO2)
+                percentageCalcultationPrio2.push_back(1);
+            else
+               percentageCalcultationPrio2.push_back(0);
+        }
+
+        //Coverage [%]
+        double sum_observed_prio1 = std::accumulate(percentageCalcultationPrio1.begin(),percentageCalcultationPrio1.end(),0.0);
+        double sum_observed_prio2 = std::accumulate(percentageCalcultationPrio2.begin(),percentageCalcultationPrio2.end(),0.0);
+        float prio1Coverage =sum_observed_prio1 / percentageCalcultationPrio1.size() *100;
+        float prio2Coverage =sum_observed_prio2 / percentageCalcultationPrio2.size() *100;
+        float totalCoverage =(sum_observed_prio2 + sum_observed_prio1) / (percentageCalcultationPrio1.size()+percentageCalcultationPrio2.size()) *100;
+        updateOptimizationResults(totalCoverage,prio1Coverage,prio2Coverage,0.0,0.0);
+    }
 }
 
 void EKU::createSafetyZone(float xpos, float ypos, SafetyZone::Priority prio)
@@ -449,20 +481,13 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
           findNotVisiblePoints();
     });
     //Calc VisMat
-    calcVisMat = new ui::Action(EKUMenu , "calcVisMat");
-    calcVisMat->setCallback([this](){
-    /*    std::vector<osg::Vec3> pointsToObserve;
-        pointsToObserve.reserve(safetyZones.size());
-        for(const auto& x : safetyZones)
-            pointsToObserve.push_back(x->getPosition());
-*/
+    calcCoverage = new ui::Action(EKUMenu , "CalculateCoverage");
+    calcCoverage->setText("CalculateCoverage");
+    calcCoverage->setCallback([this](){
+
         for(const auto& x : allCamPositions)
         {
             x->updateVisibleCam();
-          /*  x->camDraw->cam->calcVisMat();
-            for(const auto& x1: x->allCameras)
-                x1->calcVisMat();
-                */
         }
         findNotVisiblePoints();
         ModifyScene->setState(false);
@@ -472,18 +497,25 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             x->changeInteractorStatus(false);
         }
 
+        if(coVRMSController::instance()->isMaster())
+        {
+            calcPercentageOfCoveredSafetyZones();
+        }
+
     });
     world = new ui::Menu(EKUMenu,"World");
     world->setText("World");
 
     //Add Cam
     AddCam = new ui::Action(world , "addCam");
+    AddCam->setText("Add camera");
     AddCam->setCallback([this](){
         doAddCam();
     });
 
     //Add PRIO1
     AddPRIO1 = new ui::Action(world , "addPRIO1");
+    AddPRIO1->setText("Add PRIO1");
     AddPRIO1->setCallback([this](){
         osg::Vec3 pos(40.0,-20.0,1.2);
         doAddPRIO1(pos,10.0,10.0,2.0);
@@ -491,6 +523,8 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     //Add PRIO2
     AddPRIO2 = new ui::Action(world , "addPRIO2");
+    AddPRIO2->setText("Add PRIO2");
+
     AddPRIO2->setCallback([this](){
         osg::Vec3 pos(40.0,-20.0,1.2);
         doAddPRIO2(pos,10.0,10.0,2.0);
@@ -498,6 +532,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     //Add Truck
     AddTruck = new ui::Action(world , "addTruck");
+    AddTruck->setText("Add Pump");
     AddTruck->setCallback([this](){
         osg::Matrix pos;
         pos.setTrans(50,0,0);
