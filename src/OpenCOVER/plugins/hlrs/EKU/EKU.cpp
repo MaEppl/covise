@@ -443,6 +443,12 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
                 */
         }
         findNotVisiblePoints();
+        ModifyScene->setState(false);
+        modifyScene = false;
+        for(const auto& x : safetyZones)
+        {
+            x->changeInteractorStatus(false);
+        }
 
     });
     world = new ui::Menu(EKUMenu,"World");
