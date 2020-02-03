@@ -504,30 +504,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         doAddTruck(pos);
     });
 
-    //Delete Selected Objects
-    Delete = new ui::Button(world , "Delete");
-    Delete->setText("Delete Selected Objects");
-    Delete->setState(false);
-    Delete->setCallback([this](bool state){
-        deleteObjects = state;
-    });
 
-    //Remove Safety Zone
-    RmvSafetyZone = new ui::Action(world , "removeSafetyZone");
-    RmvSafetyZone->setCallback([this](){
-            doRemovePRIOZone(safetyZones.back());
-    });
-    //Remove Truck
-    RmvTruck = new ui::Action(world , "removeTruck");
-    RmvTruck->setCallback([this](){
-            doRemoveTruck(equipmentWithCamera.back());
-    });
-
-    //Remove Cam
-    RmvCam = new ui::Action(world , "removeCam");
-    RmvCam->setCallback([this](){
-            doRemoveCam(allCamPositions.back());
-    });
     //Remove all Cameras
     rmvAllCameras = new ui::Action(world , "removeAllCam");
     rmvAllCameras->setText("Delete all cameras");
@@ -541,6 +518,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     rmvAllSafetyZones->setText("Delete all zones");
     rmvAllSafetyZones->setCallback([this](){
             doRemoveAllPRIOzones();
+    });
+
+    //Delete Selected Objects
+    Delete = new ui::Button(world , "Delete");
+    Delete->setText("Delete Selected Objects");
+    Delete->setState(false);
+    Delete->setCallback([this](bool state){
+        deleteObjects = state;
     });
 
     //Menu for Optimization
@@ -827,6 +812,7 @@ void EKU::doAddTruck(osg::Matrix pos )
     std::unique_ptr<EquipmentWithCamera> pumpTruck(new EquipmentWithCamera(name,pos,truck,vecOfCameras));
     equipmentWithCamera.push_back(std::move(pumpTruck));
     changeStatusOfInteractors(true);
+    updateNbrCams();
 }
 
 
@@ -853,7 +839,7 @@ void EKU::doRemoveTruck(const std::unique_ptr<EquipmentWithCamera> &truck)
         }
         //delete Equipment
         equipmentWithCamera.erase(std::remove_if(equipmentWithCamera.begin(),equipmentWithCamera.end(),[&truck](std::unique_ptr<EquipmentWithCamera>const& it){return truck == it;}));
-
+        updateNbrCams();
         std::cout<<"nbr of Trucks after"<<equipmentWithCamera.size()<<std::endl;
         std::cout<<"nbr of Cams after"<<allCamPositions.size()<<std::endl;
         std::cout<<"nbr of SZ after"<<safetyZones.size()<<std::endl;

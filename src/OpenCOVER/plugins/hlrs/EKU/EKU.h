@@ -122,8 +122,8 @@ private:
     //UI
     ui::Menu *EKUMenu  = nullptr;
     ui::Menu *world = nullptr;
-    ui::Action *AddTruck = nullptr, *RmvTruck = nullptr,*RmvCam = nullptr, *AddCam = nullptr,*OptOrient = nullptr,
-    *OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr, *RmvSafetyZone = nullptr,
+    ui::Action *AddTruck = nullptr, *AddCam = nullptr,*OptOrient = nullptr,
+    *OptNbrCams = nullptr,*AddPRIO1 = nullptr,*AddPRIO2 = nullptr,
             *rmvAllSafetyZones = nullptr, *rmvAllCameras = nullptr;//*StopGA = nullptr,
     ui::Group *Frame = nullptr;
     ui::Label *Label = nullptr;
