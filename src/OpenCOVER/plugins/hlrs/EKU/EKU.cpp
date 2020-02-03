@@ -485,14 +485,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //Add PRIO1
     AddPRIO1 = new ui::Action(world , "addPRIO1");
     AddPRIO1->setCallback([this](){
-        osg::Vec3 pos(50.0,0.0,1.2);
+        osg::Vec3 pos(40.0,-20.0,1.2);
         doAddPRIO1(pos,10.0,10.0,2.0);
     });
 
     //Add PRIO2
     AddPRIO2 = new ui::Action(world , "addPRIO2");
     AddPRIO2->setCallback([this](){
-        osg::Vec3 pos(50.0,0.0,1.2);
+        osg::Vec3 pos(40.0,-20.0,1.2);
         doAddPRIO2(pos,10.0,10.0,2.0);
     });
 
@@ -860,7 +860,7 @@ void EKU::doAddCam()
     rotInteractor.makeRotate(osg::DegreesToRadians(180.0),osg::Z_AXIS);
    // rotInteractor2.makeRotate(osg::DegreesToRadians(45.0),osg::X_AXIS);
 
-    localInteractor.setTrans(osg::Vec3(50,0,10));
+    localInteractor.setTrans(osg::Vec3(30,-17,10));
     localInteractor.setRotate(rotInteractor*rotInteractor2);
     std::shared_ptr<CamPosition> c1 =std::make_shared<CamPosition>(localInteractor);
     allCamPositions.push_back(std::move(c1));
