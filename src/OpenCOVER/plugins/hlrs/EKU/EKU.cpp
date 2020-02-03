@@ -554,13 +554,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     rmvAllSafetyZones->setCallback([this](){
             doRemoveAllPRIOzones();
     });
-
     //Delete Selected Objects
     Delete = new ui::Button(world , "Delete");
     Delete->setText("Delete Selected Objects");
     Delete->setState(false);
     Delete->setCallback([this](bool state){
         deleteObjects = state;
+        if(deleteObjects)
+            changeStatusOfInteractors(true);
     });
 
     //Menu for Optimization
@@ -749,6 +750,11 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     ModifyScene->setState(true);
     ModifyScene->setCallback([this](bool state){
        changeStatusOfInteractors(state);
+       if(!state)
+       {
+           Delete->setState(false);
+           deleteObjects =false;
+       }
     });
 
 
