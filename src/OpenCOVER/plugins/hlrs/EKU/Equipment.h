@@ -21,7 +21,8 @@ class Equipment
 {
 public:
     Equipment(std::string name,osg::Matrix position,osg::ref_ptr<osg::Node> node);
-    void preFrame();
+    ~Equipment();
+    bool preFrame();
     void showOutline(bool status);
     osg::Matrix getPosition(){return matrix.get()->getMatrix();}
 
@@ -46,9 +47,11 @@ class EquipmentWithCamera: public Equipment
 
 public:
     EquipmentWithCamera(std::string name,osg::Matrix position,osg::ref_ptr<osg::Node> node,std::vector<osg::Matrix> camMatrixes);
-    void preFrame();
-private:
+    ~EquipmentWithCamera();
+    bool preFrame();
     std::vector<std::weak_ptr<CamPosition>> cameraPositions;
+
+private:
 };
 
 

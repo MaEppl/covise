@@ -83,7 +83,8 @@ public:
     ~EKU();
     bool init();
     void doAddTruck(osg::Matrix pos);
-    void doRemoveTruck(std::unique_ptr<EquipmentWithCamera> &t);
+    void doRemoveTruck(const std::unique_ptr<EquipmentWithCamera> &t);
+    void doRemoveEquipment(const std::unique_ptr<Equipment> &eq);
     void doAddCam();
     void doRemoveCam(std::shared_ptr<CamPosition> &c);
     void doRemoveAllCams();

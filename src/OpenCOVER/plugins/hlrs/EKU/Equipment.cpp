@@ -44,14 +44,22 @@ Equipment::Equipment(std::string name,osg::Matrix position,osg::ref_ptr<osg::Nod
     sensorList.append(aSensor);
 
 }
+Equipment::~Equipment()
+{
+    group->getParent(0)->removeChild(group.get());
+    delete aSensor;
+    delete myinteractionA;
+}
 
-void Equipment::preFrame()
+bool Equipment::preFrame()
 {
     sensorList.update();
     //Test if button is pressed
     int state = cover->getPointerButton()->getState();
     if (myinteractionA->isRunning()) //when interacting the Sphere will be moved
     {
+        if(EKU::deleteObjects)
+            return false;
 
         static osg::Matrix invStartHand;
         static osg::Matrix startPos;
@@ -82,6 +90,8 @@ void Equipment::preFrame()
         showOutline(false);
 
     }
+
+    return true;
 }
 
 void Equipment::showOutline(bool status)
@@ -112,7 +122,13 @@ EquipmentWithCamera::EquipmentWithCamera(std::string name,osg::Matrix position,o
 
 }
 
-void EquipmentWithCamera::preFrame()
+EquipmentWithCamera::~EquipmentWithCamera()
+{
+    cameraPositions.clear();
+}
+
+
+bool EquipmentWithCamera::preFrame()
 {
     if(EKU::modifyScene == true)
     {
@@ -121,6 +137,10 @@ void EquipmentWithCamera::preFrame()
         int state = cover->getPointerButton()->getState();
         if (myinteractionA->isRunning()) //when interacting the Sphere will be moved
         {
+            if(EKU::deleteObjects)
+                return false;
+
+
             showOutline(true);
             for(const auto& x:cameraPositions )
             {
@@ -200,9 +220,7 @@ void EquipmentWithCamera::preFrame()
 
         }
     }
-    else if(EKU::deleteObjects == true)
-    {
 
-    }
+    return true;
 
 }

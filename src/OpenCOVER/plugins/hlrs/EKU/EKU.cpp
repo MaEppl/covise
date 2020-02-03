@@ -38,8 +38,8 @@ void restrictMovement(osg::Matrix &mat)
 
 void EKU::preFrame()
 {
-    for(const auto &x: allCamPositions)
-        x->preFrame();
+   for(const auto &x: allCamPositions)
+       x->preFrame();
 
     if(modifyScene)
     {
@@ -53,9 +53,24 @@ void EKU::preFrame()
             }
         }
         for(const auto &x : equipment)
-            x->preFrame();
+        {
+          bool status = x->preFrame();
+          if(!status)
+          {
+            doRemoveEquipment(x);
+            return;
+          }
+
+        }
         for(const auto &x : equipmentWithCamera)
-            x->preFrame();
+        {
+            bool status = x->preFrame();
+            if(!status)
+            {
+                doRemoveTruck(x);
+                return;
+            }
+        }
     }
 
 }
@@ -808,47 +823,43 @@ void EKU::doAddTruck(osg::Matrix pos )
 }
 
 
-void EKU::doRemoveTruck(std::unique_ptr<EquipmentWithCamera> &truck)
+void EKU::doRemoveTruck(const std::unique_ptr<EquipmentWithCamera> &truck)
 {
 
-/*
-    if(!allPumps.empty())
+
+    if(!equipmentWithCamera.empty())
     {
-        std::cout<<"nbr of Trucks before"<<allPumps.size()<<std::endl;
+        std::cout<<"nbr of Trucks before"<<equipmentWithCamera.size()<<std::endl;
         std::cout<<"nbr of Cams before"<<allCamPositions.size()<<std::endl;
         std::cout<<"nbr of SZ before"<<safetyZones.size()<<std::endl;
 
+
+
         //delete cameras from list
-        if(!truck->camLeft.expired())
-        {    string id = truck->camLeft.lock()->getName();
-             allCamPositions.erase(std::remove_if(allCamPositions.begin(),allCamPositions.end(),[&id](std::shared_ptr<CamPosition>const& it){return it->getName() == id;}));
+        for(const auto& x : truck->cameraPositions)
+        {
+            if(!x.expired())
+            {
+                string id = x.lock()->getName();
+                allCamPositions.erase(std::remove_if(allCamPositions.begin(),allCamPositions.end(),[&id](std::shared_ptr<CamPosition>const& it){return it->getName() == id;}));
+            }
         }
-        if(!truck->camRight.expired())
-        {   string id = truck->camRight.lock()->getName();
-            allCamPositions.erase(std::remove_if(allCamPositions.begin(),allCamPositions.end(),[&id](std::shared_ptr<CamPosition>const& it){return it->getName() == id;}));
-        }
-        // delete SafetyZones from list:
-        if(!truck->szLeft.expired())
-        {    string id = truck->szLeft.lock()->getName();
-             safetyZones.erase(std::remove_if(safetyZones.begin(),safetyZones.end(),[&id](std::shared_ptr<SafetyZone>const& it){return it->getName() == id;}));
-        }
-        if(!truck->szRight.expired())
-        {   string id = truck->szRight.lock()->getName();
-            safetyZones.erase(std::remove_if(safetyZones.begin(),safetyZones.end(),[&id](std::shared_ptr<SafetyZone>const& it){return it->getName() == id;}));
-        }
+        //delete Equipment
+        equipmentWithCamera.erase(std::remove_if(equipmentWithCamera.begin(),equipmentWithCamera.end(),[&truck](std::unique_ptr<EquipmentWithCamera>const& it){return truck == it;}));
 
-        //delete Pump
-        allPumps.erase(std::remove_if(allPumps.begin(),allPumps.end(),[&truck](std::unique_ptr<Pump>const& it){return truck == it;}));
-
-        std::cout<<"nbr of Trucks after"<<allPumps.size()<<std::endl;
+        std::cout<<"nbr of Trucks after"<<equipmentWithCamera.size()<<std::endl;
         std::cout<<"nbr of Cams after"<<allCamPositions.size()<<std::endl;
         std::cout<<"nbr of SZ after"<<safetyZones.size()<<std::endl;
     }
     else
         std::cout<<"No trucks available"<<std::endl;
 
-*/
 }
+void EKU::doRemoveEquipment(const std::unique_ptr<Equipment> &eq)
+{
+    equipment.erase(std::remove_if(equipment.begin(),equipment.end(),[&eq](std::unique_ptr<Equipment>const& it){return eq == it;}));
+}
+
 void EKU::doAddCam()
 {
     osg::Matrix localInteractor;
