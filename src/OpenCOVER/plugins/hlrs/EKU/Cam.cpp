@@ -664,11 +664,9 @@ CamPosition::~CamPosition()
      delete viewpointInteractor;
 
 }
-void CamPosition::preFrame()
+bool CamPosition::preFrame()
 {
-   /* for(const auto &x:allCameras)
-        x->preFrame();
-    */
+
     viewpointInteractor->preFrame();
 
     //change positions of cameras
@@ -678,6 +676,8 @@ void CamPosition::preFrame()
         coCoord testEuler;
         if(viewpointInteractor->wasStarted())
         {
+            if(EKU::deleteObjects)
+                return false;
 
             deleteSearchSpace();
 
@@ -743,6 +743,7 @@ void CamPosition::preFrame()
 
         }
     }
+    return true;
 }
 
 /*void CamPosition::createCams(bool rotX=true, bool rotY=true, bool rotZ=true, double limitX=90, double limitY =90, double limitZ = 90)

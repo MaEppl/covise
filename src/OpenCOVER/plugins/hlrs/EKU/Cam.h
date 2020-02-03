@@ -173,7 +173,7 @@ public:
       //  updateVisibleCam();
     }
 
-    void preFrame();
+    bool preFrame();
     void createCamsInSearchSpace();
     void setSearchSpaceState(bool state);
     void setDeletedSearchSpaceState(bool state);

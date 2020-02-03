@@ -39,7 +39,14 @@ void restrictMovement(osg::Matrix &mat)
 void EKU::preFrame()
 {
    for(const auto &x: allCamPositions)
-       x->preFrame();
+   {
+       bool status = x->preFrame();
+       if(!status)
+       {
+           doRemoveCam(x);
+           return;
+       }
+   }
 
     if(modifyScene)
     {
@@ -876,7 +883,7 @@ void EKU::doAddCam()
     changeStatusOfInteractors(true);
 
 }
-void EKU::doRemoveCam(std::shared_ptr<CamPosition> &camera)
+void EKU::doRemoveCam(const std::shared_ptr<CamPosition> &camera)
 {
 
     if(!allCamPositions.empty())

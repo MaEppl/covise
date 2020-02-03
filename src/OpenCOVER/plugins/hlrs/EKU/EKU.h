@@ -86,7 +86,7 @@ public:
     void doRemoveTruck(const std::unique_ptr<EquipmentWithCamera> &t);
     void doRemoveEquipment(const std::unique_ptr<Equipment> &eq);
     void doAddCam();
-    void doRemoveCam(std::shared_ptr<CamPosition> &c);
+    void doRemoveCam(const std::shared_ptr<CamPosition> &c);
     void doRemoveAllCams();
     void doAddPRIO1(osg::Vec3 pos, double l, double w, double h);
     void doAddPRIO2(osg::Vec3 pos, double l, double w, double h);
