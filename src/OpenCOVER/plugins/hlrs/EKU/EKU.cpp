@@ -488,6 +488,8 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         for(const auto& x : allCamPositions)
         {
             x->updateVisibleCam();
+            x->createCamsInSearchSpace();
+
         }
         findNotVisiblePoints();
         ModifyScene->setState(false);
@@ -1049,30 +1051,12 @@ void EKU::changeStatusOfInteractors(bool status)
 {
     ModifyScene->setState(status);
     modifyScene = status;
-    if(modifyScene == false)
-    {
+
       for(const auto& x : safetyZones)
       {
-          x->changeInteractorStatus(false);
+          x->changeInteractorStatus(status);
       }
 
-      for(const auto& x : allCamPositions)
-      {
-          x->updateVisibleCam();
-          x->createCamsInSearchSpace();
-
-      }
-        //show Points which are currently not visible
-        findNotVisiblePoints();
-    }
-    else
-    {
-        for(const auto& x : safetyZones)
-        {
-            x->changeInteractorStatus(true);
-        }
-
-    }
 }
 
 
