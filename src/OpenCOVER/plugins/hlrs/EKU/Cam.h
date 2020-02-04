@@ -41,6 +41,8 @@
 #include<SafetyZone.h>
 using namespace opencover;
 void printCoCoord(coCoord m);
+double calcValueInRange(double oldMin, double oldMax, double newMin, double newMax, double oldValue);//scale values to new range
+
 class Cam
 {   
 public:
@@ -95,9 +97,6 @@ private:
     double calcPreferredDirectionFactor(osg::Vec3 directionOfPoint);
     double calcWidthDistortionFactor(const osg::Vec3d &point);
     double calcHeightDistortionFactor(const osg::Vec3d &point);
-    double scale(double oldMin, double oldMax, double newMin, double newMax, double oldValue);//scale values to new range
-
-
 };
 class EquipmentWithCamera;
 class mySensor;
@@ -115,12 +114,9 @@ private:
     osg::ref_ptr<osg::Geode> SRCgeode;
     osg::ref_ptr<osg::Geometry> geomSRC;
 
+    const std::vector<double> SRCdistances{70,56,47,41,34,13,9,5,3}; //distance in meter for SRC values of 0.2 0.4 0.6 0.8 (Rayleigh distribution with sigma =22 and range 0-27)
 
-        std::pair<osg::Vec3, osg::Vec3> calcPointsOnPyramidAtDistance(const float distance,const osg::Vec3 fixAxis);
- /*  osg::ref_ptr<osg::Vec3Array> vertsSRC;
-    osg::ref_ptr<osg::Vec4Array> colorsSRC;
-    osg::ref_ptr<osg::Geode> SRC;
-   */ int scale = 15;
+    int scale = 15;
    // osg::ref_ptr<osg::Geode> interactorGeode;
 
 
@@ -130,6 +126,7 @@ private:
     vrui::coTrackerButtonInteraction *myinteraction;
     coSensorList sensorList;
     */
+    std::pair<osg::Vec3, osg::Vec3> calcPointsOnPyramidAtDistance(const float distance,const osg::Vec3 fixAxis);
     void setStateSet(osg::StateSet *stateSet);
 
 public:
@@ -212,7 +209,7 @@ private:
 
     coVR3DTransRotInteractor *viewpointInteractor;
     osg::ref_ptr<osg::Switch> switchNode;
-    osg::ref_ptr<osg::Switch> switchNode2;
+    osg::ref_ptr<osg::Switch> switchNodeSRC;
 
     osg::ref_ptr<osg::MatrixTransform> localDCS;
     osg::ref_ptr<osg::Group> searchSpaceGroup;

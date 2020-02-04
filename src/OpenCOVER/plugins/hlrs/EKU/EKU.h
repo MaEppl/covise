@@ -79,6 +79,7 @@ class EKU: public opencover::coVRPlugin, public opencover::ui::Owner
 public:
     static bool modifyScene;
     static bool deleteObjects;//delete selected objects
+    static bool visualizeSRC;
     EKU();
     ~EKU();
     bool init();
@@ -142,7 +143,7 @@ private:
 
     ui::Menu *Camera = nullptr;
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
-    ui::Button  *ShowSearchSpace = nullptr,*ShowDeletedSearchSpace = nullptr,*ShowRealSize = nullptr;
+    ui::Button  *ShowSearchSpace = nullptr,*ShowDeletedSearchSpace = nullptr,*ShowRealSize = nullptr,*showSRC = nullptr;
     ui::Action *calcCoverage = nullptr;
 
     //Menu for safety zones

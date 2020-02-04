@@ -14,6 +14,7 @@
 using namespace opencover;
 bool EKU::modifyScene=true;
 bool EKU::deleteObjects=false;
+bool EKU::visualizeSRC=false;
 std::vector<std::shared_ptr<SafetyZone>> EKU::safetyZones;
 std::vector<std::shared_ptr<CamPosition>> EKU::allCamPositions;
 std::vector<std::unique_ptr<Equipment>> EKU::equipment;
@@ -671,6 +672,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             x->setSearchSpaceState(state);
        }
     });
+
     //Show deleted search space
     ShowDeletedSearchSpace = new ui::Button(Camera , "ShowDeletedSearchSpace");
     ShowDeletedSearchSpace->setText("Deleted search space");
@@ -683,7 +685,13 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
             x->setDeletedSearchSpaceState(state);
        }
     });
-
+    //Show SRC
+    showSRC = new ui::Button(Camera , "ShowSRC");
+    showSRC->setText("SRC");
+    showSRC->setState(false);
+    showSRC->setCallback([this](bool state){
+        visualizeSRC=state;
+    });
     //Camera visibility
     VisibilityRegulator = new ui::Slider(Camera , "Slider2");
     VisibilityRegulator->setText("Visibility");
