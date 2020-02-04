@@ -274,6 +274,10 @@ CamDrawable::CamDrawable(coCoord &m, std::vector<std::vector<double> > visMat, b
     camGeode = plotCam(showLines,color);
     camGeode->setName("CamDrawable"+std::to_string(CamDrawable::count));
     camGeode->setNodeMask(camGeode->getNodeMask() & (~Isect::Intersection) & (~Isect::Pick));
+
+    SRCgeode = plotSRC();
+    SRCgeode->setName("SRCDrawable"+std::to_string(CamDrawable::count));
+    SRCgeode->setNodeMask(camGeode->getNodeMask() & (~Isect::Intersection) & (~Isect::Pick));
     //create interactor
   /*  mySphere = new osg::Sphere(verts.get()->at(0), 1.);
     osg::ShapeDrawable *mySphereDrawable = new osg::ShapeDrawable(mySphere);
@@ -456,6 +460,103 @@ osg::Geode* CamDrawable::plotCam(bool showLines,osg::Vec4 color)
     stateset->setAttribute(lw);
     // return the geode as the root of this geometry.
     return geode;
+}
+
+osg::Geode* CamDrawable::plotSRC()
+{
+    // The Drawable geometry is held under Geode objects.
+    osg::Geode* geode = new osg::Geode();
+    geode->setName("SRC");
+    geomSRC = new osg::Geometry();
+    osg::StateSet *stateset = geode->getOrCreateStateSet();
+    //necessary for dynamic redraw (command:dirty)
+    geomSRC->setDataVariance(osg::Object::DataVariance::DYNAMIC) ;
+    geomSRC->setUseDisplayList(false);
+    geomSRC->setUseVertexBufferObjects(true);
+    //stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+    //stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA ,GL_ONE_MINUS_SRC_ALPHA), osg::StateAttribute::ON);
+    // Associate the Geometry with the Geode.
+    geode->addDrawable(geomSRC);
+    geode->getStateSet()->setMode( GL_BLEND, osg::StateAttribute::ON );
+    geode->getStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+    geode->getStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
+
+
+    double TimgWidth = 2*Cam::depthView/2*std::tan(Cam::fov/2*osg::PI/180);
+    double TimgHeight = TimgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
+   // verts->push_back(osg::Vec3(TimgWidth/2,-Cam::depthView/2,TimgHeight/2)/scale );
+   // verts->push_back(osg::Vec3(-TimgWidth/2,-Cam::depthView/2,TimgHeight/2)/scale );
+
+    vertsSRC = new osg::Vec3Array;
+  //  vertsSRC->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale );
+  //  vertsSRC->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale );
+
+    vertsSRC->push_back( osg::Vec3( 0,  0,  0) ); // 4 peak
+
+    std::vector<float> distances;
+    distances.push_back(3.3f);
+    distances.push_back(6.5f);
+    distances.push_back(10.2f);
+    distances.push_back(15.f);
+    distances.push_back(39.f);
+    distances.push_back(46.f);
+    distances.push_back(53.f);
+    distances.push_back(63.f);
+    for(const auto& x : distances)
+    {
+        std::pair<osg::Vec3,osg::Vec3> test = calcPointsOnPyramidAtDistance(x,osg::Y_AXIS);
+        vertsSRC->push_back(test.first);
+        vertsSRC->push_back(test.second);
+    }
+    std::pair<osg::Vec3,osg::Vec3> lastVertexes = calcPointsOnPyramidAtDistance(Cam::depthView,osg::Y_AXIS);
+    vertsSRC->push_back(lastVertexes.first);
+    vertsSRC->push_back(lastVertexes.second);
+
+    geomSRC->setVertexArray(vertsSRC);
+
+    osg::DrawElementsUInt* triangle =
+       new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
+    triangle->push_back(0);
+    triangle->push_back(1);
+    triangle->push_back(2);
+    geomSRC->addPrimitiveSet(triangle);
+
+
+    osg::DrawElementsUInt* quad =
+       new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
+    for(int i =3;i<=vertsSRC.get()->size()-2;i+=2)
+    {
+        quad = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
+        quad->push_back(i-2);
+        quad->push_back(i);
+        quad->push_back(i+1);
+        quad->push_back(i-1);
+        geomSRC->addPrimitiveSet(quad);
+
+    }
+    // Create a separate color for each face
+    colorsSRC = new osg::Vec4Array;
+    osg::Vec4 color = {0.0,0.0,0.0,0.3};
+    float colorChange =0.0f;
+    for(int i=1;i<=distances.size()/2+1;i++)
+    {
+
+        colorsSRC->push_back(color+osg::Vec4{0.f,colorChange,0.0f,0.f});
+        colorChange+=0.2;
+    }
+
+    colorsSRC->push_back(colorsSRC.get()->at(3));
+    colorsSRC->push_back(colorsSRC.get()->at(2));
+    colorsSRC->push_back(colorsSRC.get()->at(1));
+    colorsSRC->push_back(colorsSRC.get()->at(0));
+
+
+
+   // Assign the color indices created above to the geometry and set the
+   // binding mode to _PER_PRIMITIVE_SET.
+   geomSRC->setColorArray(colorsSRC);
+   geomSRC->setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
+   return geode;
 }
 
 void CamDrawable::updateFOV(float value)

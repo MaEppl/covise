@@ -110,6 +110,11 @@ private:
     osg::ref_ptr<osg::Geode> camGeode;
     osg::ref_ptr<osg::Geometry> geom;
 
+    osg::ref_ptr<osg::Vec3Array> vertsSRC;
+        osg::ref_ptr<osg::Vec4Array> colorsSRC;
+        osg::ref_ptr<osg::Geode> SRCgeode;
+        osg::ref_ptr<osg::Geometry> geomSRC;
+
  /*  osg::ref_ptr<osg::Vec3Array> vertsSRC;
     osg::ref_ptr<osg::Vec4Array> colorsSRC;
     osg::ref_ptr<osg::Geode> SRC;
@@ -129,6 +134,8 @@ public:
     static size_t count;
     std::shared_ptr<Cam> cam;
     osg::Geode* plotCam(bool showLines, osg::Vec4 color);
+    osg::Geode* plotSRC();
+
     CamDrawable(coCoord& m,std::vector<std::vector<double>> visMat,bool showLines,osg::Vec4 color);
     ~CamDrawable();
     bool _showRealSize=false;
