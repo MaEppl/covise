@@ -776,10 +776,10 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
 EKU::~EKU()
 {
+    allCamPositions.clear();
     safetyZones.clear();
     equipment.clear();
     equipmentWithCamera.clear();
-    allCamPositions.clear();
     fprintf(stderr, "closed EKU Plugin\n");
 
 }

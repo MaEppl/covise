@@ -312,46 +312,7 @@ CamDrawable::~CamDrawable()
     count--;
 }
 
-/*osg::Vec3 calcPointOnPyramidAtSpecificDistance(double distance)
-{
-    double x = distance*std::tan(Cam::fov/2*osg::PI/180)/(2*scale);
-    double y = x/(Cam::imgWidthPixel/Cam::imgHeightPixel)/(2*scale);
-    osg::Vec3 point = {x,y,dof};
-    return point;
-}
-*/
-/*osg::Geode* CamDrawable::plotSRC()
-{
-    // The Drawable geometry is held under Geode objects.
-    osg::Geode* geode = new osg::Geode();
-    geode->setName("Pyramid");
-    osg::Geometry* geom = new osg::Geometry();
-    osg::StateSet *stateset = geode->getOrCreateStateSet();
-    //necessary for dynamic redraw (command:dirty)
-    geom->setDataVariance(osg::Object::DataVariance::DYNAMIC) ;
-    geom->setUseDisplayList(false);
-    geom->setUseVertexBufferObjects(true);
-    //stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
-    //stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA ,GL_ONE_MINUS_SRC_ALPHA), osg::StateAttribute::ON);
-    // Associate the Geometry with the Geode.
-    geode->addDrawable(geom);
-    geode->getStateSet()->setMode( GL_BLEND, osg::StateAttribute::ON );
-    geode->getStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
 
-
-    double TimgWidth = 2*Cam::depthView/2*std::tan(Cam::fov/2*osg::PI/180);
-    double TimgHeight = TimgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
-    verts->push_back(osg::Vec3(TimgWidth/2,-Cam::depthView/2,TimgHeight/2)/scale );
-    verts->push_back(osg::Vec3(-TimgWidth/2,-Cam::depthView/2,TimgHeight/2)/scale );
-
-    vertsSRC = new osg::Vec3Array;
-    verts->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale ); // 0 upper  front base
-    verts->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2 )/scale ); // 1 lower front base
-    verts->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView,-Cam::imgHeight/2 )/scale ); // 3 lower  back  base
-    verts->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale ); // 2 upper back  base
-    verts->push_back( osg::Vec3( 0,  0,  0) ); // 4 peak
-}
-*/
 osg::Geode* CamDrawable::plotCam(bool showLines,osg::Vec4 color)
 {
     // The Drawable geometry is held under Geode objects.
@@ -523,7 +484,7 @@ osg::Geode* CamDrawable::plotSRC()
     colorsSRC = new osg::Vec4Array;
     osg::Vec4 color = {0.0,0.0,0.0,0.3};
     float colorChange =0.0f;
-    for(int i=1;i<=SRCdistances.size()/2;i++)
+    for(int i=1;i<=SRCdistances.size()/2+1;i++)
     {
 
         colorsSRC->push_back(color+osg::Vec4{0.f,colorChange,0.0f,0.f});
@@ -708,12 +669,16 @@ CamPosition::CamPosition(osg::Matrix m)
     searchSpaceDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false,osg::Vec4(1.0f, 1.0f, 0.0f, 1.f)));
     deletedOrientationsDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false,osg::Vec4(1.f, 0.0f, 0.0f, 1.f)));
 
+    switchNodeSRC = new osg::Switch();
+    switchNodeSRC->setName("CamSRCSwitch");
     //create Interactors
     float _interSize = cover->getSceneSize() / 25;
     viewpointInteractor = new coVR3DTransRotInteractor(m, _interSize/2, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
     viewpointInteractor->show();
     viewpointInteractor->enableIntersection();
-    localDCS->addChild(camDraw->getCamGeode());
+    localDCS->addChild(switchNodeSRC.get());
+    localDCS->addChild(camDraw->getCamGeode().get());
+    switchNodeSRC->addChild(camDraw->getSRCgeode().get(),false);
 
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
