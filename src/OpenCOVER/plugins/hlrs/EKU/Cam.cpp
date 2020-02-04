@@ -33,6 +33,7 @@ double Cam::imgWidth = 2*depthView*std::tan(Cam::fov/2*osg::PI/180);
 double Cam::imgHeight = Cam::imgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
 double Cam::rangeDistortionDepth =23;
 size_t Cam::count=0;
+const std::vector<double>Cam::SRCdistances{70,56,47,41,34,13,9,5,3};//distance in meter for SRC values of 0.2 0.4 0.6 0.8 (Rayleigh distribution with sigma =22 and range 0-27)
 
 Cam::Cam(coCoord matrix,std::vector<std::vector<double>> visMat,std::string name):pos(matrix.xyz),rot(matrix.hpr[0],matrix.hpr[1]),visMat(visMat),name(name)
 {
@@ -134,7 +135,7 @@ void Cam::calcVisMat()
                         std::cout<<"H: "<<std::abs(newPoint.z())<<" <= "<<Cam::imgHeight/2 * newPoint.y()/Cam::depthView<<std::endl;
                         */
                         newPoint.set(newPoint.x(),newPoint.y()*-1,newPoint.z());
-                        if((newPoint.y()<=Cam::depthView ) && (newPoint.y()>=0) &&
+                        if((newPoint.y()<=Cam::depthView ) && (newPoint.y()>=Cam::SRCdistances.back()) &&
                            (std::abs(newPoint.x()) <= Cam::imgWidth/2 * newPoint.y()/Cam::depthView) &&
                            (std::abs(newPoint.z()) <=Cam::imgHeight/2 * newPoint.y()/Cam::depthView))
                         {   //if point is in FOV
@@ -449,7 +450,7 @@ osg::Geode* CamDrawable::plotSRC()
 
     vertsSRC = new osg::Vec3Array;
 
-    for(const auto x : SRCdistances)
+    for(const auto x : Cam::SRCdistances)
     {
         std::pair<osg::Vec3,osg::Vec3> dist = calcPointsOnPyramidAtDistance(calcValueInRange(0,70,0,Cam::depthView,x),osg::Y_AXIS);
         vertsSRC->push_back(dist.first);
@@ -471,24 +472,28 @@ osg::Geode* CamDrawable::plotSRC()
         geomSRC->addPrimitiveSet(quad);
 
     }
-    osg::DrawElementsUInt* triangle =
-       new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
+  //instead of triangle plot nothing to show that cameras can't see thing to near!
+  /*  osg::DrawElementsUInt* triangle =
+    new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
     int count = vertsSRC.get()->size();
     triangle->push_back(count-3);
     triangle->push_back(count-2);
     triangle->push_back(count-1);
     geomSRC->addPrimitiveSet(triangle);
-
+*/
 
    // Create a separate color for each face
     colorsSRC = new osg::Vec4Array;
     osg::Vec4 color = {0.0,0.0,0.0,0.3};
     float colorChange =0.0f;
-    for(int i=1;i<=SRCdistances.size()/2+1;i++)
+    float colorChangeRed =1.0f;
+    for(int i=1;i<=Cam::SRCdistances.size()/2+1;i++)
     {
 
-        colorsSRC->push_back(color+osg::Vec4{0.f,colorChange,0.0f,0.f});
+        colorsSRC->push_back(color+osg::Vec4{colorChangeRed,colorChange,0.0f,0.f});
         colorChange+=0.2;
+        colorChangeRed-=0.2;
+
     }
 
     colorsSRC->push_back(colorsSRC.get()->at(3));
@@ -559,7 +564,7 @@ void CamDrawable::updateFOV(float value)
     if(vertsSRC.valid())
     {
         vertsSRC.get()->clear();
-        for(const auto x : SRCdistances)
+        for(const auto x : Cam::SRCdistances)
         {
             std::pair<osg::Vec3,osg::Vec3> dist = calcPointsOnPyramidAtDistance(calcValueInRange(0,70,0,Cam::depthView,x),osg::Y_AXIS);
             vertsSRC->push_back(dist.first);
@@ -603,7 +608,7 @@ void CamDrawable::updateVisibility(float value)
     if(vertsSRC.valid())
     {
         vertsSRC.get()->clear();
-        for(const auto x : SRCdistances)
+        for(const auto x : Cam::SRCdistances)
         {
             std::pair<osg::Vec3,osg::Vec3> dist = calcPointsOnPyramidAtDistance(calcValueInRange(0,70,0,Cam::depthView,x),osg::Y_AXIS);
             vertsSRC->push_back(dist.first);

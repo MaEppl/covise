@@ -56,6 +56,7 @@ public:
     static double depthView;
     static double focalLengthPixel;
     static double rangeDistortionDepth;
+    static const std::vector<double> SRCdistances;
     Cam(coCoord m,std::vector<std::vector<double>> visMat,const std::string name);
     ~Cam();
     std::vector<std::vector<double>> getVisMat(){return visMat;}
@@ -113,9 +114,6 @@ private:
     osg::ref_ptr<osg::Vec4Array> colorsSRC;
     osg::ref_ptr<osg::Geode> SRCgeode;
     osg::ref_ptr<osg::Geometry> geomSRC;
-
-    const std::vector<double> SRCdistances{70,56,47,41,34,13,9,5,3}; //distance in meter for SRC values of 0.2 0.4 0.6 0.8 (Rayleigh distribution with sigma =22 and range 0-27)
-
     int scale = 15;
    // osg::ref_ptr<osg::Geode> interactorGeode;
 
