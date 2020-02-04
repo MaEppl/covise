@@ -111,10 +111,12 @@ private:
     osg::ref_ptr<osg::Geometry> geom;
 
     osg::ref_ptr<osg::Vec3Array> vertsSRC;
-        osg::ref_ptr<osg::Vec4Array> colorsSRC;
-        osg::ref_ptr<osg::Geode> SRCgeode;
-        osg::ref_ptr<osg::Geometry> geomSRC;
+    osg::ref_ptr<osg::Vec4Array> colorsSRC;
+    osg::ref_ptr<osg::Geode> SRCgeode;
+    osg::ref_ptr<osg::Geometry> geomSRC;
 
+
+        std::pair<osg::Vec3, osg::Vec3> calcPointsOnPyramidAtDistance(const float distance,const osg::Vec3 fixAxis);
  /*  osg::ref_ptr<osg::Vec3Array> vertsSRC;
     osg::ref_ptr<osg::Vec4Array> colorsSRC;
     osg::ref_ptr<osg::Geode> SRC;
@@ -141,6 +143,8 @@ public:
     bool _showRealSize=false;
 
     osg::ref_ptr<osg::Geode> getCamGeode()const{return camGeode;}
+    osg::ref_ptr<osg::Geode> getSRCgeode()const{return SRCgeode;}
+
 
     void updateFOV(float value);
     void updateVisibility(float value);
@@ -208,6 +212,8 @@ private:
 
     coVR3DTransRotInteractor *viewpointInteractor;
     osg::ref_ptr<osg::Switch> switchNode;
+    osg::ref_ptr<osg::Switch> switchNode2;
+
     osg::ref_ptr<osg::MatrixTransform> localDCS;
     osg::ref_ptr<osg::Group> searchSpaceGroup;
     osg::ref_ptr<osg::Group> searchSpaceGroupDeleted;

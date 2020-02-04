@@ -481,19 +481,32 @@ osg::Geode* CamDrawable::plotSRC()
     geode->getStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
     geode->getStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
 
-
-    double TimgWidth = 2*Cam::depthView/2*std::tan(Cam::fov/2*osg::PI/180);
-    double TimgHeight = TimgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
-   // verts->push_back(osg::Vec3(TimgWidth/2,-Cam::depthView/2,TimgHeight/2)/scale );
-   // verts->push_back(osg::Vec3(-TimgWidth/2,-Cam::depthView/2,TimgHeight/2)/scale );
-
     vertsSRC = new osg::Vec3Array;
-  //  vertsSRC->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale );
-  //  vertsSRC->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale );
 
-    vertsSRC->push_back( osg::Vec3( 0,  0,  0) ); // 4 peak
+
+   //  vertsSRC->push_back( osg::Vec3( -Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale );
+   //   vertsSRC->push_back( osg::Vec3(  Cam::imgWidth/2,-Cam::depthView, Cam::imgHeight/2 )/scale );
+    std::pair<osg::Vec3,osg::Vec3> lastVertexes = calcPointsOnPyramidAtDistance(Cam::depthView,osg::Y_AXIS);
+//    vertsSRC->push_back(lastVertexes.first);
+//    vertsSRC->push_back(lastVertexes.second);
+
+    vertsSRC->push_back(osg::Vec3(-Cam::imgWidth/4,-Cam::depthView/2,Cam::imgHeight)/scale);
+    vertsSRC->push_back(osg::Vec3(-Cam::imgWidth/2,-Cam::depthView,Cam::imgHeight)/scale);
+    vertsSRC->push_back(osg::Vec3(Cam::imgWidth/2,-Cam::depthView,Cam::imgHeight)/scale);
+    vertsSRC->push_back(osg::Vec3(Cam::imgWidth/4,-Cam::depthView/2,Cam::imgHeight)/scale);
+
+    vertsSRC->push_back(osg::Vec3(-Cam::imgWidth/8,0,Cam::imgHeight)/scale);
+    vertsSRC->push_back(osg::Vec3(-Cam::imgWidth/4,-Cam::depthView/2,Cam::imgHeight)/scale);
+    vertsSRC->push_back(osg::Vec3(Cam::imgWidth/4,-Cam::depthView/2,Cam::imgHeight)/scale);
+    vertsSRC->push_back(osg::Vec3(Cam::imgWidth/8,0,Cam::imgHeight)/scale);
+
 
     std::vector<float> distances;
+        distances.push_back(0.f);
+
+
+
+ /*   std::vector<float> distances;
     distances.push_back(3.3f);
     distances.push_back(6.5f);
     distances.push_back(10.2f);
@@ -502,43 +515,59 @@ osg::Geode* CamDrawable::plotSRC()
     distances.push_back(46.f);
     distances.push_back(53.f);
     distances.push_back(63.f);
-    for(const auto& x : distances)
+*/
+/*    for(const auto x : distances)
     {
         std::pair<osg::Vec3,osg::Vec3> test = calcPointsOnPyramidAtDistance(x,osg::Y_AXIS);
         vertsSRC->push_back(test.first);
         vertsSRC->push_back(test.second);
     }
-    std::pair<osg::Vec3,osg::Vec3> lastVertexes = calcPointsOnPyramidAtDistance(Cam::depthView,osg::Y_AXIS);
-    vertsSRC->push_back(lastVertexes.first);
-    vertsSRC->push_back(lastVertexes.second);
+  */  vertsSRC->push_back( osg::Vec3( 0,  0,  0) ); // 4 peak
+
 
     geomSRC->setVertexArray(vertsSRC);
 
-    osg::DrawElementsUInt* triangle =
-       new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
-    triangle->push_back(0);
-    triangle->push_back(1);
-    triangle->push_back(2);
-    geomSRC->addPrimitiveSet(triangle);
 
 
-    osg::DrawElementsUInt* quad =
+
+ /*   osg::DrawElementsUInt* quad =
        new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-    for(int i =3;i<=vertsSRC.get()->size()-2;i+=2)
+    for(int i =0;i<=vertsSRC.get()->size()-4;i+=4)
     {
-        quad = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
-        quad->push_back(i-2);
-        quad->push_back(i);
-        quad->push_back(i+1);
-        quad->push_back(i-1);
+   */     osg::DrawElementsUInt* quad = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
+        quad->push_back(0);
+        quad->push_back(0+1);
+        quad->push_back(0+2);
+        quad->push_back(0+3);
         geomSRC->addPrimitiveSet(quad);
 
-    }
-    // Create a separate color for each face
+        quad = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
+                quad->push_back(4);
+                quad->push_back(5);
+                quad->push_back(6);
+                quad->push_back(7);
+                geomSRC->addPrimitiveSet(quad);
+
+  //  }
+    osg::DrawElementsUInt* triangle =
+       new osg::DrawElementsUInt(osg::PrimitiveSet::TRIANGLES, 0);
+    int count = vertsSRC.get()->size();
+    triangle->push_back(4);
+    triangle->push_back(7);
+    triangle->push_back(8);
+    geomSRC->addPrimitiveSet(triangle);
+   // Create a separate color for each face
     colorsSRC = new osg::Vec4Array;
     osg::Vec4 color = {0.0,0.0,0.0,0.3};
     float colorChange =0.0f;
-    for(int i=1;i<=distances.size()/2+1;i++)
+
+    colorsSRC->push_back(color+osg::Vec4{0.f,colorChange,0.0f,0.f});
+    colorsSRC->push_back(color+osg::Vec4{0.f,0.5,0.0f,0.f});
+    colorsSRC->push_back(color+osg::Vec4{0.f,0.5,1.0f,0.f});
+
+
+
+ /*   for(int i=1;i<=distances.size()/2+1;i++)
     {
 
         colorsSRC->push_back(color+osg::Vec4{0.f,colorChange,0.0f,0.f});
@@ -550,13 +579,43 @@ osg::Geode* CamDrawable::plotSRC()
     colorsSRC->push_back(colorsSRC.get()->at(1));
     colorsSRC->push_back(colorsSRC.get()->at(0));
 
-
+*/
 
    // Assign the color indices created above to the geometry and set the
    // binding mode to _PER_PRIMITIVE_SET.
    geomSRC->setColorArray(colorsSRC);
    geomSRC->setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
    return geode;
+}
+std::pair<osg::Vec3, osg::Vec3> CamDrawable::calcPointsOnPyramidAtDistance(const float distance,const osg::Vec3 fixAxis)
+{
+    osg::Vec3 vert1;
+    osg::Vec3 vert2;
+    if(fixAxis == osg::X_AXIS)
+    {
+
+    }
+    else if(fixAxis == osg::Y_AXIS)
+    {
+       // float width = 2*distance*std::tan(Cam::fov/2*osg::PI/180);
+        float width = 2*70*std::tan(Cam::fov/2*osg::PI/180);
+
+        float heigth = width/(Cam::imgWidthPixel/Cam::imgHeightPixel);
+        // vert1 = osg::Vec3(-width/2,-distance,heigth/2)/scale;
+        // vert2 = osg::Vec3(width/2,-distance,heigth/2)/scale;
+        vert1 = osg::Vec3(-width/2,-distance,heigth/2)/scale;
+        vert2 = osg::Vec3(width/2,-distance,heigth/2)/scale;
+    }
+    else if(fixAxis == osg::Z_AXIS)
+    {
+
+    }
+    else
+    {
+        //else trow Exeption!s
+    }
+
+    return std::make_pair(vert1,vert2);
 }
 
 void CamDrawable::updateFOV(float value)
@@ -714,13 +773,18 @@ CamPosition::CamPosition(osg::Matrix m,EquipmentWithCamera *pump )
     searchSpaceDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false,osg::Vec4(1.0f, 1.0f, 0.0f, 1.f)));
     deletedOrientationsDrawable = std::unique_ptr<CamDrawable>(new CamDrawable(empty,visMat,false,osg::Vec4(1.0f, 0.0f, 0.0f, 1.f)));
 
+    switchNode2 = new osg::Switch();
+    switchNode2->setName("CamSRCSwitch");
 
     //create Interactors
     float _interSize = cover->getSceneSize() / 25;
     viewpointInteractor = new coVR3DTransRotInteractor(m, _interSize/3, vrui::coInteraction::ButtonA, "hand", "CamInteractor", vrui::coInteraction::Medium);
     viewpointInteractor->show();
     viewpointInteractor->enableIntersection();
-    localDCS->addChild(camDraw->getCamGeode().get());
+    localDCS->addChild(switchNode2.get());
+    switchNode2->addChild(camDraw->getCamGeode().get(),true);
+    switchNode2->addChild(camDraw->getSRCgeode().get(),true);
+ //   localDCS->addChild(camDraw->getSRCgeode().get());
 
     searchSpaceGroup = new osg::Group;
     searchSpaceGroup->setName("SearchSpace");
