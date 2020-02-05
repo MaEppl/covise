@@ -597,6 +597,13 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     penalty->setCallback([this](double value, bool released){
         GA::penalty =value;
     });
+    //penalization
+    penalization = new ui::Button(Optimize , "Penalization");
+    penalization->setText("NewFunction");
+    penalization->setState(GA::newFunction);
+    penalization->setCallback([this](bool state){
+        GA::newFunction = state;
+    });
     //weight for Prio1
     weighting = new ui::Slider(Optimize , "weighting");
     weighting->setText("Weigthing PRIO1");

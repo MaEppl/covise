@@ -25,6 +25,7 @@ double GA::mutationRate=0.3;
 double GA::crossoverRate=0.7;
 int GA::populationSize = 2000;
 bool GA::dynamicThreading=false;
+bool GA::newFunction = false;
 #if(1)
 
 std::shared_ptr<Cam> GA::getRandomCamera(int camPos, const std::function<double(void)> &rnd01)
@@ -135,7 +136,9 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
             percentageCalcultationPrio2.push_back(0);
 
         count2++;
- }
+    }
+
+
 
     //Coverage [%]
     double sum_observed_prio1 = std::accumulate(percentageCalcultationPrio1.begin(),percentageCalcultationPrio1.end(),0.0);
@@ -155,9 +158,18 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
                 std::transform(x->distortionValuePrio2.begin(),x->distortionValuePrio2.end(),visFactor_prio2.begin(),visFactor_prio2.begin(),std::plus<double>());
             }
            // c.objective = -(weighting * std::accumulate(visFactor_prio1.begin(),visFactor_prio1.end(),0.0) + std::accumulate(visFactor_prio2.begin(),visFactor_prio2.end(),0.0));
-  */          c.objective = -(weightingPRIO1 * std::accumulate(visMatPrio1.begin(),visMatPrio1.end(),0.0) + std::accumulate(visMatPrio2.begin(),visMatPrio2.end(),0.0));
+  */
+    if(!newFunction)
+        c.objective = -(weightingPRIO1 * std::accumulate(visMatPrio1.begin(),visMatPrio1.end(),0.0) + std::accumulate(visMatPrio2.begin(),visMatPrio2.end(),0.0));
 
-            return true;
+    else
+    {
+    double nROI = visYesNo_prio1.size();
+    double penaltyFunction = penalty * nROI/std::accumulate(percentageCalcultationPrio1.begin(),percentageCalcultationPrio1.end(),0.0);
+    c.objective = -(std::accumulate(percentageCalcultationPrio1.begin(),percentageCalcultationPrio1.end(),0.0) + std::accumulate(percentageCalcultationPrio2.begin(),percentageCalcultationPrio2.end(),0.0)-penaltyFunction);
+    }
+
+    return true;
 /*        }
     }else
         return true;

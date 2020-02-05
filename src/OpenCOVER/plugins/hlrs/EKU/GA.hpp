@@ -27,6 +27,7 @@ public:
     static double mutationRate;
     static double crossoverRate;
     static bool dynamicThreading;
+    static bool newFunction;
 
     void stopGA(){
         std::cout<<"Stop requested"<<std::endl;
