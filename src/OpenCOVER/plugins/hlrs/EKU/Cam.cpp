@@ -81,6 +81,8 @@ void Cam::calcVisMat()
   //  visMat.clear(); do not clear anymore!
     distortionValuePrio1.clear();
     distortionValuePrio2.clear();
+    srcValuesPrio1.clear();
+    srcValuesPrio2.clear();
     if(!visMat.empty()){
   //  visMat.reserve(EKU::safetyZones.size());
         osg::Matrix T = osg::Matrix::translate(-pos);
@@ -108,12 +110,15 @@ void Cam::calcVisMat()
                     {
                         visMatPrio1.push_back(0);
                         distortionValuePrio1.push_back(0);
+                        srcValuesPrio1.push_back(0);
 
                     }
                     else if(p->getPriority() ==SafetyZone::PRIO2)
                     {
                         visMatPrio2.push_back(0);
                         distortionValuePrio2.push_back(0);
+                        srcValuesPrio2.push_back(0);
+
 
                     }
                     //count++;
@@ -148,6 +153,7 @@ void Cam::calcVisMat()
                                 double SWC = calcWidthDistortionFactor(newPoint);
                                 double SHC = calcHeightDistortionFactor(newPoint);
                                 distortionValuePrio1.push_back(SRC*SWC*SHC*PDC);
+                                srcValuesPrio1.push_back(SRC);
                                // std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
 
                             }
@@ -158,6 +164,8 @@ void Cam::calcVisMat()
                                 double SWC = calcWidthDistortionFactor(newPoint);
                                 double SHC = calcHeightDistortionFactor(newPoint);
                                 distortionValuePrio2.push_back(SRC*SWC*SHC*PDC);
+                                srcValuesPrio2.push_back(SRC);
+
                                 //std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
 
                             }
@@ -169,6 +177,8 @@ void Cam::calcVisMat()
                             {
                                 visMatPrio1.push_back(0);
                                 distortionValuePrio1.push_back(0);
+                                srcValuesPrio1.push_back(0);
+
                                // std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
 
                             }
@@ -176,6 +186,8 @@ void Cam::calcVisMat()
                             {
                                 visMatPrio2.push_back(0);
                                 distortionValuePrio2.push_back(0);
+                                srcValuesPrio2.push_back(0);
+
                                 //std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
 
                             }

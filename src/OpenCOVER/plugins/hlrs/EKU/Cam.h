@@ -74,6 +74,8 @@ public:
     std::vector<int> visMatPrio2;
     std::vector<double> distortionValuePrio1;
     std::vector<double> distortionValuePrio2;
+    std::vector<double> srcValuesPrio1;
+    std::vector<double> srcValuesPrio2;
 
     std::string getName()const{return name;}
     void setPosition(coCoord& m, std::vector<std::vector<double>> visMatInput);
