@@ -32,6 +32,7 @@ public:
     static double coverageThreshold;
     static double requiredPrio1Coverage;
     static double penalty2;
+    static long long int createdChromoses;
 
     void stopGA(){
         std::cout<<"Stop requested"<<std::endl;

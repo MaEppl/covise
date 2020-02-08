@@ -31,6 +31,8 @@ double GA::coverageThreshold = 0.4;
 double GA::requiredPrio1Coverage = 1.0 ;
 double GA::penalty2 = 3500.0 ;
 
+long long int GA::createdChromoses =0;
+
 #if(1)
 
 std::shared_ptr<Cam> GA::getRandomCamera(int camPos, const std::function<double(void)> &rnd01)
@@ -198,17 +200,28 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
     {
         int sumPrio1Points = coefficients_prio1.size();
         int sumCoveredPrio1Points = std::accumulate(percentageCalcultationPrio1.begin(),percentageCalcultationPrio1.end(),0);
+        int sumPartialCoveredPrio1Points = std::accumulate(coveredPrio1.begin(),coveredPrio1.end(),0);
         double penaltyValue;
         if(sumCoveredPrio1Points > 0 && sumCoveredPrio1Points < requiredPrio1Coverage * sumPrio1Points)
             penaltyValue = penalty2 * sumPrio1Points/sumCoveredPrio1Points;
         else if(sumCoveredPrio1Points == 0)
-            penaltyValue = penalty2 * sumPrio1Points;
+        {
+            /* First observe Prio1 zones, even if it's only seen by less cameras then needed!
+             *
+             *
+            */
+           // if(sumPartialCoveredPrio1Points > 0)
+           //     penaltyValue = penalty2 * sumPrio1Points/sumPartialCoveredPrio1Points;
+           // else if(sumPartialCoveredPrio1Points == 0)
+                penaltyValue = penalty2 * sumPrio1Points;
+        }
         else if(sumCoveredPrio1Points >= requiredPrio1Coverage * sumPrio1Points)
             penaltyValue = 0;
 
         c.objective = -(std::accumulate(coveredPrio1.begin(),coveredPrio1.end(),0) + std::accumulate(coveredPrio2.begin(),coveredPrio2.end(),0)-penaltyValue);
     }
 
+    createdChromoses++;
     return true;
 /*        }
     }else
@@ -306,8 +319,10 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     int possibleCameras=0;
     for(const auto& x :camlist)
     {
+        std::cout<<"Orientations per camera: "<<x->allCameras.size()<<", ";
         possibleCameras += x->allCameras.size();
     }
+    std::cout<<" "<<std::endl;
     int numberOfPoints = cam.at(0)->camDraw->cam->getVisMatPrio1().size() + cam.at(0)->camDraw->cam->getVisMatPrio2().size();
     std::string name = "results_"+std::to_string(coVRMSController::instance()->getID())+".txt";
     output_file.open(name);
@@ -341,6 +356,7 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
 
     if(!user_stop)
     {
+        std::cout<<"created Chromosomes: " <<createdChromoses<<std::endl;
         std::cout<<"The problem is optimized in "<<timer.toc()<<" seconds.###########################################"<<std::endl;
     }
     optimizationTime = timer.toc();
