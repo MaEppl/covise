@@ -581,18 +581,18 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     });
 */
     //population size
-    penalty = new ui::Slider(Optimize , "PopulatioSize");
-    penalty->setText("Population size");
-    penalty->setBounds(50,6000);
-    penalty->setValue(GA::populationSize);
-    penalty->setCallback([this](int value, bool released){
+    populationSize = new ui::Slider(Optimize , "PopulatioSize");
+    populationSize->setText("Population size");
+    populationSize->setBounds(50,6000);
+    populationSize->setValue(GA::populationSize);
+    populationSize->setCallback([this](int value, bool released){
         GA::populationSize =value;
     });
 
     //penalty
     penalty = new ui::Slider(Optimize , "penalty");
     penalty->setText("Penalty");
-    penalty->setBounds(1., 30.);
+    penalty->setBounds(0., 30.);
     penalty->setValue(GA::penalty);
     penalty->setCallback([this](double value, bool released){
         GA::penalty =value;
@@ -801,9 +801,16 @@ void EKU::findNotVisiblePoints()
     if(!allCamPositions.empty())
     {
         std::vector<std::vector<double>> result(safetyZones.size());
+        std::vector<std::vector<double>> resultSRC(safetyZones.size());
+
         result = allCamPositions.front()->camDraw->cam->visMat;
+        resultSRC = allCamPositions.front()->camDraw->cam->visMatSRCValues;
+
         for(auto &x:result)
-            std::fill(x.begin(), x.end(), 0);
+            std::fill(x.begin(), x.end(), 0);//0 for addition
+        for(auto &x:resultSRC)
+            std::fill(x.begin(), x.end(), 1.0);//1.0 for multilcation
+
 
         size_t counter =0;
         for(const auto& x : allCamPositions)
@@ -815,9 +822,18 @@ void EKU::findNotVisiblePoints()
             {
                 std::transform(x1.begin(),x1.end(),result.at(counter).begin(),result.at(counter).begin(),std::plus<double>());
                 counter ++;
-
             }
             counter =0;
+            for(const auto& x1: x->camDraw->cam->visMatSRCValues)
+            {
+                std::transform(x1.begin(),x1.end(),resultSRC.at(counter).begin(),resultSRC.at(counter).begin(),[](double i, double j)
+                {
+                    return (1-i)*j;
+                });
+                counter++;
+            }
+            counter =0;
+
 
         }
         //go over all SZ and check if nbr of Cams == PRIO zone!
@@ -826,12 +842,14 @@ void EKU::findNotVisiblePoints()
         {
             std::vector<double>visMat;
             visMat.reserve(x.size());
+            register size_t counter2 =0;
             for(const auto&x1 :x)
             {
-                if(safetyZones.at(counter)->getPriority()>x1)
-                    visMat.push_back(1);
+                if(safetyZones.at(counter)->getPriority()<=x1 && (1-resultSRC.at(counter).at(counter2))>=GA::coverageThreshold )
+                    visMat.push_back(0);//this is weird here! 0 meansvisible in this case
                 else
-                    visMat.push_back(0);
+                    visMat.push_back(1);
+                counter2++;
 
             }
             safetyZones.at(counter)->pointsVisibleForEnoughCameras(visMat);

@@ -33,7 +33,7 @@ double Cam::imgWidth = 2*depthView*std::tan(Cam::fov/2*osg::PI/180);
 double Cam::imgHeight = Cam::imgWidth/(Cam::imgWidthPixel/Cam::imgHeightPixel);
 double Cam::rangeDistortionDepth =23;
 size_t Cam::count=0;
-const std::vector<double>Cam::SRCdistances{70,56,47,41,34,13,9,5,3};//distance in meter for SRC values of 0.2 0.4 0.6 0.8 (Rayleigh distribution with sigma =22 and range 0-27)
+const std::vector<double>Cam::SRCdistances{70,56.4,47.63,41,34.6,13,9.0,5.75,2.8};//distance in meter for SRC values of 0.2 0.4 0.6 0.8 (Rayleigh distribution with sigma =23 and range 0-70)
 
 Cam::Cam(coCoord matrix,std::vector<std::vector<double>> visMat,std::string name):pos(matrix.xyz),rot(matrix.hpr[0],matrix.hpr[1]),visMat(visMat),name(name)
 {
@@ -83,6 +83,8 @@ void Cam::calcVisMat()
     distortionValuePrio2.clear();
     srcValuesPrio1.clear();
     srcValuesPrio2.clear();
+    visMatSRCValues.clear();
+    visMatSRCValues=visMat;
     if(!visMat.empty()){
   //  visMat.reserve(EKU::safetyZones.size());
         osg::Matrix T = osg::Matrix::translate(-pos);
@@ -121,7 +123,6 @@ void Cam::calcVisMat()
 
 
                     }
-                    //count++;
                 }
                 else{ //point is Visible from CamPos now check if it's in FOV
                         osg::Vec3 newPoint = p1*T*zRot*yRot*testRot;
@@ -140,7 +141,7 @@ void Cam::calcVisMat()
                         std::cout<<"H: "<<std::abs(newPoint.z())<<" <= "<<Cam::imgHeight/2 * newPoint.y()/Cam::depthView<<std::endl;
                         */
                         newPoint.set(newPoint.x(),newPoint.y()*-1,newPoint.z());
-                        if((newPoint.y()<=Cam::depthView ) && (newPoint.y()>=Cam::SRCdistances.back()) &&
+                        if((newPoint.y()<=Cam::depthView ) && (newPoint.y()>=calcValueInRange(0,70,0,Cam::depthView,Cam::SRCdistances.back())) &&
                            (std::abs(newPoint.x()) <= Cam::imgWidth/2 * newPoint.y()/Cam::depthView) &&
                            (std::abs(newPoint.z()) <=Cam::imgHeight/2 * newPoint.y()/Cam::depthView))
                         {   //if point is in FOV
@@ -169,10 +170,12 @@ void Cam::calcVisMat()
                                 //std::cout<<"Total Value: "<<SRC*PDC<<std::endl;
 
                             }
+                            visMatSRCValues.at(countSZ).at(count) = calcRangeDistortionFactor(newPoint);
                          }
                         else // not in FOV
                         {
                             visMat.at(countSZ).at(count)=0;
+                            visMatSRCValues.at(countSZ).at(count) =0;
                             if(p->getPriority() == SafetyZone::PRIO1)
                             {
                                 visMatPrio1.push_back(0);

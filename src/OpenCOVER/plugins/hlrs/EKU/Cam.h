@@ -70,6 +70,7 @@ public:
     //check if points are visible for this camera
     void calcVisMat();
     std::vector<std::vector<double>> visMat; //outer Vector is for SafetyZones, inner for dots in each SafetyZone
+    std::vector<std::vector<double>> visMatSRCValues;
     std::vector<int> visMatPrio1;
     std::vector<int> visMatPrio2;
     std::vector<double> distortionValuePrio1;
