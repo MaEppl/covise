@@ -25,7 +25,12 @@ double GA::mutationRate=0.3;
 double GA::crossoverRate=0.7;
 int GA::populationSize = 2000;
 bool GA::dynamicThreading=false;
-bool GA::newFunction = false;
+bool GA::newFunction = true;
+
+double GA::coverageThreshold = 0.4;
+double GA::requiredPrio1Coverage = 1.0 ;
+double GA::penalty2 = 3500.0 ;
+
 #if(1)
 
 std::shared_ptr<Cam> GA::getRandomCamera(int camPos, const std::function<double(void)> &rnd01)
@@ -75,22 +80,49 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
     std::vector<int> visYesNo_prio1(p.cameras.begin()->get()->visMatPrio1.size(),0);
     std::vector<int> visYesNo_prio2(p.cameras.begin()->get()->visMatPrio2.size(),0);
 
-    std::vector<double> coefficients_prio1(p.cameras.begin()->get()->distortionValuePrio1.size(),1);
-    std::vector<double> coefficients_prio2(p.cameras.begin()->get()->distortionValuePrio2.size(),1);
+    std::vector<double> coefficients_prio1(p.cameras.begin()->get()->srcValuesPrio1.size(),1);
+    std::vector<double> coefficients_prio2(p.cameras.begin()->get()->srcValuesPrio2.size(),1);
 
     for(const auto &x: p.cameras)
     {
-      //  std::cout<<"size visMat Prio1: "<<x->visMatPrio1.size()<<std::endl;
-      //  std::cout<<"size visMat Prio2: "<<x->visMatPrio2.size()<<std::endl;
-
         //not necessarry to add all elements, until 2 is enough
         std::transform(x->visMatPrio1.begin(),x->visMatPrio1.end(),visYesNo_prio1.begin(),visYesNo_prio1.begin(),std::plus<int>());
         std::transform(x->visMatPrio2.begin(),x->visMatPrio2.end(),visYesNo_prio2.begin(),visYesNo_prio2.begin(),std::plus<int>());
 
-        std::transform(x->distortionValuePrio1.begin(),x->distortionValuePrio1.end(),coefficients_prio1.begin(),coefficients_prio1.begin(),std::multiplies<double>());
-        std::transform(x->distortionValuePrio2.begin(),x->distortionValuePrio2.end(),coefficients_prio2.begin(),coefficients_prio2.begin(),std::multiplies<double>());
+      //  std::transform(x->distortionValuePrio1.begin(),x->distortionValuePrio1.end(),coefficients_prio1.begin(),coefficients_prio1.begin(),std::multiplies<double>());
+      //  std::transform(x->distortionValuePrio2.begin(),x->distortionValuePrio2.end(),coefficients_prio2.begin(),coefficients_prio2.begin(),std::multiplies<double>());
 
+        std::transform(x->srcValuesPrio1.begin(),x->srcValuesPrio1.end(),coefficients_prio1.begin(),coefficients_prio1.begin(),[](double i, double j)
+        {
+            return (1-i)*j;
+        });
+        std::transform(x->srcValuesPrio2.begin(),x->srcValuesPrio2.end(),coefficients_prio2.begin(),coefficients_prio2.begin(),[](double i, double j)
+        {
+            return (1-i)*j;
+        });
     }
+    std::vector<int> coveredPrio1(coefficients_prio1.size(),0);
+    std::vector<int> coveredPrio2(coefficients_prio2.size(),0);
+    register int cntPrio1 =0;
+    for(const auto& x : coefficients_prio1)
+    {
+        if(1-x >= coverageThreshold )//&& visYesNo_prio1.at(cntPrio1) - SafetyZone::PRIO1>=0)
+            coveredPrio1.at(cntPrio1)=1;
+
+        cntPrio1++;
+    }
+
+    register int cntPrio2 =0;
+    for(const auto& x : coefficients_prio2)
+    {
+        if(1-x >= coverageThreshold)// && visYesNo_prio2.at(cntPrio2) - SafetyZone::PRIO2>=0)
+            coveredPrio2.at(cntPrio2)=1;
+
+        cntPrio2++;
+    }
+
+
+
     std::vector<int> percentageCalcultationPrio1;
     std::vector<int> percentageCalcultationPrio2;
 
@@ -164,9 +196,17 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
 
     else
     {
-    double nROI = visYesNo_prio1.size();
-    double penaltyFunction = penalty * nROI/std::accumulate(percentageCalcultationPrio1.begin(),percentageCalcultationPrio1.end(),0.0);
-    c.objective = -(std::accumulate(percentageCalcultationPrio1.begin(),percentageCalcultationPrio1.end(),0.0) + std::accumulate(percentageCalcultationPrio2.begin(),percentageCalcultationPrio2.end(),0.0)-penaltyFunction);
+        int sumPrio1Points = coefficients_prio1.size();
+        int sumCoveredPrio1Points = std::accumulate(percentageCalcultationPrio1.begin(),percentageCalcultationPrio1.end(),0);
+        double penaltyValue;
+        if(sumCoveredPrio1Points > 0 && sumCoveredPrio1Points < requiredPrio1Coverage * sumPrio1Points)
+            penaltyValue = penalty2 * sumPrio1Points/sumCoveredPrio1Points;
+        else if(sumCoveredPrio1Points == 0)
+            penaltyValue = penalty2 * sumPrio1Points;
+        else if(sumCoveredPrio1Points >= requiredPrio1Coverage * sumPrio1Points)
+            penaltyValue = 0;
+
+        c.objective = -(std::accumulate(coveredPrio1.begin(),coveredPrio1.end(),0) + std::accumulate(coveredPrio2.begin(),coveredPrio2.end(),0)-penaltyValue);
     }
 
     return true;
@@ -178,16 +218,17 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
 
 GA::MySolution GA:: mutate(const MySolution& X1,const std::function<double(void)> &rnd01,double shrink_scale)
 {
+
     MySolution X_new=X1;
-    int randCamPos = rnd01()*(nbrCamPositions-1);
-    int count = shrink_scale * nbrCamPositions;
+    int count = std::ceil(shrink_scale * nbrCamPositions);
+
     while( count !=0)
     {
+        int randCamPos = std::roundl(rnd01()*(nbrCamPositions-1));
         X_new.cameras.at(randCamPos).reset();
         X_new.cameras.at(randCamPos) = getRandomCamera(randCamPos,rnd01);
         count--;
     }
-
     return X_new;
 }
 
@@ -280,7 +321,7 @@ GA::GA(std::vector<std::shared_ptr<CamPosition>>& cam, std::vector<std::shared_p
     timer.tic();
     using namespace std::placeholders;
     ga_obj.problem_mode=EA::GA_MODE::SOGA;
-    ga_obj.multi_threading=true;
+    ga_obj.multi_threading=false;
     ga_obj.idle_delay_us=1;//10 // switch between threads quickly
     ga_obj.dynamic_threading=dynamicThreading;
     ga_obj.verbose=true;

@@ -29,6 +29,10 @@ public:
     static bool dynamicThreading;
     static bool newFunction;
 
+    static double coverageThreshold;
+    static double requiredPrio1Coverage;
+    static double penalty2;
+
     void stopGA(){
         std::cout<<"Stop requested"<<std::endl;
         user_stop=true;}
