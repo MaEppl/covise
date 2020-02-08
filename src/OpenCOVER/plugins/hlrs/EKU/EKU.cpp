@@ -14,7 +14,7 @@
 using namespace opencover;
 bool EKU::modifyScene=true;
 bool EKU::deleteObjects=false;
-bool EKU::visualizeSRC=false;
+bool EKU::visualizeSRC=true;
 std::vector<std::shared_ptr<SafetyZone>> EKU::safetyZones;
 std::vector<std::shared_ptr<CamPosition>> EKU::allCamPositions;
 std::vector<std::unique_ptr<Equipment>> EKU::equipment;
@@ -695,7 +695,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     //Show SRC
     showSRC = new ui::Button(Camera , "ShowSRC");
     showSRC->setText("SRC");
-    showSRC->setState(false);
+    showSRC->setState(true);
     showSRC->setCallback([this](bool state){
         visualizeSRC=state;
     });
