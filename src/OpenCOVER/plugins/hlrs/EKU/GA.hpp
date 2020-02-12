@@ -21,7 +21,8 @@ public:
     static int nbrCamPositions;
     static int nbrPoints;
 
-    static double penalty;
+    static double penalty1;
+    static double penalty2;
     static double weightingPRIO1;
     static int populationSize;
     static double mutationRate;

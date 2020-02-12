@@ -590,13 +590,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     });
 
     //penalty
-    penalty = new ui::Slider(Optimize , "penalty");
-    penalty->setText("Penalty Not Covered Points");
-    penalty->setBounds(0., 3000.);
-    penalty->setValue(GA::penalty);
+    penalty = new ui::Slider(Optimize , "penaltyFitness1");
+    penalty->setText("Penalty Fitness 1");
+    penalty->setBounds(0., 100.);
+    penalty->setValue(GA::penalty1);
     penalty->setCallback([this](double value, bool released){
-        GA::penalty =value;
+        GA::penalty1 =value;
     });
+
 
     //weight for Prio1
     weighting = new ui::Slider(Optimize , "weighting");
@@ -653,7 +654,14 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     });
 
-
+    //penalty2
+    penalty = new ui::Slider(Optimize , "penalty2");
+    penalty->setText("Penalty Fitness 2");
+    penalty->setBounds(100., 3500.);
+    penalty->setValue(GA::penalty2);
+    penalty->setCallback([this](double value, bool released){
+        GA::penalty2 =value;
+    });
 
     //Menu for Camera
     Camera = new ui::Menu(EKUMenu, "Camera");
