@@ -228,7 +228,7 @@ void EKU::createScene()
         blender->setName(name);
         std::vector<osg::Matrix> vecOfCameras;
         osg::Matrix matBlender;
-        matBlender.setTrans(0,-17,0);
+        matBlender.setTrans(0,-20,0);
         osg::Matrix cam1,cam2;
         cam1.setTrans(7,1.5,2.5);
         cam2.setTrans(-3,1.5,2.5);
@@ -257,8 +257,8 @@ void EKU::createScene()
         matDataVan.setRotate(rotY);
        // cam1.setRotate(rotY);
        // cam2.setRotate(rotY);
-        vecOfCameras.push_back(cam1);
-        vecOfCameras.push_back(cam2);
+      //  vecOfCameras.push_back(cam1);
+      //  vecOfCameras.push_back(cam2);
         std::unique_ptr<EquipmentWithCamera> dataVanDraw(new EquipmentWithCamera(name,matDataVan,dataVan,vecOfCameras));
         equipmentWithCamera.push_back(std::move(dataVanDraw));
     }
@@ -894,8 +894,8 @@ void EKU::doAddTruck(osg::Matrix pos )
     rotLast2.makeRotate(osg::DegreesToRadians(-10.0),osg::Z_AXIS);
     cam1.setRotate(rotY*rotZ*rotX*rotLast2);
     cam2.setRotate(rotY*rotZ*rotX*rotLast1);
-    vecOfCameras.push_back(cam1);
-    vecOfCameras.push_back(cam2);
+  //  vecOfCameras.push_back(cam1);
+  //  vecOfCameras.push_back(cam2);
     std::string name ="Pump";
     std::unique_ptr<EquipmentWithCamera> pumpTruck(new EquipmentWithCamera(name,pos,truck,vecOfCameras));
     equipmentWithCamera.push_back(std::move(pumpTruck));
