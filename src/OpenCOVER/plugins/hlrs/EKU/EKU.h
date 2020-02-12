@@ -133,7 +133,7 @@ private:
     //Menu for Optimization parameters
     ui::Menu *Optimize = nullptr;
     ui::Slider *populationSize = nullptr;
-    ui::Slider *penalty = nullptr, *weighting = nullptr;
+    ui::Slider *penalty = nullptr, *weighting = nullptr,*reqPRIO1Coverage = nullptr;
     ui::Button *dynamicThreading = nullptr;
 
     //Menu for optimization results
@@ -146,6 +146,7 @@ private:
     ui::Slider *FOVRegulator = nullptr, *VisibilityRegulator = nullptr;
     ui::Button  *ShowSearchSpace = nullptr,*ShowDeletedSearchSpace = nullptr,*ShowRealSize = nullptr,*showSRC = nullptr;
     ui::Action *calcCoverage = nullptr;
+
 
     //Menu for safety zones
     ui::Menu *safetyZoneMenu = nullptr;

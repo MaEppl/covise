@@ -20,16 +20,15 @@
 int GA::nbrCamPositions=0;
 int GA::nbrPoints=0;
 double GA::weightingPRIO1 = 3;
-double GA::penalty =10;
+double GA::penalty =2500;
 double GA::mutationRate=0.3;
 double GA::crossoverRate=0.7;
 int GA::populationSize = 2000;
 bool GA::dynamicThreading=false;
-bool GA::newFunction = true;
+bool GA::newFunction = false;
 
 double GA::coverageThreshold = 0.4;
-double GA::requiredPrio1Coverage = 1.0 ;
-double GA::penalty2 = 3500.0 ;
+double GA::requiredPrio1Coverage = 0.9 ;
 
 long long int GA::createdChromoses =0;
 
@@ -143,8 +142,8 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
 
         }
         else
-            visMatPrio1.push_back((value+1)*coefficients_prio1.at(count1));//plus 1 otherwise multiplication with zero!
-        if(x>=SafetyZone::PRIO1)
+            visMatPrio1.push_back(value);//plus 1 otherwise multiplication with zero!
+        if(x>=SafetyZone::PRIO1 && coveredPrio1.at(count1)==1)
             percentageCalcultationPrio1.push_back(1);
         else
            percentageCalcultationPrio1.push_back(0);
@@ -162,9 +161,9 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
 
         }
         else
-            visMatPrio2.push_back((value+1)*coefficients_prio2.at(count2));
+            visMatPrio2.push_back(value);
 
-        if(x>=SafetyZone::PRIO2)
+        if(x>=SafetyZone::PRIO2 && coveredPrio2.at(count2)==1)
             percentageCalcultationPrio2.push_back(1);
         else
             percentageCalcultationPrio2.push_back(0);
@@ -181,7 +180,6 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
     c.coverage.prio2 =sum_observed_prio2 / percentageCalcultationPrio2.size() *100;
     c.coverage.total =(sum_observed_prio2 + sum_observed_prio1) / (percentageCalcultationPrio1.size()+percentageCalcultationPrio2.size()) *100;
 
-    static size_t counter = 0;
 /*
         {   // if coverage is high enough then calc sum of PDC and RDC
             std::vector<double> visFactor_prio1(p.cameras.begin()->get()->distortionValuePrio1.size(),0);
@@ -194,16 +192,31 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
            // c.objective = -(weighting * std::accumulate(visFactor_prio1.begin(),visFactor_prio1.end(),0.0) + std::accumulate(visFactor_prio2.begin(),visFactor_prio2.end(),0.0));
   */
     if(!newFunction)
-        c.objective = -(weightingPRIO1 * std::accumulate(visMatPrio1.begin(),visMatPrio1.end(),0.0) + std::accumulate(visMatPrio2.begin(),visMatPrio2.end(),0.0));
+    {
+        double penaltyValuePrio1 = std::accumulate(visMatPrio1.begin(),visMatPrio1.end(),0.0);
+        double penaltyValuePrio2 = std::accumulate(visMatPrio2.begin(),visMatPrio2.end(),0.0);
 
+        //c.objective = -(weightingPRIO1 * std::accumulate(visMatPrio1.begin(),visMatPrio1.end(),0.0) + std::accumulate(visMatPrio2.begin(),visMatPrio2.end(),0.0));
+        c.objective = -(weightingPRIO1 * (std::accumulate(coveredPrio1.begin(),coveredPrio1.end(),0) +penaltyValuePrio1)+ std::accumulate(coveredPrio2.begin(),coveredPrio2.end(),0)+penaltyValuePrio2);
+    }
     else
     {
         int sumPrio1Points = coefficients_prio1.size();
         int sumCoveredPrio1Points = std::accumulate(percentageCalcultationPrio1.begin(),percentageCalcultationPrio1.end(),0);
-        int sumPartialCoveredPrio1Points = std::accumulate(coveredPrio1.begin(),coveredPrio1.end(),0);
+        //calculate Partial Covered Points
+        int sumPartialCoveredPoints=0;
+        for(const auto&x :visYesNo_prio1)
+        {
+            if(x<SafetyZone::PRIO1 && x !=0)
+                sumPartialCoveredPoints +=1;
+
+        }
         double penaltyValue;
         if(sumCoveredPrio1Points > 0 && sumCoveredPrio1Points < requiredPrio1Coverage * sumPrio1Points)
-            penaltyValue = penalty2 * sumPrio1Points/sumCoveredPrio1Points;
+            if(sumPartialCoveredPoints == 0)
+                penaltyValue = penalty * sumPrio1Points/(sumCoveredPrio1Points);
+            else
+                penaltyValue = penalty * sumPrio1Points/(sumCoveredPrio1Points)-(1-(sumPrio1Points-sumCoveredPrio1Points)/sumPartialCoveredPoints);
         else if(sumCoveredPrio1Points == 0)
         {
             /* First observe Prio1 zones, even if it's only seen by less cameras then needed!
@@ -213,7 +226,7 @@ bool GA::eval_solution(const MySolution& p,MyMiddleCost &c)
            // if(sumPartialCoveredPrio1Points > 0)
            //     penaltyValue = penalty2 * sumPrio1Points/sumPartialCoveredPrio1Points;
            // else if(sumPartialCoveredPrio1Points == 0)
-                penaltyValue = penalty2 * sumPrio1Points;
+                penaltyValue = penalty * sumPrio1Points*(sumPrio1Points-sumPartialCoveredPoints);
         }
         else if(sumCoveredPrio1Points >= requiredPrio1Coverage * sumPrio1Points)
             penaltyValue = 0;

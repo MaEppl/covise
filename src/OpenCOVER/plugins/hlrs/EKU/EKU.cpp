@@ -591,23 +591,17 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
 
     //penalty
     penalty = new ui::Slider(Optimize , "penalty");
-    penalty->setText("Penalty");
-    penalty->setBounds(0., 30.);
+    penalty->setText("Penalty Not Covered Points");
+    penalty->setBounds(0., 3000.);
     penalty->setValue(GA::penalty);
     penalty->setCallback([this](double value, bool released){
         GA::penalty =value;
     });
-    //penalization
-    penalization = new ui::Button(Optimize , "Penalization");
-    penalization->setText("NewFunction");
-    penalization->setState(GA::newFunction);
-    penalization->setCallback([this](bool state){
-        GA::newFunction = state;
-    });
+
     //weight for Prio1
     weighting = new ui::Slider(Optimize , "weighting");
     weighting->setText("Weigthing PRIO1");
-    weighting->setBounds(1., 10.);
+    weighting->setBounds(1., 20.);
     weighting->setValue(GA::weightingPRIO1);
     weighting->setCallback([this](double value, bool released){
         GA::weightingPRIO1=value;
@@ -639,6 +633,24 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     dynamicThreading->setCallback([this](bool state)
     {
        GA::dynamicThreading = state ;
+    });
+
+    //penalization
+    penalization = new ui::Button(Optimize , "Penalization");
+    penalization->setText("New fitness function");
+    penalization->setState(GA::newFunction);
+    penalization->setCallback([this](bool state){
+        GA::newFunction = state;
+    });
+
+    //requiredPrio1 Coverage
+    reqPRIO1Coverage = new ui::Slider(Optimize , "ReqPRIO1Coverage");
+    reqPRIO1Coverage->setText("Required Prio1 Coverage");
+    reqPRIO1Coverage->setBounds(0.1,1.0);
+    reqPRIO1Coverage->setValue(GA::requiredPrio1Coverage);
+    reqPRIO1Coverage->setCallback([this](double value, bool released){
+        GA::requiredPrio1Coverage=value;
+
     });
 
 
