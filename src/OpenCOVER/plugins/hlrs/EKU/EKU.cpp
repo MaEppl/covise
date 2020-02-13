@@ -607,7 +607,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
     weighting->setCallback([this](double value, bool released){
         GA::weightingPRIO1=value;
     });
-    //mutation rate
+/*    //mutation rate
     mutationRate = new ui::Slider(Optimize , "MutationRate");
     mutationRate->setText("Mutation fraction");
     mutationRate->setBounds(0.0,0.9);
@@ -627,6 +627,7 @@ EKU::EKU(): ui::Owner("EKUPlugin", cover->ui)
         GA::mutationRate= 1.0-value;
         mutationRate->setValue(1.0-value);
     });
+    */
     //Dynamic threading
     dynamicThreading = new ui::Button(Optimize , "dynamicThreading");
     dynamicThreading->setText("Dynamic Threading");
